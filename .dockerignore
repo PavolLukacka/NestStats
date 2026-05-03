@@ -1,4 +1,15 @@
-# Build output
+# Git and editor state
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+.claude/
+*.user
+*.suo
+*.DotSettings.user
+
+# .NET build output
 bin/
 obj/
 build-verify/
@@ -13,34 +24,9 @@ coverage/
 coverage*/
 *.nupkg
 *.snupkg
-*.zip
-*.7z
-*.tar
-*.tar.gz
-*.rar
-*.log
-*.tmp
-output-edge.png
-deploy.zip
 
-# IDE and local editor state
-.vs/
-.vscode/
-.idea/
-.claude/
-*.user
-*.suo
-*.DotSettings.user
-
-# Local runtime data
+# Runtime data and local secrets
 App_Data/
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
-
-# Application secrets
 appsettings.Local.json
 appsettings.*.Local.json
 .env
@@ -51,6 +37,22 @@ secrets.*
 *.pem
 *.pfx
 *.key
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Local logs and archives
+*.log
+*.tmp
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.rar
+output-edge.png
+deploy.zip
 
 # Firmware generated output and private credentials
 Firmwares/**/build/
@@ -70,7 +72,7 @@ Firmwares/**/secret*.h
 Firmwares/**/secrets*.h
 Firmwares/**/wifi_credentials*.h
 
-# Personal project material that is not part of the public NestStats app
+# Personal project material outside the public app
 Dipomovka/
 RYSTATS2_new/
 New rystats/

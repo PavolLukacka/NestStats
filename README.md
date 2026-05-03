@@ -448,6 +448,42 @@ powershell -ExecutionPolicy Bypass -File .\run-net10.ps1
 
 ---
 
+## Deploy cez Render Docker
+
+Projekt obsahuje pripravený Docker deployment:
+
+| Súbor | Úloha |
+|---|---|
+| `Dockerfile` | build a runtime image pre ASP.NET Core |
+| `.dockerignore` | chráni lokálne secrets, databázy, buildy a osobné priečinky pred vložením do image |
+| `render.yaml` | voliteľný Render blueprint |
+| `RENDER_DEPLOYMENT.md` | podrobný postup nasadenia |
+
+Render web service musí počúvať na porte z premennej `PORT`. Dockerfile preto spúšťa aplikáciu cez:
+
+```text
+ASPNETCORE_URLS=http://0.0.0.0:${PORT:-10000}
+```
+
+Na Renderi nenahrávaj `appsettings.Local.json`. Reálne hodnoty nastav ako Environment Variables:
+
+```text
+Supabase__Url=https://YOUR_PROJECT.supabase.co
+Supabase__AnonKey=YOUR_SUPABASE_ANON_KEY
+ConnectionStrings__DefaultConnection=Data Source=/app/App_Data/neststats-auth.db
+Authentication__RequireConfirmedAccount=false
+```
+
+Ak chceš, aby ASP.NET Identity účty prežili redeploy/reštart, pridaj v Render službe persistent disk mountnutý na:
+
+```text
+/app/App_Data
+```
+
+Detailný postup je v [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md).
+
+---
+
 ## Konfigurácia
 
 Hlavné konfiguračné sekcie:

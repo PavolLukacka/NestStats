@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: neststats
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        value: Data Source=/app/App_Data/neststats-auth.db
+      - key: Supabase__Url
+        sync: false
+      - key: Supabase__AnonKey
+        sync: false
+      - key: Authentication__RequireConfirmedAccount
+        value: "false"
+      - key: Authentication__Google__ClientId
+        sync: false
+      - key: Authentication__Google__ClientSecret
+        sync: false
+      - key: Authentication__Facebook__ClientId
+        sync: false
+      - key: Authentication__Facebook__ClientSecret
+        sync: false
+      - key: Email__FromAddress
+        sync: false
+      - key: Email__SmtpHost
+        sync: false
+      - key: Email__SmtpUser
+        sync: false
+      - key: Email__SmtpPassword
+        sync: false
+      - key: AdminBootstrap__Email
+        sync: false
+      - key: AdminBootstrap__Password
+        sync: false
+      - key: AdminBootstrap__DisplayName
+        value: NestStats Admin
