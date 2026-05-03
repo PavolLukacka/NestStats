@@ -51,6 +51,8 @@ secrets.*
 *.pem
 *.pfx
 *.key
+*.keystore
+*.jks
 
 # Firmware generated output and private credentials
 Firmwares/**/build/
@@ -74,3 +76,12 @@ Firmwares/**/wifi_credentials*.h
 Dipomovka/
 RYSTATS2_new/
 New rystats/
+
+# Bubblewrap / Android generated build output
+app/build/
+app/.gradle/
+.gradle/
+*.apk
+*.aab
+*.apks
+local.properties

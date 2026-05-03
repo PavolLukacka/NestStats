@@ -1,0 +1,52 @@
+{
+  "packageId": "com.onrender.neststats.twa",
+  "host": "neststats.onrender.com",
+  "name": "NestStats",
+  "launcherName": "NestStats",
+  "display": "standalone",
+  "themeColor": "#1E9E6E",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F9F8F6",
+  "enableNotifications": true,
+  "startUrl": "https://neststats.onrender.com/",
+  "iconUrl": "https://neststats.onrender.com/icons/icon-512.png",
+  "maskableIconUrl": "https://neststats.onrender.com/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:\\Users\\mepla\\OneDrive\\Documents\\SocialStrats\\NestStats2\\NestStats2\\android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://neststats.onrender.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://neststats.onrender.com/",
+  "minSdkVersion": 21,
+  "orientation": "portrait-primary",
+  "fingerprints": [
+    {
+      "name": "android-release-key",
+      "value": "8F:1A:4A:E7:51:45:A6:71:45:35:53:F0:3E:FD:BF:74:8F:DD:FF:D0:92:29:1F:24:E0:7C:C5:2E:B8:78:8D:FD"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1"
+}

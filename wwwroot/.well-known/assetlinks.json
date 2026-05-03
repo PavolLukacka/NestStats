@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.onrender.neststats.twa",
+      "sha256_cert_fingerprints": [
+        "8F:1A:4A:E7:51:45:A6:71:45:35:53:F0:3E:FD:BF:74:8F:DD:FF:D0:92:29:1F:24:E0:7C:C5:2E:B8:78:8D:FD"
+      ]
+    }
+  }
+]
