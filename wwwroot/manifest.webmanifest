@@ -1,0 +1,44 @@
+{
+  "name": "NestStats",
+  "short_name": "NestStats",
+  "description": "Open-source energetický workspace pre monitoring fotovoltiky, batérie, siete a riadených prebytkov.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f9f8f6",
+  "theme_color": "#1e9e6e",
+  "categories": ["productivity", "utilities"],
+  "lang": "sk-SK",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/lib/appscreenshots/prehlad_vykonu.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Prehľad výkonu"
+    },
+    {
+      "src": "/lib/appscreenshots/liveflow.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tok energie"
+    }
+  ]
+}

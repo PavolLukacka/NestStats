@@ -484,6 +484,30 @@ Detailný postup je v [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md).
 
 ---
 
+## Google Play cez Bubblewrap
+
+NestStats má pripravený základ pre PWA/TWA distribúciu:
+
+| Súbor | Úloha |
+|---|---|
+| `wwwroot/manifest.webmanifest` | PWA manifest pre Bubblewrap |
+| `wwwroot/service-worker.js` | základný service worker |
+| `wwwroot/icons/icon-192.png` | Android/PWA ikona |
+| `wwwroot/icons/icon-512.png` | Android/PWA ikona |
+| `PLAY_STORE_TWA.md` | postup pre Bubblewrap a Google Play |
+
+Po nasadení na verejnú HTTPS doménu môžeš spustiť:
+
+```powershell
+npm install -g @bubblewrap/cli
+bubblewrap doctor
+bubblewrap init --manifest=https://TVOJA-DOMENA/manifest.webmanifest
+```
+
+Detailný postup je v [PLAY_STORE_TWA.md](PLAY_STORE_TWA.md).
+
+---
+
 ## Konfigurácia
 
 Hlavné konfiguračné sekcie:
