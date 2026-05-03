@@ -1,0 +1,883 @@
+@page
+@model NestStats2.Pages.Systems.ConnectModel
+@{
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+
+    ViewData["Title"] = T("Pripojenie systému", "Connect system");
+
+    var primarySystem = Model.ConnectedSystems.FirstOrDefault(x => x.IsPrimary);
+    var verifiedCount = Model.ConnectedSystems.Count(x => x.LastVerifiedUtc is not null);
+    var needsPrimary = primarySystem is null;
+}
+
+@section Head {
+<style>
+    .connect-page {
+        --connect-panel: rgba(255,255,255,.92);
+        --connect-soft: rgba(249,248,246,.78);
+        --connect-green: #1e9e6e;
+        --connect-blue: #2563eb;
+        --connect-amber: #e8a020;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 34px 28px 76px;
+        display: grid;
+        gap: 24px;
+    }
+
+    .connect-page *,
+    .connect-page *::before,
+    .connect-page *::after {
+        box-sizing: border-box;
+    }
+
+    .connect-hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 28px;
+        min-height: 430px;
+        padding: 40px;
+        overflow: hidden;
+        border: 1px solid var(--ns-border);
+        border-radius: 30px;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,.96), rgba(249,248,246,.86)),
+            radial-gradient(circle at 100% 100%, rgba(30,158,110,.12), transparent 56%);
+        box-shadow: var(--ns-shadow-md);
+    }
+
+    .connect-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(90deg, rgba(13,14,18,.045) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(13,14,18,.035) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: linear-gradient(90deg, rgba(0,0,0,.72), transparent 78%);
+        pointer-events: none;
+    }
+
+    .connect-hero__body,
+    .connect-hero__panel {
+        position: relative;
+        z-index: 1;
+    }
+
+    .connect-kicker,
+    .connect-eyebrow {
+        width: fit-content;
+        color: #0c6e48;
+        font: 800 .68rem/1 var(--ff-mono);
+        letter-spacing: .11em;
+        text-transform: uppercase;
+    }
+
+    .connect-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid rgba(30,158,110,.18);
+        border-radius: 999px;
+        background: rgba(30,158,110,.08);
+    }
+
+    .connect-kicker::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--connect-green);
+        box-shadow: 0 0 0 4px rgba(30,158,110,.16);
+    }
+
+    .connect-title {
+        max-width: 760px;
+        margin: 20px 0 16px;
+        color: var(--ns-ink);
+        font-size: 4.4rem;
+        line-height: .98;
+        letter-spacing: -.055em;
+    }
+
+    .connect-title span {
+        display: block;
+        margin-top: 8px;
+        color: transparent;
+        background: linear-gradient(92deg, var(--connect-green), #0f766e 44%, var(--connect-amber));
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-family: var(--ff-mono);
+        font-size: .68em;
+        letter-spacing: 0;
+    }
+
+    .connect-lead {
+        max-width: 680px;
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: 1rem;
+        line-height: 1.72;
+    }
+
+    .connect-hero__actions,
+    .connect-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .connect-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 11px 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 999px;
+        background: rgba(255,255,255,.9);
+        color: var(--ns-ink);
+        font-weight: 800;
+        font-size: .88rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .16s var(--ease-out), box-shadow .16s, border-color .16s, background .16s;
+    }
+
+    .connect-button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(30,158,110,.35);
+        box-shadow: var(--ns-shadow-sm);
+        color: var(--ns-ink);
+    }
+
+    .connect-button--primary {
+        border-color: var(--ns-ink);
+        background: var(--ns-ink);
+        color: #fff;
+    }
+
+    .connect-button--primary:hover {
+        color: #fff;
+        background: #171923;
+    }
+
+    .connect-button--danger {
+        color: #b42318;
+        border-color: rgba(180,35,24,.20);
+        background: rgba(255,255,255,.9);
+    }
+
+    .connect-button--small {
+        min-height: 36px;
+        padding: 8px 12px;
+        font-size: .78rem;
+    }
+
+    .connect-hero__panel {
+        align-self: stretch;
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,.78);
+        border-radius: 24px;
+        background: rgba(255,255,255,.74);
+        box-shadow: var(--ns-shadow-sm);
+        backdrop-filter: blur(16px);
+    }
+
+    .connect-signal {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 18px;
+        background: rgba(255,255,255,.92);
+    }
+
+    .connect-signal span {
+        color: var(--ns-ink-3);
+        font: 800 .66rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .connect-signal strong {
+        color: var(--ns-ink);
+        font-size: 1.05rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .connect-signal p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .84rem;
+        line-height: 1.48;
+    }
+
+    .connect-status-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .connect-stat {
+        min-height: 128px;
+        padding: 16px;
+        display: grid;
+        align-content: space-between;
+        gap: 14px;
+        border: 1px solid var(--ns-border);
+        border-radius: 22px;
+        background: var(--connect-panel);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .connect-stat span {
+        color: var(--ns-ink-3);
+        font: 800 .66rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .connect-stat strong {
+        color: var(--ns-ink);
+        font-size: 1.45rem;
+        line-height: 1.08;
+        overflow-wrap: anywhere;
+    }
+
+    .connect-stat small {
+        color: var(--ns-ink-3);
+        line-height: 1.45;
+    }
+
+    .connect-workspace {
+        display: grid;
+        grid-template-columns: minmax(340px, .82fr) minmax(0, 1.18fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .connect-panel {
+        border: 1px solid var(--ns-border);
+        border-radius: 24px;
+        background: var(--connect-panel);
+        box-shadow: var(--ns-shadow-sm);
+        overflow: hidden;
+    }
+
+    .connect-panel__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 22px 22px 0;
+    }
+
+    .connect-panel__head h2,
+    .connect-card h3,
+    .connect-empty h3 {
+        margin: 6px 0 0;
+        color: var(--ns-ink);
+        font-size: 1.35rem;
+        line-height: 1.15;
+        letter-spacing: -.025em;
+    }
+
+    .connect-panel__head p {
+        max-width: 580px;
+        margin: 8px 0 0;
+        color: var(--ns-ink-3);
+        font-size: .92rem;
+        line-height: 1.58;
+    }
+
+    .connect-form {
+        display: grid;
+        gap: 16px;
+        padding: 22px;
+    }
+
+    .connect-field {
+        display: grid;
+        gap: 8px;
+    }
+
+    .connect-field label {
+        color: var(--ns-ink);
+        font-weight: 800;
+        font-size: .86rem;
+    }
+
+    .connect-field input {
+        width: 100%;
+        min-height: 50px;
+        padding: 13px 14px;
+        border: 1px solid var(--ns-border);
+        border-radius: 15px;
+        background: rgba(255,255,255,.92);
+        color: var(--ns-ink);
+        font: 600 .95rem/1.2 var(--ff-sans);
+        outline: none;
+        transition: border-color .16s, box-shadow .16s, background .16s;
+    }
+
+    .connect-field input:focus {
+        border-color: rgba(30,158,110,.52);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(30,158,110,.12);
+    }
+
+    .connect-field small,
+    .connect-validation {
+        color: var(--ns-ink-3);
+        font-size: .78rem;
+        line-height: 1.45;
+    }
+
+    .connect-validation {
+        color: #b42318;
+        font-weight: 700;
+    }
+
+    .validation-summary {
+        padding: 14px;
+        border: 1px solid rgba(180,35,24,.18);
+        border-radius: 16px;
+        background: rgba(254,242,242,.82);
+        color: #991b1b;
+        font-size: .88rem;
+        line-height: 1.5;
+    }
+
+    .validation-summary:empty {
+        display: none;
+    }
+
+    .connect-hint {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid rgba(37,99,235,.14);
+        border-radius: 18px;
+        background: rgba(239,244,255,.8);
+    }
+
+    .connect-hint strong {
+        color: var(--ns-ink);
+        font-size: .9rem;
+    }
+
+    .connect-hint p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .84rem;
+        line-height: 1.55;
+    }
+
+    .connect-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 18px;
+        border: 1px solid rgba(30,158,110,.20);
+        border-radius: 20px;
+        background: rgba(230,247,241,.88);
+        color: #0c6e48;
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .connect-status__mark {
+        display: grid;
+        place-items: center;
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(30,158,110,.14);
+        font: 900 .9rem/1 var(--ff-mono);
+    }
+
+    .connect-status strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #075f3c;
+    }
+
+    .connect-status span {
+        color: #0c6e48;
+        line-height: 1.45;
+    }
+
+    .connect-stack {
+        display: grid;
+        gap: 18px;
+    }
+
+    .connect-list {
+        display: grid;
+        gap: 12px;
+        padding: 22px;
+    }
+
+    .connect-system {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 20px;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,.96), rgba(249,248,246,.78));
+    }
+
+    .connect-system.is-primary {
+        border-color: rgba(30,158,110,.28);
+        background:
+            linear-gradient(135deg, rgba(230,247,241,.96), rgba(255,255,255,.9));
+    }
+
+    .connect-system__main {
+        min-width: 0;
+        display: grid;
+        gap: 8px;
+    }
+
+    .connect-system__title {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .connect-system__title strong {
+        color: var(--ns-ink);
+        font-size: 1.05rem;
+        overflow-wrap: anywhere;
+    }
+
+    .connect-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 5px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(30,158,110,.20);
+        background: rgba(30,158,110,.10);
+        color: #0c6e48;
+        font: 800 .62rem/1 var(--ff-mono);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .connect-system__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .connect-meta {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        max-width: 100%;
+        padding: 6px 9px;
+        border-radius: 10px;
+        background: rgba(255,255,255,.82);
+        border: 1px solid rgba(13,14,18,.06);
+        color: var(--ns-ink-3);
+        font-size: .8rem;
+        overflow-wrap: anywhere;
+    }
+
+    .connect-system__actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .connect-empty {
+        margin: 22px;
+        padding: 24px;
+        border: 1px dashed rgba(13,14,18,.16);
+        border-radius: 22px;
+        background: rgba(249,248,246,.72);
+        text-align: left;
+    }
+
+    .connect-empty p {
+        margin: 10px 0 0;
+        color: var(--ns-ink-3);
+        line-height: 1.6;
+    }
+
+    .connect-guide {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .connect-card {
+        min-height: 180px;
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid var(--ns-border);
+        border-radius: 22px;
+        background: var(--connect-panel);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .connect-card--accent {
+        border-color: rgba(30,158,110,.22);
+        background: linear-gradient(145deg, rgba(230,247,241,.86), rgba(255,255,255,.92));
+    }
+
+    .connect-card p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .88rem;
+        line-height: 1.55;
+    }
+
+    .connect-number {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 13px;
+        background: var(--ns-ink);
+        color: #fff;
+        font: 900 .82rem/1 var(--ff-mono);
+    }
+
+    @@media (max-width: 1080px) {
+        .connect-hero,
+        .connect-workspace {
+            grid-template-columns: 1fr;
+        }
+
+        .connect-hero {
+            min-height: auto;
+        }
+
+        .connect-status-grid,
+        .connect-guide {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .connect-page {
+            width: 100%;
+            max-width: 100%;
+            padding: 18px 14px 58px;
+            gap: 18px;
+            overflow-x: hidden;
+        }
+
+        .connect-page *,
+        .connect-page *::before,
+        .connect-page *::after {
+            min-width: 0;
+        }
+
+        .connect-hero {
+            width: 100%;
+            max-width: 100%;
+            padding: 22px 18px;
+            border-radius: 22px;
+            gap: 18px;
+        }
+
+        .connect-title {
+            margin: 18px 0 14px;
+            font-size: 2.35rem;
+            line-height: 1.03;
+            letter-spacing: -.038em;
+        }
+
+        .connect-title span {
+            font-size: .72em;
+        }
+
+        .connect-lead,
+        .connect-panel__head p,
+        .connect-card p,
+        .connect-hint p {
+            font-size: .9rem;
+            line-height: 1.58;
+        }
+
+        .connect-hero__panel,
+        .connect-panel,
+        .connect-card,
+        .connect-stat,
+        .connect-system,
+        .connect-empty,
+        .connect-status {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 18px;
+        }
+
+        .connect-status-grid,
+        .connect-guide {
+            grid-template-columns: 1fr;
+        }
+
+        .connect-workspace {
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        .connect-panel__head {
+            display: grid;
+            padding: 18px 18px 0;
+        }
+
+        .connect-form,
+        .connect-list {
+            padding: 18px;
+        }
+
+        .connect-system {
+            grid-template-columns: 1fr;
+            align-items: start;
+        }
+
+        .connect-system__actions {
+            justify-content: stretch;
+        }
+
+        .connect-system__actions form,
+        .connect-system__actions .connect-button,
+        .connect-hero__actions .connect-button,
+        .connect-actions .connect-button {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 420px) {
+        .connect-page {
+            padding-inline: 10px;
+        }
+
+        .connect-hero {
+            padding: 20px 14px;
+        }
+
+        .connect-title {
+            font-size: 2.05rem;
+        }
+    }
+</style>
+}
+
+<section class="connect-page">
+    <header class="connect-hero">
+        <div class="connect-hero__body">
+            <span class="connect-kicker">@T("Pripojenie inštalácie", "Installation pairing")</span>
+            <h1 class="connect-title">
+                @T("Pripoj systém, ktorý bude živiť celý dashboard.", "Connect the system that powers the dashboard.")
+                <span>@T("Sériové číslo. Heslo. Jasný názov.", "Serial number. Password. Clear name.")</span>
+            </h1>
+            <p class="connect-lead">
+                @T(
+                    "Táto stránka vytvorí väzbu medzi tvojím účtom a konkrétnou fotovoltickou inštaláciou. Od tohto momentu vie NestStats načítať správne dáta, otvoriť dashboard v správnom kontexte a používať systém v ďalších prevádzkových častiach aplikácie.",
+                    "This page links your account with a concrete photovoltaic installation. From that moment NestStats can load the right data, open the dashboard in the correct context, and use the system across the operational workspace.")
+            </p>
+            <div class="connect-hero__actions">
+                <a class="connect-button connect-button--primary" href="#connect-form">@T("Pripojiť nový systém", "Connect new system")</a>
+                <a class="connect-button" asp-page="/Index">@T("Otvoriť dashboard", "Open dashboard")</a>
+            </div>
+        </div>
+
+        <aside class="connect-hero__panel" aria-label="@T("Stav portfólia", "Portfolio status")">
+            <div class="connect-signal">
+                <span>@T("Aktuálny kontext", "Current context")</span>
+                <strong>@(primarySystem?.SystemName ?? T("Primárny systém ešte nie je nastavený", "No primary system selected yet"))</strong>
+                <p>@(needsPrimary
+                    ? T("Po pripojení prvého systému ho automaticky nastavíme ako hlavný.", "After connecting the first system, it will automatically become primary.")
+                    : T("Tento systém sa otvorí ako prvý pracovný kontext po prihlásení.", "This system opens as the first workspace context after sign-in."))</p>
+            </div>
+            <div class="connect-signal">
+                <span>@T("Čo sa páruje", "What gets paired")</span>
+                <strong>@T("SN + systémové heslo + názov", "SN + system password + name")</strong>
+                <p>@T("Sériové číslo musí sedieť s databázou a firmware nodmi.", "The serial number must match the database and firmware nodes.")</p>
+            </div>
+        </aside>
+    </header>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="connect-status" role="status">
+            <span class="connect-status__mark">OK</span>
+            <div>
+                <strong>@T("Zmena bola uložená", "Change saved")</strong>
+                <span>@message</span>
+            </div>
+        </div>
+    }
+
+    <section class="connect-status-grid" aria-label="@T("Rýchly prehľad", "Quick overview")">
+        <article class="connect-stat">
+            <span>@T("Pripojené systémy", "Connected systems")</span>
+            <strong>@Model.ConnectedSystems.Count</strong>
+            <small>@T("Počet inštalácií dostupných pre tento účet.", "Installations available to this account.")</small>
+        </article>
+        <article class="connect-stat">
+            <span>@T("Primárny systém", "Primary system")</span>
+            <strong>@(primarySystem?.SystemName ?? T("Nenastavený", "Not set"))</strong>
+            <small>@T("Predvolený kontext pre dashboard po prihlásení.", "Default dashboard context after sign-in.")</small>
+        </article>
+        <article class="connect-stat">
+            <span>@T("Overené prístupy", "Verified access")</span>
+            <strong>@verifiedCount / @Model.ConnectedSystems.Count</strong>
+            <small>@T("Systémy, ktoré už boli uložené s prístupovým heslom.", "Systems already stored with access credentials.")</small>
+        </article>
+    </section>
+
+    <div class="connect-workspace">
+        <article class="connect-panel" id="connect-form">
+            <div class="connect-panel__head">
+                <div>
+                    <span class="connect-eyebrow">@T("Nový systém", "New system")</span>
+                    <h2>@T("Pridať fotovoltickú inštaláciu", "Add a photovoltaic installation")</h2>
+                    <p>@T("Použi presné sériové číslo zo systému. Alias je iba názov, ktorý budeš vidieť v NestStats.", "Use the exact serial number from the system. The alias is only the friendly name you will see in NestStats.")</p>
+                </div>
+            </div>
+
+            <form method="post" asp-page-handler="Connect" class="connect-form">
+                <div asp-validation-summary="All" class="validation-summary"></div>
+
+                <div class="connect-field">
+                    <label asp-for="Input.SnNumber">@T("Sériové číslo systému", "System serial number")</label>
+                    <input asp-for="Input.SnNumber" autocomplete="off" placeholder="@T("Napríklad SP2ES108NB3249", "For example SP2ES108NB3249")" />
+                    <small>@T("Musí sa zhodovať s hodnotou SN_NUMBER v databáze a vo firmware.", "Must match SN_NUMBER in the database and firmware.")</small>
+                    <span asp-validation-for="Input.SnNumber" class="connect-validation"></span>
+                </div>
+
+                <div class="connect-field">
+                    <label asp-for="Input.SystemPassword">@T("Systémové heslo", "System password")</label>
+                    <input asp-for="Input.SystemPassword" type="password" autocomplete="current-password" placeholder="@T("Heslo od inštalácie alebo monitoringu", "Installation or monitoring password")" />
+                    <small>@T("Heslo sa uloží chránené pre ďalšie použitie v aplikácii.", "The password is stored protected for later use inside the app.")</small>
+                    <span asp-validation-for="Input.SystemPassword" class="connect-validation"></span>
+                </div>
+
+                <div class="connect-field">
+                    <label asp-for="Input.Alias">@T("Názov v NestStats", "Name inside NestStats")</label>
+                    <input asp-for="Input.Alias" autocomplete="off" placeholder="@T("Dom Novák - Trnava", "Novak home - Trnava")" />
+                    <small>@T("Ak názov nevyplníš, použije sa názov systému z databázy.", "If left empty, the database system name will be used.")</small>
+                    <span asp-validation-for="Input.Alias" class="connect-validation"></span>
+                </div>
+
+                <div class="connect-hint">
+                    <strong>@T("Odporúčaný postup", "Recommended flow")</strong>
+                    <p>@T("Najprv over, že firmware posiela dáta pod rovnakým sériovým číslom. Potom pripoj systém tu a až následne kontroluj dashboard.", "First verify that firmware sends data under the same serial number. Then connect the system here and only after that check the dashboard.")</p>
+                </div>
+
+                <button type="submit" class="connect-button connect-button--primary">@T("Pripojiť systém", "Connect system")</button>
+            </form>
+        </article>
+
+        <div class="connect-stack">
+            <article class="connect-panel">
+                <div class="connect-panel__head">
+                    <div>
+                        <span class="connect-eyebrow">@T("Moje systémy", "My systems")</span>
+                        <h2>@T("Prevádzkové portfólio", "Operational portfolio")</h2>
+                        <p>@T("Tu vidíš všetky inštalácie, ktoré sú priradené k tvojmu účtu. Jeden systém môže byť hlavný pre predvolený dashboard.", "Here you can see every installation assigned to your account. One system can be primary for the default dashboard.")</p>
+                    </div>
+                </div>
+
+                @if (Model.ConnectedSystems.Count == 0)
+                {
+                    <div class="connect-empty">
+                        <h3>@T("Zatiaľ nie je pripojený žiadny systém", "No system is connected yet")</h3>
+                        <p>@T("Po pripojení prvého systému sa dashboard prestane správať všeobecne a začne pracovať s konkrétnou inštaláciou, jej SN číslom a jej dátami.", "After connecting the first system, the dashboard stops being generic and starts working with a concrete installation, serial number, and data.")</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="connect-list">
+                        @foreach (var system in Model.ConnectedSystems)
+                        {
+                            <article class="connect-system @(system.IsPrimary ? "is-primary" : string.Empty)">
+                                <div class="connect-system__main">
+                                    <div class="connect-system__title">
+                                        <strong>@system.SystemName</strong>
+                                        @if (system.IsPrimary)
+                                        {
+                                            <span class="connect-chip">@T("Hlavný", "Primary")</span>
+                                        }
+                                    </div>
+                                    <div class="connect-system__meta">
+                                        <span class="connect-meta">SN: @system.SnNumber</span>
+                                        <span class="connect-meta">@(string.IsNullOrWhiteSpace(system.SystemAddress) ? T("Adresa nie je uložená", "Address is not available") : system.SystemAddress)</span>
+                                        <span class="connect-meta">@T("Pripojené", "Connected"): @system.ConnectedUtc.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                                    </div>
+                                </div>
+                                <div class="connect-system__actions">
+                                    @if (!system.IsPrimary)
+                                    {
+                                        <form method="post" asp-page-handler="SetPrimary">
+                                            <input type="hidden" name="id" value="@system.Id" />
+                                            <button type="submit" class="connect-button connect-button--small">@T("Nastaviť ako hlavný", "Make primary")</button>
+                                        </form>
+                                    }
+
+                                    <form method="post" asp-page-handler="Remove">
+                                        <input type="hidden" name="id" value="@system.Id" />
+                                        <button type="submit" class="connect-button connect-button--small connect-button--danger">@T("Odpojiť", "Disconnect")</button>
+                                    </form>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </article>
+
+            <section class="connect-guide" aria-label="@T("Ako pripojenie funguje", "How pairing works")">
+                <article class="connect-card connect-card--accent">
+                    <span class="connect-number">01</span>
+                    <div>
+                        <span class="connect-eyebrow">@T("Dáta", "Data")</span>
+                        <h3>@T("SN musí sedieť", "SN must match")</h3>
+                    </div>
+                    <p>@T("Rovnaké sériové číslo spája fyzický menič, Supabase tabuľky, firmware a používateľský dashboard.", "The same serial number connects the physical inverter, Supabase tables, firmware, and user dashboard.")</p>
+                </article>
+                <article class="connect-card">
+                    <span class="connect-number">02</span>
+                    <div>
+                        <span class="connect-eyebrow">@T("Kontext", "Context")</span>
+                        <h3>@T("Hlavný systém vedie dashboard", "Primary system leads the dashboard")</h3>
+                    </div>
+                    <p>@T("Ak má účet viac systémov, hlavný systém určuje predvolený pracovný kontext po prihlásení.", "If the account has multiple systems, the primary system defines the default workspace after sign-in.")</p>
+                </article>
+                <article class="connect-card">
+                    <span class="connect-number">03</span>
+                    <div>
+                        <span class="connect-eyebrow">@T("Prevádzka", "Operations")</span>
+                        <h3>@T("Aplikácia vie, kam pozerať", "The app knows where to look")</h3>
+                    </div>
+                    <p>@T("Po pripojení vie NestStats načítať live vrstvu, denné KPI, históriu a systémové grafy pre správnu inštaláciu.", "After pairing, NestStats can load the live layer, daily KPI, history, and system charts for the right installation.")</p>
+                </article>
+            </section>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

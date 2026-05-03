@@ -1,0 +1,49 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<section class="product-page product-page--immersive">
+    <header class="page-hero immersive-hero">
+        <div class="section-stack">
+            <span class="hero-kicker">Recovery path</span>
+            <div>
+                <span class="section-eyebrow">Unexpected error</span>
+                <h1>The request could not be completed, but the workspace can recover from here</h1>
+                <p>This page now acts like a calmer support surface: it explains what happened at a high level, gives the request identifier when available and points operators back to a useful next step.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="button button--primary" asp-page="/Index">Return to dashboard</a>
+                <a class="button button--ghost" href="https://github.com/PavolLukacka/NestStats/blob/main/NESTSTATS_TECHNICAL_DOCUMENTATION.md" target="_blank" rel="noopener">Open technical documentation</a>
+            </div>
+        </div>
+        <aside class="hero-note hero-note--dark">
+            <strong>Triage note</strong>
+            <span>The safest next move is to retry the workflow, confirm configuration and keep the request identifier nearby if support is needed.</span>
+        </aside>
+    </header>
+
+    <div class="story-grid">
+        <article class="story-card">
+            <strong>What to do next</strong>
+            <ul class="number-list">
+                <li>Refresh or retry the action once, especially if the page depended on fresh remote data.</li>
+                <li>Check whether the account, system assignment or tariff context was changed just before the failure.</li>
+                <li>If the issue repeats, capture the request identifier and reproduce the exact route for support.</li>
+            </ul>
+        </article>
+        <article class="story-card story-card--cool">
+            <strong>Request context</strong>
+            @if (Model.ShowRequestId)
+            {
+                <p><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
+            }
+            else
+            {
+                <p>No request identifier is available for this view.</p>
+            }
+            <p>In development, turning on the <code>Development</code> environment reveals deeper error detail. In production, detailed errors should stay hidden.</p>
+        </article>
+    </div>
+</section>

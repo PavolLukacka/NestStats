@@ -1,0 +1,1882 @@
+@page "/ako-zacat"
+@{
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+    ViewData["Title"] = T("Ako začať", "Getting started");
+
+    var toolsUrl = isEnglish ? "/tools" : "/nastroje";
+    var analysisUrl = isEnglish ? "/15-minute-interval-analysis" : "/analyza-15-minutovych-intervalov";
+    var technicalDocsUrl = "https://github.com/PavolLukacka/NestStats/blob/main/NESTSTATS_TECHNICAL_DOCUMENTATION.md";
+    var systemsUrl = "/systems/connect";
+}
+
+@section Head {
+<style>
+    .gs-page {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: clamp(28px, 4vw, 48px) 28px 72px;
+        display: grid;
+        gap: 28px;
+    }
+
+    .gs-hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 34px;
+        min-height: 520px;
+        padding: clamp(34px, 5vw, 64px);
+        border: 1px solid var(--ns-border);
+        border-radius: 30px;
+        background:
+            radial-gradient(ellipse 80% 140% at 100% 100%, rgba(30,158,110,.08), transparent 58%),
+            radial-gradient(ellipse 70% 120% at 0% 0%, rgba(37,99,235,.06), transparent 55%),
+            linear-gradient(120deg, rgba(255,255,255,.96), rgba(249,248,246,.86));
+        box-shadow: var(--ns-shadow-md);
+        overflow: hidden;
+    }
+
+    .gs-hero::before {
+        content: "";
+        position: absolute;
+        inset: auto -90px -120px auto;
+        width: 520px;
+        height: 520px;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 45% 45%, rgba(30,158,110,.20), transparent 56%),
+            radial-gradient(circle at 62% 60%, rgba(232,160,32,.16), transparent 64%);
+        pointer-events: none;
+    }
+
+    .gs-hero__body,
+    .gs-hero__panel {
+        position: relative;
+        z-index: 1;
+    }
+
+    .gs-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(30,158,110,.18);
+        background: rgba(30,158,110,.08);
+        color: #0c6e48;
+        font: 700 .68rem/1 var(--ff-mono);
+        letter-spacing: .11em;
+        text-transform: uppercase;
+    }
+
+    .gs-kicker::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ns-green);
+        box-shadow: 0 0 0 4px rgba(30,158,110,.16);
+    }
+
+    .gs-title {
+        max-width: 820px;
+        margin: 22px 0 18px;
+        font-size: clamp(2.3rem, 6vw, 5.2rem);
+        line-height: .98;
+        letter-spacing: -.055em;
+        color: var(--ns-ink);
+    }
+
+    .gs-title em {
+        display: inline-block;
+        margin-top: 6px;
+        font-family: var(--ff-mono);
+        font-size: .78em;
+        font-style: normal;
+        font-weight: 800;
+        letter-spacing: 0;
+        color: transparent;
+        background: linear-gradient(92deg, #1e9e6e 0%, #0f766e 42%, #e8a020 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        text-shadow: 0 12px 34px rgba(30,158,110,.16);
+    }
+
+    .gs-lead {
+        max-width: 680px;
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: 1.02rem;
+        line-height: 1.74;
+    }
+
+    .gs-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 26px;
+    }
+
+    .gs-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        border: 1px solid var(--ns-border);
+        background: rgba(255,255,255,.86);
+        color: var(--ns-ink);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: .9rem;
+        transition: transform .18s var(--ease-out), border-color .18s, box-shadow .18s, background .18s;
+    }
+
+    .gs-button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(30,158,110,.32);
+        box-shadow: var(--ns-shadow-sm);
+        color: var(--ns-ink);
+    }
+
+    .gs-button--primary {
+        background: var(--ns-ink);
+        border-color: var(--ns-ink);
+        color: #fff;
+    }
+
+    .gs-button--primary:hover {
+        background: #171923;
+        color: #fff;
+    }
+
+    .gs-hero__panel {
+        align-self: stretch;
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,.72);
+        border-radius: 24px;
+        background: rgba(255,255,255,.72);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .gs-status {
+        display: grid;
+        gap: 4px;
+        padding: 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 18px;
+        background: rgba(255,255,255,.9);
+    }
+
+    .gs-status span {
+        color: var(--ns-ink-3);
+        font: 700 .66rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .gs-status strong {
+        color: var(--ns-ink);
+        font-size: 1rem;
+        line-height: 1.25;
+    }
+
+    .gs-section {
+        display: grid;
+        gap: 18px;
+    }
+
+    .gs-section-head {
+        display: grid;
+        gap: 6px;
+        max-width: 780px;
+    }
+
+    .gs-eyebrow {
+        color: var(--ns-ink-3);
+        font: 700 .7rem/1 var(--ff-mono);
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .gs-section h2 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: clamp(1.55rem, 3vw, 2.25rem);
+        line-height: 1.08;
+        letter-spacing: -.04em;
+    }
+
+    .gs-section-head p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .96rem;
+        line-height: 1.65;
+    }
+
+    .gs-capabilities {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .gs-card,
+    .gs-step,
+    .gs-support,
+    .gs-callout {
+        border: 1px solid var(--ns-border);
+        border-radius: 22px;
+        background: rgba(255,255,255,.92);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .gs-card {
+        min-height: 190px;
+        padding: 20px;
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .gs-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--accent, var(--ns-green));
+    }
+
+    .gs-card__icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-grid;
+        place-items: center;
+        background: var(--tone, var(--ns-green-dim));
+        color: var(--accent, var(--ns-green));
+    }
+
+    .gs-card h3,
+    .gs-step h3,
+    .gs-support h3 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: 1.02rem;
+        line-height: 1.22;
+    }
+
+    .gs-card p,
+    .gs-step p,
+    .gs-support p,
+    .gs-callout p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .88rem;
+        line-height: 1.58;
+    }
+
+    .gs-analysis {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 18px;
+        padding: 24px;
+        border-radius: 26px;
+        border: 1px solid rgba(37,99,235,.16);
+        background:
+            linear-gradient(135deg, rgba(239,246,255,.92), rgba(255,255,255,.92)),
+            linear-gradient(#fff, #fff);
+    }
+
+    .gs-analysis__stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .gs-mini {
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(37,99,235,.14);
+        background: rgba(255,255,255,.82);
+    }
+
+    .gs-mini span {
+        display: block;
+        color: var(--ns-ink-3);
+        font: 700 .64rem/1 var(--ff-mono);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 7px;
+    }
+
+    .gs-mini strong {
+        color: var(--ns-ink);
+        font-size: 1.15rem;
+    }
+
+    .gs-support-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .gs-support {
+        padding: 18px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .gs-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .gs-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--ns-border);
+        background: rgba(255,255,255,.86);
+        color: var(--ns-ink-3);
+        font: 700 .68rem/1 var(--ff-mono);
+        letter-spacing: .03em;
+    }
+
+    .gs-steps {
+        display: grid;
+        gap: 12px;
+        counter-reset: gs-step;
+    }
+
+    .gs-step {
+        counter-increment: gs-step;
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 18px;
+    }
+
+    .gs-step::before {
+        content: counter(gs-step);
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-grid;
+        place-items: center;
+        background: var(--ns-ink);
+        color: #fff;
+        font: 800 .9rem/1 var(--ff-mono);
+    }
+
+    .gs-step__meta {
+        color: var(--ns-ink-4);
+        font: 700 .68rem/1 var(--ff-mono);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .gs-flow {
+        padding: 24px;
+        border: 1px solid var(--ns-border);
+        border-radius: 26px;
+        background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,249,255,.86));
+        display: grid;
+        gap: 18px;
+    }
+
+    .gs-flow__line {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .gs-flow__node {
+        min-height: 112px;
+        padding: 15px;
+        border: 1px solid var(--ns-border);
+        border-radius: 18px;
+        background: rgba(255,255,255,.9);
+        display: grid;
+        gap: 7px;
+        align-content: start;
+    }
+
+    .gs-flow__node strong {
+        color: var(--ns-ink);
+        font-size: .92rem;
+    }
+
+    .gs-flow__node span {
+        color: var(--ns-ink-3);
+        font-size: .78rem;
+        line-height: 1.45;
+    }
+
+    .gs-firmware-grid,
+    .gs-wiring-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .gs-firmware-card,
+    .gs-wiring-card {
+        padding: 18px;
+        border: 1px solid var(--ns-border);
+        border-radius: 20px;
+        background: rgba(255,255,255,.9);
+        box-shadow: var(--ns-shadow-sm);
+        display: grid;
+        gap: 10px;
+    }
+
+    .gs-firmware-card header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .gs-firmware-card h3,
+    .gs-wiring-card h3 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: 1rem;
+        line-height: 1.25;
+    }
+
+    .gs-firmware-card p,
+    .gs-wiring-card p,
+    .gs-checklist li {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .86rem;
+        line-height: 1.55;
+    }
+
+    .gs-firmware-card code,
+    .gs-pin-table code {
+        font-family: var(--ff-mono);
+        font-size: .72rem;
+        color: var(--ns-ink);
+        background: rgba(15,23,42,.05);
+        border: 1px solid rgba(15,23,42,.08);
+        border-radius: 8px;
+        padding: 3px 6px;
+        word-break: break-word;
+    }
+
+    .gs-firmware-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .gs-button--small {
+        min-height: 34px;
+        padding: 8px 12px;
+        font-size: .75rem;
+    }
+
+    .gs-pin-table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 16px;
+        border: 1px solid var(--ns-border);
+        background: rgba(255,255,255,.88);
+    }
+
+    .gs-pin-table th,
+    .gs-pin-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--ns-border);
+        text-align: left;
+        vertical-align: top;
+        color: var(--ns-ink-3);
+        font-size: .84rem;
+        line-height: 1.45;
+    }
+
+    .gs-pin-table th {
+        color: var(--ns-ink);
+        font: 800 .68rem/1 var(--ff-mono);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        background: rgba(15,23,42,.035);
+    }
+
+    .gs-pin-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .gs-checklist {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 7px;
+    }
+
+    .gs-warning {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(232,160,32,.24);
+        background: rgba(255,247,229,.82);
+        color: var(--ns-ink-3);
+        font-size: .88rem;
+        line-height: 1.6;
+    }
+
+    .gs-schema {
+        overflow: hidden;
+        border: 1px solid var(--ns-border);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,250,252,.9));
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .gs-schema img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    .gs-setup-guide {
+        display: grid;
+        gap: 16px;
+    }
+
+    .gs-setup-row {
+        display: grid;
+        grid-template-columns: 160px minmax(0, 1fr);
+        gap: 16px;
+        padding: 18px;
+        border: 1px solid var(--ns-border);
+        border-radius: 22px;
+        background: rgba(255,255,255,.92);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .gs-setup-row__stage {
+        display: grid;
+        align-content: start;
+        gap: 8px;
+    }
+
+    .gs-setup-row__stage span {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-grid;
+        place-items: center;
+        background: var(--ns-ink);
+        color: #fff;
+        font: 800 .88rem/1 var(--ff-mono);
+    }
+
+    .gs-setup-row__stage strong {
+        color: var(--ns-ink);
+        font-size: .96rem;
+        line-height: 1.25;
+    }
+
+    .gs-setup-row__body {
+        display: grid;
+        gap: 12px;
+    }
+
+    .gs-setup-row__body h3 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: 1.08rem;
+    }
+
+    .gs-setup-row__body p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .9rem;
+        line-height: 1.62;
+    }
+
+    .gs-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .gs-detail {
+        padding: 13px;
+        border: 1px solid var(--ns-border);
+        border-radius: 16px;
+        background: rgba(248,250,252,.88);
+        display: grid;
+        gap: 7px;
+    }
+
+    .gs-detail b {
+        color: var(--ns-ink);
+        font-size: .78rem;
+        line-height: 1.25;
+    }
+
+    .gs-detail span {
+        color: var(--ns-ink-3);
+        font-size: .78rem;
+        line-height: 1.45;
+    }
+
+    .gs-code {
+        margin: 0;
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(15,23,42,.14);
+        background: #0f172a;
+        color: #dbeafe;
+        overflow-x: auto;
+        font: 12px/1.58 var(--ff-mono, Consolas, monospace);
+        white-space: pre;
+    }
+
+    .gs-code code {
+        font: inherit;
+        color: inherit;
+    }
+
+    .gs-copy-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .gs-copy-card {
+        padding: 18px;
+        border: 1px solid var(--ns-border);
+        border-radius: 22px;
+        background: rgba(255,255,255,.94);
+        box-shadow: var(--ns-shadow-sm);
+        display: grid;
+        gap: 12px;
+    }
+
+    .gs-copy-card header {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: start;
+    }
+
+    .gs-copy-card h3 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: 1.05rem;
+        line-height: 1.25;
+    }
+
+    .gs-copy-card p,
+    .gs-copy-card li {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .88rem;
+        line-height: 1.6;
+    }
+
+    .gs-copy-card ul {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 6px;
+    }
+
+    .gs-callout {
+        padding: 22px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+        background: linear-gradient(135deg, rgba(30,158,110,.08), rgba(232,160,32,.08));
+    }
+
+    @@media (max-width: 1060px) {
+        .gs-hero,
+        .gs-analysis,
+        .gs-callout {
+            grid-template-columns: 1fr;
+        }
+
+        .gs-capabilities,
+        .gs-support-grid,
+        .gs-firmware-grid,
+        .gs-wiring-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .gs-flow__line {
+            grid-template-columns: 1fr;
+        }
+
+        .gs-setup-row,
+        .gs-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 680px) {
+        .gs-page,
+        .gs-page *,
+        .gs-page *::before,
+        .gs-page *::after {
+            box-sizing: border-box;
+            min-width: 0;
+        }
+
+        .gs-page {
+            width: 100%;
+            max-width: 100%;
+            padding: 18px 14px 56px;
+            gap: 20px;
+            overflow-x: hidden;
+        }
+
+        .gs-hero {
+            width: 100%;
+            max-width: 100%;
+            min-height: auto;
+            padding: 22px 18px;
+            border-radius: 22px;
+            gap: 20px;
+        }
+
+        .gs-hero::before {
+            width: 280px;
+            height: 280px;
+            inset: auto -110px -100px auto;
+            opacity: .75;
+        }
+
+        .gs-kicker {
+            max-width: 100%;
+            align-items: flex-start;
+            white-space: normal;
+            line-height: 1.35;
+        }
+
+        .gs-kicker::before {
+            flex: 0 0 8px;
+            margin-top: 2px;
+        }
+
+        .gs-title {
+            margin: 18px 0 14px;
+            font-size: 2.38rem;
+            line-height: 1.03;
+            letter-spacing: -.035em;
+        }
+
+        .gs-title em {
+            display: block;
+            margin-top: 8px;
+            font-size: .72em;
+        }
+
+        .gs-lead,
+        .gs-section-head p,
+        .gs-card p,
+        .gs-support p,
+        .gs-step p,
+        .gs-firmware-card p,
+        .gs-wiring-card p,
+        .gs-copy-card p,
+        .gs-callout p {
+            font-size: .92rem;
+            line-height: 1.62;
+        }
+
+        .gs-section {
+            width: 100%;
+            max-width: 100%;
+            gap: 14px;
+        }
+
+        .gs-section-head,
+        .gs-flow__line,
+        .gs-setup-row,
+        .gs-detail-grid,
+        .gs-copy-grid,
+        .gs-firmware-actions {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .gs-section h2 {
+            font-size: 1.55rem;
+            line-height: 1.14;
+            letter-spacing: -.025em;
+        }
+
+        .gs-capabilities,
+        .gs-support-grid,
+        .gs-firmware-grid,
+        .gs-wiring-grid,
+        .gs-analysis__stats {
+            width: 100%;
+            max-width: 100%;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .gs-actions {
+            margin-top: 18px;
+            width: 100%;
+        }
+
+        .gs-button {
+            width: 100%;
+            max-width: 100%;
+            min-height: 42px;
+            padding: 11px 14px;
+            text-align: center;
+            white-space: normal;
+        }
+
+        .gs-hero__panel {
+            padding: 12px;
+            gap: 10px;
+            border-radius: 18px;
+        }
+
+        .gs-status {
+            padding: 13px;
+            border-radius: 15px;
+        }
+
+        .gs-status strong {
+            font-size: .92rem;
+            line-height: 1.32;
+            overflow-wrap: anywhere;
+        }
+
+        .gs-card,
+        .gs-step,
+        .gs-support,
+        .gs-firmware-card,
+        .gs-wiring-card,
+        .gs-copy-card,
+        .gs-flow,
+        .gs-analysis,
+        .gs-callout {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 18px;
+        }
+
+        .gs-card,
+        .gs-support,
+        .gs-firmware-card,
+        .gs-wiring-card,
+        .gs-copy-card,
+        .gs-flow,
+        .gs-analysis,
+        .gs-callout {
+            padding: 16px;
+        }
+
+        .gs-card {
+            min-height: auto;
+            gap: 10px;
+        }
+
+        .gs-card__icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        .gs-analysis {
+            gap: 16px;
+        }
+
+        .gs-flow__node,
+        .gs-mini {
+            min-height: auto;
+            padding: 13px;
+        }
+
+        .gs-step {
+            grid-template-columns: 42px 1fr;
+            padding: 14px;
+            gap: 12px;
+        }
+
+        .gs-step__number {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+        }
+
+        .gs-step h3,
+        .gs-firmware-card h3,
+        .gs-wiring-card h3,
+        .gs-copy-card h3 {
+            font-size: 1rem;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
+        .gs-firmware-card code,
+        .gs-pin-table code {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .gs-step__meta {
+            grid-column: 2;
+            white-space: normal;
+        }
+
+        .gs-code {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: .72rem;
+            overflow-x: auto;
+            white-space: pre;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .gs-schema {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            border-radius: 18px;
+        }
+
+        .gs-schema img {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .gs-pin-table {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            overflow: visible;
+            border-radius: 18px;
+            background: transparent;
+            border-spacing: 0;
+        }
+
+        .gs-pin-table thead {
+            display: none;
+        }
+
+        .gs-pin-table tbody,
+        .gs-pin-table tr,
+        .gs-pin-table td {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .gs-pin-table tr {
+            margin-bottom: 12px;
+            padding: 12px;
+            border: 1px solid var(--ns-border);
+            border-radius: 16px;
+            background: rgba(255,255,255,.92);
+            box-shadow: var(--ns-shadow-sm);
+        }
+
+        .gs-pin-table td {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(31,36,48,.08);
+            font-size: .88rem;
+        }
+
+        .gs-pin-table td:last-child {
+            border-bottom: 0;
+        }
+
+        .gs-pin-table td::before {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--ns-ink-3);
+            font: 800 .62rem/1 var(--ff-mono);
+            letter-spacing: .10em;
+            text-transform: uppercase;
+        }
+
+        .gs-pin-table td:nth-child(1)::before {
+            content: "Firmware";
+        }
+
+        .gs-pin-table td:nth-child(2)::before {
+            content: "RS485 / Modbus";
+        }
+
+        .gs-pin-table td:nth-child(3)::before {
+            content: "Výstupy / Outputs";
+        }
+
+        .gs-pin-table td:nth-child(4)::before {
+            content: "Poznámka / Note";
+        }
+
+        .gs-callout {
+            align-items: stretch;
+        }
+    }
+
+    @@media (max-width: 420px) {
+        .gs-page {
+            padding-inline: 10px;
+        }
+
+        .gs-hero {
+            padding: 20px 14px;
+            border-radius: 20px;
+        }
+
+        .gs-title {
+            font-size: 2.05rem;
+        }
+
+        .gs-section h2 {
+            font-size: 1.38rem;
+        }
+
+        .gs-card,
+        .gs-support,
+        .gs-step,
+        .gs-firmware-card,
+        .gs-wiring-card,
+        .gs-copy-card,
+        .gs-flow,
+        .gs-analysis,
+        .gs-callout {
+            padding: 14px;
+        }
+
+        .gs-code {
+            font-size: .68rem;
+        }
+    }
+</style>
+}
+
+<main class="gs-page">
+    <section class="gs-hero">
+        <div class="gs-hero__body">
+            <span class="gs-kicker">@T("Prvý štart ekosystému", "First start of the ecosystem")</span>
+            <h1 class="gs-title">@T("Začni s NestStats bez hádania.", "Start with NestStats without guesswork.") <em>@T("Meraj, riaď, overuj.", "Measure, control, verify.")</em></h1>
+            <p class="gs-lead">
+                @T(
+                    "NestStats prepája fotovoltiku, batériu, WattRouter, lokálne displeje, firmware nody a webový dashboard do jedného energetického workspace. Táto stránka ukazuje, čo platforma vie, čo je dnes podporované a ako zapojiť prvý systém.",
+                    "NestStats connects solar production, battery storage, WattRouter, local displays, firmware nodes, and the web dashboard into one energy workspace. This page explains what the platform can do, what is supported today, and how to connect the first system.")
+            </p>
+        </div>
+
+        <aside class="gs-hero__panel" aria-label="@T("Rýchly prehľad", "Quick overview")">
+            <div class="gs-status">
+                <span>@T("Jadro", "Core")</span>
+                <strong>@T("Sofar Solar + Supabase + ASP.NET dashboard", "Sofar Solar + Supabase + ASP.NET dashboard")</strong>
+            </div>
+            <div class="gs-status">
+                <span>@T("Lokálne riadenie", "Local control")</span>
+                <strong>@T("WattRouter, batéria, SSR výstupy, analógový výstup", "WattRouter, battery, SSR outputs, analog output")</strong>
+            </div>
+            <div class="gs-status">
+                <span>@T("Zobrazenie", "Display")</span>
+                <strong>@T("Waveshare, ESP32 Display, ESP32/Arduino displeje", "Waveshare, ESP32 Display, ESP32/Arduino displays")</strong>
+            </div>
+            <div class="gs-status">
+                <span>@T("Začiatok", "Start")</span>
+                <strong>@T("Najprv over dáta, potom pripájaj riadenie", "Verify data first, then connect control")</strong>
+            </div>
+        </aside>
+    </section>
+
+    <section class="gs-section">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Možnosti platformy", "Platform capabilities")</span>
+            <h2>@T("Čo môžeš s NestStats robiť", "What you can do with this platform")</h2>
+            <p>@T("Platforma nie je iba grafický dashboard. Vie zbierať dáta, vyhodnocovať prevádzku, riadiť prebytky a ukázať stav systému aj mimo webovej aplikácie.", "The platform is not only a dashboard. It can collect data, evaluate operation, control surplus energy, and show system state outside the web application as well.")</p>
+        </div>
+
+        <div class="gs-capabilities">
+            <article class="gs-card" style="--accent:#1e9e6e;--tone:#e6f7f1">
+                <span class="gs-card__icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 13h6l-2 7 12-12h-6l2-7L4 13Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                </span>
+                <h3>@T("Riadenie prebytkov cez WattRouter", "Surplus control through WattRouter")</h3>
+                <p>@T("Pre bojler a odporové záťaže používaj zero-crossing SSR relé dimenzované na výkon fázy. Praktické príklady sú Carlo Gavazzi RGC1A23D15KKE približne pre 3 kW na fázu alebo RGS1A23D25KKEDIN približne pre 2 kW na fázu.", "For boilers and resistive loads use zero-crossing SSR relays sized for the phase load. Practical examples are Carlo Gavazzi RGC1A23D15KKE for roughly 3 kW per phase or RGS1A23D25KKEDIN for roughly 2 kW per phase.")</p>
+            </article>
+
+            <article class="gs-card" style="--accent:#2563eb;--tone:#eff4ff">
+                <span class="gs-card__icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10H7V7Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <h3>@T("Riadenie cez batériové meniče ME3000SP", "Control through ME3000SP battery inverters")</h3>
+                <p>@T("Batériový regulátor vie počúvať lokálny stav prebytkov a cez Modbus držať batériu v rozumnom režime.", "The battery regulator can listen to local surplus state and use Modbus to keep the battery in a useful mode.")</p>
+            </article>
+
+            <article class="gs-card" style="--accent:#e8a020;--tone:#faf0d9">
+                <span class="gs-card__icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 17c4-10 12-10 16 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6 17h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <h3>@T("Analógový výstup pre wallbox alebo výkonový regulátor", "Analog output for wallbox or power control")</h3>
+                <p>@T("Prebytky sa dajú preložiť aj na plynulý riadiaci signál pre zariadenia, ktoré nepotrebujú iba zapnúť alebo vypnúť.", "Surplus can also be translated into a smooth control signal for devices that need more than simple on/off switching.")</p>
+            </article>
+
+            <article class="gs-card" style="--accent:#7c3aed;--tone:#f3e8ff">
+                <span class="gs-card__icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <h3>@T("Získanie dát z meniča", "Get data from the inverter")</h3>
+                <p>@T("Firmware uzly čítajú výkon FV, batériu, sieť, štatistické počítadlá a ďalšie veličiny podľa podporovaného meniča.", "Firmware nodes read PV power, battery state, grid values, statistical counters, and other values depending on the supported inverter.")</p>
+            </article>
+
+            <article class="gs-card" style="--accent:#0f766e;--tone:#ccfbf1">
+                <span class="gs-card__icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 6h14v10H5V6Z" stroke="currentColor" stroke-width="1.8"/><path d="M9 20h6M12 16v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <h3>@T("Lokálne displeje Waveshare a ESP32 Display", "Waveshare and ESP32 Display screens")</h3>
+                <p>@T("Vybrané ESP32 displeje môžu ukazovať stav FV, batérie a siete bez toho, aby bolo nutné otvoriť web.", "Selected ESP32 displays can show PV, battery, and grid state without opening the web dashboard.")</p>
+            </article>
+
+            <article class="gs-card" style="--accent:#d63a3a;--tone:#fef2f2">
+                <span class="gs-card__icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 4h8v16H8V4Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 8h4M10 12h4M10 16h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </span>
+                <h3>@T("Arduino, ESP32 a vlastné uzly", "Arduino, ESP32, and custom nodes")</h3>
+                <p>@T("Ak má zariadenie Wi-Fi a vie poslať správne polia do Supabase, môže sa stať súčasťou ekosystému.", "If a device has Wi-Fi and can send the correct fields to Supabase, it can become part of the ecosystem.")</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="gs-analysis">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Pred investíciou", "Before investing")</span>
+            <h2>@T("Neopieraj sa iba o odhad. Over si dáta.", "Do not trust estimates alone. Verify your data.")</h2>
+            <p>
+                @T(
+                    "Ak riešiš, či sa oplatí fotovoltika, batéria alebo tepelné čerpadlo, začni analýzou 15-minútových elektromerových dát. Zistíš reálny profil spotreby, potenciál vlastnej spotreby a rozdiel medzi pocitom a číslami.",
+                    "If you are deciding whether solar, battery storage, or a heat pump is worth it, start with a 15-minute electricity meter analysis. It shows the real consumption profile, self-use potential, and the difference between guesswork and data.")
+            </p>
+            <div class="gs-actions">
+                <a class="gs-button gs-button--primary" href="@analysisUrl">@T("Otvoriť 15-minútovú analýzu", "Open 15-minute analysis")</a>
+                <a class="gs-button" href="@toolsUrl">@T("Pozrieť všetky nástroje", "See all tools")</a>
+            </div>
+        </div>
+        <div class="gs-analysis__stats">
+            <div class="gs-mini"><span>@T("Vstup", "Input")</span><strong>15 min</strong></div>
+            <div class="gs-mini"><span>@T("Výstup", "Output")</span><strong>@T("scenár", "scenario")</strong></div>
+            <div class="gs-mini"><span>@T("Cieľ", "Goal")</span><strong>@T("reálne kWh", "real kWh")</strong></div>
+        </div>
+    </section>
+
+    <section class="gs-section">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Ekosystém", "Ecosystem")</span>
+            <h2>@T("Čo dnes podporujeme", "What we support today")</h2>
+            <p>@T("Jadro je aktuálne postavené okolo SOFAR Solar meničov a vlastných ESP32 firmware nodov. Ďalšie zariadenia sa dajú dopĺňať cez rovnaký dátový kontrakt.", "The core is currently built around SOFAR Solar inverters and custom ESP32 firmware nodes. More devices can be added through the same data contract.")</p>
+        </div>
+        <div class="gs-support-grid">
+            <article class="gs-support">
+                <h3>@T("Meniče", "Inverters")</h3>
+                <p>@T("Primárne SOFAR Solar, najmä hybridné a batériové scenáre, kde dávajú zmysel FV, batéria a sieťové dáta spolu.", "Primarily SOFAR Solar, especially hybrid and battery scenarios where PV, battery, and grid data need to be read together.")</p>
+                <div class="gs-chip-row">
+                    <span class="gs-chip">HYD KTL-3PH</span>
+                    <span class="gs-chip">ME3000SP</span>
+                    <span class="gs-chip">KTLX-G3</span>
+                </div>
+            </article>
+            <article class="gs-support">
+                <h3>@T("Hardware", "Hardware")</h3>
+                <p>@T("ESP32/Arduino nody, RS485 prevodníky, SSR relé, lokálne displeje.", "ESP32/Arduino nodes, RS485 converters, SSR relays, local displays.")</p>
+                <div class="gs-chip-row">
+                    <span class="gs-chip">ESP32</span>
+                    <span class="gs-chip">RS485</span>
+                    <span class="gs-chip">SSR</span>
+                </div>
+            </article>
+            <article class="gs-support">
+                <h3>@T("Cloud", "Cloud")</h3>
+                <p>@T("Web aplikácia môže bežať lokálne alebo v cloude, napríklad Azure. Telemetria je navrhnutá okolo Supabase tabuliek.", "The web app can run locally or in the cloud, for example on Azure. Telemetry is designed around Supabase tables.")</p>
+                <div class="gs-chip-row">
+                    <span class="gs-chip">Azure</span>
+                    <span class="gs-chip">Supabase</span>
+                    <span class="gs-chip">ASP.NET</span>
+                </div>
+            </article>
+            <article class="gs-support">
+                <h3>@T("Displeje", "Displays")</h3>
+                <p>@T("Podporované sú prototypy lokálneho zobrazenia na Waveshare a lacnejších ESP32 displejoch.", "Prototype local display support includes Waveshare and lower-cost ESP32 displays.")</p>
+                <div class="gs-chip-row">
+                    <span class="gs-chip">Waveshare</span>
+                    <span class="gs-chip">ESP32 Display</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="gs-section">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Od nuly po prvé spustenie", "Start to finish")</span>
+            <h2>@T("Web aplikácia, Supabase a Azure hosting krok za krokom", "Web app, Supabase, and Azure hosting step by step")</h2>
+            <p>
+                @T(
+                    "Tento postup je pre samotnú webovú aplikáciu NestStats. Najprv stiahneš kód z GitHubu, pripravíš Supabase projekt, zapíšeš prístupové údaje do konfigurácie, overíš lokálne spustenie a až potom aplikáciu nasadíš na Azure.",
+                    "This procedure is for the NestStats web application itself. First download the code from GitHub, prepare the Supabase project, write credentials into configuration, verify local startup, and only then deploy the app to Azure.")
+            </p>
+        </div>
+
+        <div class="gs-copy-grid">
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("1. Stiahni aplikáciu z GitHubu", "1. Download the app from GitHub")</h3>
+                    <span class="gs-chip">GitHub</span>
+                </header>
+                <p>@T("Repozitár obsahuje webovú aplikáciu, stránky, dashboard služby, konfiguráciu, dokumentáciu a firmware priečinok. Po stiahnutí pracuj v koreňovom priečinku projektu, kde je súbor NestStats2.csproj.", "The repository contains the web application, pages, dashboard services, configuration, documentation, and firmware folder. After downloading, work in the project root where NestStats2.csproj is located.")</p>
+                <pre class="gs-code"><code>git clone https://github.com/PavolLukacka/NestStats.git
+cd NestStats
+dotnet restore</code></pre>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("2. Založ Supabase projekt", "2. Create a Supabase project")</h3>
+                    <span class="gs-chip">Supabase</span>
+                </header>
+                <ul>
+                    <li>@T("Otvor supabase.com a vytvor nový projekt.", "Open supabase.com and create a new project.")</li>
+                    <li>@T("V projekte otvor Project Settings → API.", "In the project open Project Settings → API.")</li>
+                    <li>@T("Skopíruj Project URL. Vyzerá napríklad ako https://xxxxx.supabase.co.", "Copy the Project URL. It looks like https://xxxxx.supabase.co.")</li>
+                    <li>@T("Skopíruj anon public key. Nepoužívaj service_role key vo webovej aplikácii.", "Copy the anon public key. Do not use the service_role key in the web application.")</li>
+                </ul>
+                <div class="gs-warning">
+                    <strong>@T("Bezpečnosť:", "Security:")</strong>
+                    @T("Service role key má administrátorské oprávnenia a nepatrí do aplikácie, firmware ani verejného repozitára. Pre NestStats používaj Supabase anon key a nastav RLS podľa potreby.", "The service role key has administrative permissions and does not belong in the app, firmware, or public repository. For NestStats use the Supabase anon key and configure RLS as needed.")
+                </div>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("3. Vytvor základné Supabase tabuľky", "3. Create the core Supabase tables")</h3>
+                    <span class="gs-chip">SQL editor</span>
+                </header>
+                <p>@T("Ak máš už databázu z existujúcej inštalácie, tento krok nerob naslepo. Pre novú testovaciu databázu môžeš v Supabase SQL editore použiť minimálnu schému nižšie a potom ju rozšíriť podľa produkčného modelu.", "If you already have a database from an existing installation, do not run this blindly. For a new test database you can use the minimal schema below in Supabase SQL editor and then extend it according to the production model.")</p>
+                <pre class="gs-code"><code>create table if not exists public."SYSTEM" (
+  system_id bigint generated by default as identity primary key,
+  sn_number text not null unique,
+  system_name text not null unique,
+  system_address text,
+  user_def uuid,
+  pocet_ssr integer,
+  menic_model text,
+  instalovany_vykon real,
+  pv1_instalovany_vykon real,
+  pv2_instalovany_vykon real
+);
+
+create table if not exists public."PV_INFORMATION" (
+  created_at timestamptz not null default now(),
+  sn_number text not null,
+  mppt smallint,
+  voltage real,
+  current real,
+  power real,
+  primary key (created_at, sn_number)
+);
+
+create table if not exists public."GRID_INFORMATION" (
+  created_at timestamptz not null default now(),
+  sn_number text not null,
+  grid_frequency double precision,
+  active_power_output_total double precision,
+  active_power_pcc_total double precision,
+  voltage_phase_r double precision,
+  voltage_phase_s double precision,
+  voltage_phase_t double precision,
+  primary key (created_at, sn_number)
+);
+
+create table if not exists public."BATTERY_INFORMATION" (
+  created_at timestamptz not null default now(),
+  sn_number text not null,
+  voltage real,
+  current double precision,
+  power real,
+  temperature real,
+  soc integer,
+  soh integer,
+  charge_cycle integer,
+  primary key (sn_number, created_at)
+);
+
+create table if not exists public."STATISTICAL_INFORMATION" (
+  timestamp timestamptz not null default now(),
+  sn_number text not null,
+  pv_generation_today double precision,
+  pv_generation_total double precision,
+  consumption_today double precision,
+  consumption_total double precision,
+  purchase_today double precision,
+  purchase_total double precision,
+  sell_today double precision,
+  sell_total double precision,
+  battery_charge_today double precision,
+  battery_charge_total double precision,
+  battery_discharge_today double precision,
+  battery_discharge_total double precision,
+  primary key (sn_number, timestamp)
+);
+
+create table if not exists public."WATTROUTER_INFO" (
+  created_at timestamptz not null default now(),
+  sn_number text not null,
+  "powerPercentage" double precision,
+  "relay2On" boolean,
+  "relay3On" boolean,
+  "gridFetch" boolean,
+  primary key (created_at, sn_number)
+);</code></pre>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("4. Vlož prvý testovací systém", "4. Insert the first test system")</h3>
+                    <span class="gs-chip">sn_number</span>
+                </header>
+                <p>@T("Sériové číslo musí byť rovnaké v tabuľke SYSTEM, vo firmware a v dátových tabuľkách. Bez toho aplikácia nenájde dáta pre konkrétny dashboard.", "The serial number must be the same in the SYSTEM table, firmware, and data tables. Without this the app cannot find data for a concrete dashboard.")</p>
+                <pre class="gs-code"><code>insert into public."SYSTEM" (
+  sn_number,
+  system_name,
+  system_address,
+  pocet_ssr,
+  menic_model,
+  instalovany_vykon,
+  pv1_instalovany_vykon,
+  pv2_instalovany_vykon
+) values (
+  'YOUR_INVERTER_SN',
+  'Demo NestStats system',
+  'Demo address',
+  2,
+  'SOFAR HYD KTL-3PH',
+  10.0,
+  5.0,
+  5.0
+) on conflict (sn_number) do nothing;</code></pre>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("5. Zapíš Supabase údaje do aplikácie", "5. Write Supabase credentials into the app")</h3>
+                    <span class="gs-chip">config</span>
+                </header>
+                <p>@T("Repozitár je pripravený pre verejný GitHub. appsettings.json aj appsettings.Development.json ostávajú bez tajomstiev. Lokálne použi .NET user-secrets alebo ignorovaný appsettings.Local.json.", "The repository is prepared for public GitHub. appsettings.json and appsettings.Development.json stay secret-free. Locally, use .NET user-secrets or the ignored appsettings.Local.json file.")</p>
+                <pre class="gs-code"><code>dotnet user-secrets init
+dotnet user-secrets set "Supabase:Url" "https://YOUR_PROJECT.supabase.co"
+dotnet user-secrets set "Supabase:AnonKey" "YOUR_SUPABASE_ANON_KEY"</code></pre>
+                <p>@T("Alternatíva cez lokálny súbor, ktorý sa neposiela do repozitára:", "Alternative through a local file that is not committed to the repository:")</p>
+                <pre class="gs-code"><code>Copy-Item appsettings.Local.example.json appsettings.Local.json</code></pre>
+                <pre class="gs-code"><code>{
+  "Supabase": {
+    "Url": "https://YOUR_PROJECT.supabase.co",
+    "AnonKey": "YOUR_SUPABASE_ANON_KEY"
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=App_Data/neststats-auth.db"
+  }
+}</code></pre>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("6. Spusť aplikáciu lokálne a over konfiguráciu", "6. Run locally and verify configuration")</h3>
+                    <span class="gs-chip">local run</span>
+                </header>
+                <pre class="gs-code"><code>dotnet run --project NestStats2.csproj</code></pre>
+                <ul>
+                    <li>@T("Ak aplikácia padne s hláškou o Supabase configuration, chýba Url alebo AnonKey.", "If the app fails with a Supabase configuration message, Url or AnonKey is missing.")</li>
+                    <li>@T("Ak dashboard neukazuje systém, skontroluj tabuľku SYSTEM a hodnotu sn_number.", "If dashboard does not show a system, check the SYSTEM table and sn_number.")</li>
+                    <li>@T("Ak systém existuje, ale nemá dáta, skontroluj posledné riadky v telemetrických tabuľkách.", "If the system exists but has no data, check the latest rows in telemetry tables.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("7. Priprav Azure hosting", "7. Prepare Azure hosting")</h3>
+                    <span class="gs-chip">Azure CLI</span>
+                </header>
+                <p>@T("Nižšie je jednoduchý Azure App Service setup cez Azure CLI pre PowerShell. Názvy si zmeň podľa seba. Ak chceš free plán, over dostupné SKU v tvojom Azure účte; pre stabilnejší test je bezpečnejší malý Basic plán.", "Below is a simple Azure App Service setup through Azure CLI for PowerShell. Change names as needed. If you want a free plan, verify available SKUs in your Azure account; for a more stable test a small Basic plan is safer.")</p>
+                <pre class="gs-code"><code>az login
+az group create --name rg-neststats --location westeurope
+az appservice plan create --name plan-neststats --resource-group rg-neststats --sku B1 --is-linux
+az webapp create --resource-group rg-neststats --plan plan-neststats --name YOUR_UNIQUE_APP_NAME --runtime "DOTNETCORE:10.0"</code></pre>
+                <p>@T("Nastav Supabase a Identity konfiguráciu priamo do Azure App Settings:", "Set Supabase and Identity configuration directly into Azure App Settings:")</p>
+                <pre class="gs-code"><code>az webapp config appsettings set `
+  --resource-group rg-neststats `
+  --name YOUR_UNIQUE_APP_NAME `
+  --settings `
+  Supabase__Url="https://YOUR_PROJECT.supabase.co" `
+  Supabase__AnonKey="YOUR_SUPABASE_ANON_KEY" `
+  ConnectionStrings__DefaultConnection="Data Source=App_Data/neststats-auth.db" `
+  Authentication__RequireConfirmedAccount="false"</code></pre>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("8. Publikuj aplikáciu na Azure", "8. Publish the app to Azure")</h3>
+                    <span class="gs-chip">publish</span>
+                </header>
+                <p>@T("Pre jednoduchý prvý deploy môžeš použiť ZIP deploy. Pri dlhodobej prevádzke je lepšie nastaviť GitHub Actions alebo Azure deployment pipeline.", "For a simple first deploy you can use ZIP deploy. For long-term operation, GitHub Actions or an Azure deployment pipeline is better.")</p>
+                <pre class="gs-code"><code>dotnet publish NestStats2.csproj -c Release -o publish
+Compress-Archive -Path publish\* -DestinationPath neststats-publish.zip -Force
+az webapp deploy `
+  --resource-group rg-neststats `
+  --name YOUR_UNIQUE_APP_NAME `
+  --src-path neststats-publish.zip `
+  --type zip</code></pre>
+                <div class="gs-warning">
+                    <strong>@T("Poznámka:", "Note:")</strong>
+                    @T("Ak používaš Windows PowerShell, príkaz Compress-Archive funguje priamo. Na Linuxe/macOS použi zip -r neststats-publish.zip publish/.", "If you use Windows PowerShell, Compress-Archive works directly. On Linux/macOS use zip -r neststats-publish.zip publish/.")
+                </div>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("9. Finálne overenie po deploy", "9. Final verification after deploy")</h3>
+                    <span class="gs-chip">@T("checklist", "checklist")</span>
+                </header>
+                <ul>
+                    <li>@T("Otvor produkčnú URL aplikácie a over, že sa zobrazí login alebo verejná stránka.", "Open the production app URL and verify that login or public page is shown.")</li>
+                    <li>@T("Prihlás sa ako admin a skontroluj, či existuje aspoň jeden systém v SYSTEM.", "Log in as admin and check that at least one system exists in SYSTEM.")</li>
+                    <li>@T("Over, že Supabase app settings v Azure nemajú preklep v názvoch: Supabase__Url a Supabase__AnonKey.", "Verify that Supabase app settings in Azure have no typo: Supabase__Url and Supabase__AnonKey.")</li>
+                    <li>@T("Otvor dashboard a porovnaj vybraný sn_number s riadkami v Supabase.", "Open dashboard and compare selected sn_number with rows in Supabase.")</li>
+                    <li>@T("Až keď web aplikácia číta dáta, pokračuj firmware nodmi a hardvérovým zapojením nižšie.", "Only when the web app reads data, continue with firmware nodes and hardware wiring below.")</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="gs-section">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Po kroku 9", "After step 9")</span>
+            <h2>@T("Priprav hardvérové zariadenia, ktoré budú posielať dáta", "Prepare the hardware devices that will send data")</h2>
+            <p>
+                @T(
+                    "Keď web aplikácia beží a vie sa pripojiť na Supabase, ďalší krok je fyzický zber dát. Cieľom nie je hneď spúšťať reguláciu, ale najprv bezpečne overiť, že menič odpovedá, ESP node vie čítať Modbus hodnoty a databáza dostáva riadky so správnym sériovým číslom systému.",
+                    "When the web app is running and can connect to Supabase, the next step is physical data collection. The goal is not to start control immediately, but to safely verify that the inverter replies, the ESP node can read Modbus values, and the database receives rows with the correct system serial number.")
+            </p>
+        </div>
+
+        <div class="gs-copy-grid">
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("10. Najprv si priprav minimum hardvéru", "10. Prepare the minimum hardware first")</h3>
+                    <span class="gs-chip">hardware</span>
+                </header>
+                <p>@T("Na prvé spustenie stačí iba zberový node. Ten nič nespína a iba číta menič. Takto si vieš overiť celý dátový tok bez rizika, že sa omylom zapne bojler, SSR alebo batériový režim.", "For the first startup, a data-fetch node is enough. It switches nothing and only reads the inverter. This lets you verify the full data path without the risk of accidentally enabling a boiler, SSR, or battery mode.")</p>
+                <div class="gs-detail-grid">
+                    <div class="gs-detail"><b>@T("Menič", "Inverter")</b><span>@T("Podporovaný SOFAR Solar menič s dostupnou RS485/Modbus komunikáciou.", "Supported SOFAR Solar inverter with available RS485/Modbus communication.")</span></div>
+                    <div class="gs-detail"><b>ESP32</b><span>@T("ESP32 alebo kompatibilná doska podľa vybraného firmware. Pri displejoch môže ísť aj o Waveshare alebo Yellow Display ESP32.", "ESP32 or compatible board according to the selected firmware. Display nodes can also use Waveshare or Yellow Display ESP32.")</span></div>
+                    <div class="gs-detail"><b>RS485 TTL</b><span>@T("Prevodník medzi UART dosky a A/B svorkami meniča. Použi stabilné 5 V alebo 3,3 V podľa modulu.", "Converter between the board UART and inverter A/B terminals. Use stable 5 V or 3.3 V according to the module.")</span></div>
+                </div>
+                <ul>
+                    <li>@T("USB kábel potrebuješ na nahratie firmware a sériový monitor.", "A USB cable is needed for flashing firmware and serial monitor.")</li>
+                    <li>@T("Wi-Fi musí mať dosah pri meničovej technológii alebo pri rozvádzači.", "Wi-Fi must reach the inverter area or the electrical cabinet.")</li>
+                    <li>@T("Pri regulácii prebytkov priprav SSR relé so zero-crossing, správne istenie, chladič a revíziu silovej časti.", "For surplus control prepare zero-crossing SSR relays, correct protection, heatsink, and inspection of the power side.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("11. Vyber správny firmware podľa úlohy", "11. Choose firmware by role")</h3>
+                    <span class="gs-chip">node role</span>
+                </header>
+                <p>@T("Firmvéry sú rozdelené podľa toho, či zariadenie iba zbiera dáta, riadi WattRouter, zobrazuje hodnoty na displeji alebo komunikuje s batériovým meničom. Pri prvom zapojení začni dátovým nodom a až po overení pokračuj reguláciou.", "Firmwares are split by whether the device only collects data, controls WattRouter, shows values on a display, or communicates with a battery inverter. On the first setup start with the data node and continue with regulation only after verification.")</p>
+                <div class="gs-detail-grid">
+                    <div class="gs-detail"><b>@T("Zber dát", "Data fetch")</b><span><code>Inverter_fetch_node.ino</code> @T("číta FV, sieť, batériu a štatistiky z meniča.", "reads PV, grid, battery, and statistics from the inverter.")</span></div>
+                    <div class="gs-detail"><b>WattRouter</b><span>@T("SSR verzie pracujú s prebytkom a zapisujú stav relé do WATTROUTER_INFO.", "SSR versions work with surplus and write relay state into WATTROUTER_INFO.")</span></div>
+                    <div class="gs-detail"><b>@T("Displej", "Display")</b><span>@T("Lokálny node môže zobrazovať rovnaké hodnoty ako dashboard bez potreby otvárať web.", "A local node can show the same values as the dashboard without opening the web app.")</span></div>
+                </div>
+                <div class="gs-warning">
+                    <strong>@T("Odporúčané poradie:", "Recommended order:")</strong>
+                    @T("Najprv nahraj iba dátový firmware, potom over Supabase zápisy a dashboard. Až potom pripájaj SSR, analógový výstup alebo reguláciu batérie.", "First flash only the data firmware, then verify Supabase writes and dashboard. Only after that connect SSR, analog output, or battery regulation.")
+                </div>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("12. Doplň do firmware prístupové údaje", "12. Fill credentials into firmware")</h3>
+                    <span class="gs-chip">config</span>
+                </header>
+                <p>@T("Stiahnuté firmvéry majú citlivé hodnoty nahradené placeholdermi. Pred nahratím musíš doplniť Wi-Fi, Supabase URL, Supabase anon key a SN_NUMBER. Práve SN_NUMBER je spojka medzi fyzickým meničom, databázou a používateľským dashboardom.", "Downloaded firmwares have sensitive values replaced with placeholders. Before flashing, fill in Wi-Fi, Supabase URL, Supabase anon key, and SN_NUMBER. SN_NUMBER is the link between the physical inverter, database, and user dashboard.")</p>
+                <pre class="gs-code"><code>// príklad konfiguračnej časti firmware
+const char* WIFI_SSID = "YOUR_WIFI";
+const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+
+const char* SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+const char* SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+const char* SN_NUMBER = "YOUR_INVERTER_SN";</code></pre>
+                <ul>
+                    <li>@T("SN_NUMBER musí byť rovnaké ako riadok v tabuľke SYSTEM.", "SN_NUMBER must match the row in the SYSTEM table.")</li>
+                    <li>@T("Do firmware nevkladaj service_role key. Pre priame zápisy z nodu používaj anon key a premyslené RLS pravidlá.", "Do not put the service_role key into firmware. For direct node writes use the anon key and deliberate RLS rules.")</li>
+                    <li>@T("Ak používaš viac systémov, každý menič alebo inštalácia musí mať vlastné sn_number.", "If you use multiple systems, each inverter or installation must have its own sn_number.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("13. Ako fyzické zariadenie zapisuje do Supabase", "13. How the physical device writes to Supabase")</h3>
+                    <span class="gs-chip">data path</span>
+                </header>
+                <p>@T("ESP node po štarte urobí tri veci: pripojí sa na Wi-Fi, cez RS485 načíta registre z meniča a cez HTTPS odošle normalizované hodnoty do Supabase REST rozhrania. Aplikácia potom nečíta priamo menič, ale databázové tabuľky zoradené podľa času a sn_number.", "After boot, the ESP node does three things: connects to Wi-Fi, reads inverter registers through RS485, and sends normalized values through HTTPS to the Supabase REST interface. The app then does not read the inverter directly, but database tables ordered by time and sn_number.")</p>
+                <pre class="gs-code"><code>SOFAR menič
+  -> RS485 / Modbus registre
+  -> ESP32 firmware node
+  -> Wi-Fi + HTTPS
+  -> Supabase tabuľky
+  -> NestStats dashboard</code></pre>
+                <div class="gs-detail-grid">
+                    <div class="gs-detail"><b>@T("Live dáta", "Live data")</b><span>@T("PV_INFORMATION, GRID_INFORMATION, BATTERY_INFORMATION a WATTROUTER_INFO sa používajú na aktuálny stav.", "PV_INFORMATION, GRID_INFORMATION, BATTERY_INFORMATION, and WATTROUTER_INFO are used for current state.")</span></div>
+                    <div class="gs-detail"><b>@T("Denné súčty", "Daily totals")</b><span>@T("STATISTICAL_INFORMATION nesie denné a total počítadlá z meniča.", "STATISTICAL_INFORMATION carries daily and total counters from the inverter.")</span></div>
+                    <div class="gs-detail"><b>@T("Systém", "System")</b><span>@T("SYSTEM drží názov, adresu, počet SSR, model meniča a inštalovaný výkon.", "SYSTEM stores name, address, SSR count, inverter model, and installed capacity.")</span></div>
+                </div>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("14. Over databázu skôr než riešiš UI", "14. Verify the database before debugging UI")</h3>
+                    <span class="gs-chip">Supabase SQL</span>
+                </header>
+                <p>@T("Ak dashboard nič neukazuje, najprv sa pozri do Supabase. Keď v tabuľkách nepribúdajú riadky, problém je vo Wi-Fi, kľúči, RLS, názve tabuľky alebo Modbus čítaní. Keď riadky pribúdajú, ale dashboard ich nevidí, problém bude skôr v priradení systému alebo sn_number.", "If the dashboard shows nothing, check Supabase first. If tables receive no rows, the issue is Wi-Fi, key, RLS, table name, or Modbus reading. If rows are arriving but the dashboard cannot see them, the issue is more likely system assignment or sn_number.")</p>
+                <pre class="gs-code"><code>select sn_number, created_at, power
+from public."PV_INFORMATION"
+where sn_number = 'YOUR_INVERTER_SN'
+order by created_at desc
+limit 10;
+
+select sn_number, timestamp, pv_generation_today, consumption_today
+from public."STATISTICAL_INFORMATION"
+where sn_number = 'YOUR_INVERTER_SN'
+order by timestamp desc
+limit 10;</code></pre>
+                <ul>
+                    <li>@T("created_at alebo timestamp má pribúdať podľa intervalu firmware.", "created_at or timestamp should advance according to firmware interval.")</li>
+                    <li>@T("power, napätia a prúdy majú byť realistické a majú sa meniť podľa slnka alebo spotreby.", "power, voltages, and currents should be realistic and change with sun or consumption.")</li>
+                    <li>@T("Ak vidíš iné sn_number, aplikácia číta inú inštaláciu.", "If you see a different sn_number, the app is reading a different installation.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-copy-card">
+                <header>
+                    <h3>@T("15. Až potom povoľ riadenie prebytkov", "15. Enable surplus control only after that")</h3>
+                    <span class="gs-chip">control</span>
+                </header>
+                <p>@T("Regulačné nody majú vplyv na reálnu silovú časť. Preto sa zapájajú až vtedy, keď sú znamienka importu/exportu správne, dashboard ukazuje zhodné hodnoty s meničom a v databáze vidíš stabilné dáta. Pri SSR používaj zero-crossing polovodičové relé určené na daný výkon a nechaj skontrolovať istenie aj chladenie.", "Control nodes affect the real power side. Connect them only when import/export signs are correct, the dashboard matches inverter values, and the database shows stable data. For SSR use zero-crossing solid state relays rated for the load and have protection and cooling checked.")</p>
+                <div class="gs-detail-grid">
+                    <div class="gs-detail"><b>SSR</b><span>@T("Pre bojler typicky zero-crossing SSR, napríklad Carlo Gavazzi RGC/RGS podľa výkonu fázy.", "For boiler control typically zero-crossing SSR, for example Carlo Gavazzi RGC/RGS according to phase power.")</span></div>
+                    <div class="gs-detail"><b>@T("Batéria", "Battery")</b><span>@T("ME3000SP alebo iný regulátor sa povoľuje až po overení, že sieťový výkon má správne znamienko.", "ME3000SP or another regulator is enabled only after verifying that grid power has the correct sign.")</span></div>
+                    <div class="gs-detail"><b>@T("Bezpečnosť", "Safety")</b><span>@T("Silové zapojenie nerob ako test na stole. Najprv dátový node, potom suchý test, až potom výkonová časť.", "Do not treat power wiring as a bench test. First data node, then dry test, only then power side.")</span></div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="gs-section">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Firmvéry", "Firmwares")</span>
+            <h2>@T("Stiahnuteľné nody podľa úlohy", "Downloadable nodes by role")</h2>
+            <p>
+                @T(
+                    "Každý firmware je pripravený pre inú časť ekosystému. Verejný repozitár obsahuje iba CHANGE_ME placeholdery, takže pred nahratím vždy doplň Wi-Fi, Supabase URL, Supabase anon key a SN_NUMBER. Krátke pravidlá sú aj vo Firmwares/README.md.",
+                    "Each firmware is prepared for a different part of the ecosystem. The public repository contains only CHANGE_ME placeholders, so before flashing always fill Wi-Fi, Supabase URL, Supabase anon key, and SN_NUMBER. Short rules are also in Firmwares/README.md.")
+            </p>
+        </div>
+
+        <div class="gs-firmware-grid">
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("Zber dát z meniča", "Inverter data fetch")</h3>
+                    <span class="gs-chip">SOFAR / RS485</span>
+                </header>
+                <p>@T("Číta menič cez Modbus/RS485 a zapisuje FV, batériu, sieť a denné počítadlá do Supabase tabuliek.", "Reads the inverter through Modbus/RS485 and writes PV, battery, grid, and daily counters to Supabase tables.")</p>
+                <code>Inverter_fetch_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/Inverter_fetch_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("WattRouter 2 SSR + UDP", "WattRouter 2 SSR + UDP")</h3>
+                    <span class="gs-chip">bojler / SSR</span>
+                </header>
+                <p>@T("Riadi modulovaný SSR výstup a pevný SSR stupeň, posiela stav siete lokálne cez UDP pre batériový regulátor.", "Controls one modulated SSR output and one fixed SSR stage, then broadcasts grid state locally over UDP for the battery regulator.")</p>
+                <code>wattrouter_2SSR_UDP_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/wattrouter_2SSR_UDP_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("WattRouter 3 SSR", "WattRouter 3 SSR")</h3>
+                    <span class="gs-chip">3 stupne</span>
+                </header>
+                <p>@T("Verzia pre tri výstupy, kde sa prebytok rozkladá medzi modulovaný a pevné relé stupne podľa aktuálneho importu/exportu.", "Version for three outputs where surplus is split between a modulated output and fixed relay stages based on current import/export.")</p>
+                <code>wattrouter_3SSR_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/wattrouter_3SSR_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("WattRouter 3 SSR + 7 segment", "WattRouter 3 SSR + 7 segment")</h3>
+                    <span class="gs-chip">lokálny stav</span>
+                </header>
+                <p>@T("Varianta s lokálnym sedemsegmentovým zobrazením pre kontrolu výkonu a stavov priamo pri regulátore.", "Variant with local seven-segment display for checking power and states directly near the controller.")</p>
+                <code>wattrouter_3SSR_7segmentdisp_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/wattrouter_3SSR_7segmentdisp_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("Lokálny WattRouter bez Wi-Fi", "Local WattRouter without Wi-Fi")</h3>
+                    <span class="gs-chip">offline</span>
+                </header>
+                <p>@T("Jednoduchšia lokálna verzia pre ESP8266/Arduino pinout, keď chceš regulovať bez cloudového zápisu.", "Simpler local version for ESP8266/Arduino pinout when regulation is needed without cloud upload.")</p>
+                <code>wattrouter_3SSR_local_no_wifi_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/wattrouter_3SSR_local_no_wifi_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("Batériový regulátor ME3000SP", "ME3000SP battery regulator")</h3>
+                    <span class="gs-chip">UDP + Modbus</span>
+                </header>
+                <p>@T("Počúva UDP stav prebytkov z WattRoutera a podľa potvrdeného stavu prepína ME3000SP medzi nabíjaním, vybíjaním a pohotovosťou.", "Listens to UDP surplus state from WattRouter and switches ME3000SP between charging, discharging, and standby after confirmation.")</p>
+                <code>Battery_regulator_UDP_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/Battery_regulator_UDP_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("Lacný ESP32 Display", "Cheap ESP32 Display")</h3>
+                    <span class="gs-chip">ESP32 display</span>
+                </header>
+                <p>@T("Jednoduché lokálne zobrazenie dát zo Supabase pre rýchlu kontrolu systému bez otvorenia dashboardu.", "Simple local display of Supabase data for quick system checking without opening the dashboard.")</p>
+                <code>cheapyellowdispV1_node.ino</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download/cheapyellowdispV1_node.ino">@T("Stiahnuť node", "Download node")</a>
+                </div>
+            </article>
+
+            <article class="gs-firmware-card">
+                <header>
+                    <h3>@T("Waveshare displej V1", "Waveshare display V1")</h3>
+                    <span class="gs-chip">ESP-IDF</span>
+                </header>
+                <p>@T("Väčší ESP-IDF projekt pre lokálnu energetickú obrazovku. Sťahuje sa v spoločnom ZIP balíku bez build a managed_components priečinkov.", "Larger ESP-IDF project for a local energy screen. It is included in the shared ZIP package without build and managed_components folders.")</p>
+                <code>Firmwares/WAVESHAREV1</code>
+                <div class="gs-firmware-actions">
+                    <a class="gs-button gs-button--small" href="/firmwares/download">@T("Stiahnuť ZIP", "Download ZIP")</a>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="gs-section">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Hardvérový postup", "Hardware procedure")</span>
+            <h2>@T("Presné zapojenie od meniča po reguláciu", "Exact wiring path from inverter to control")</h2>
+            <p>
+                @T(
+                    "Toto je praktická postupnosť pre prvé spustenie. Najprv spojazdni iba čítanie dát. SSR, bojler, wallbox alebo batériové príkazy pripájaj až po tom, čo v dashboarde sedí výkon FV, sieť aj znamienka importu a exportu.",
+                    "This is the practical order for first startup. First make data reading work. Connect SSR, boiler, wallbox, or battery commands only after PV power, grid power, and import/export signs are correct in the dashboard.")
+            </p>
+        </div>
+
+        <div class="gs-wiring-grid">
+            <article class="gs-wiring-card">
+                <h3>@T("1. Komunikačná časť", "1. Communication side")</h3>
+                <ul class="gs-checklist">
+                    <li>@T("Použi ESP32 alebo podporovanú Arduino/ESP dosku podľa vybraného firmware.", "Use ESP32 or a supported Arduino/ESP board according to the selected firmware.")</li>
+                    <li>@T("Medzi menič a dosku vlož RS485 TTL prevodník. A/B vodiče veď ako krútený pár a drž rovnakú polaritu na celej zbernici.", "Place an RS485 TTL converter between inverter and board. Route A/B as a twisted pair and keep polarity consistent across the bus.")</li>
+                    <li>@T("Na SOFAR strane používaj Modbus slave ID 1 a rýchlosť 9600 baud, ak konkrétna inštalácia nemá nastavené inak.", "On the SOFAR side use Modbus slave ID 1 and 9600 baud unless the specific installation is configured differently.")</li>
+                    <li>@T("RTS/DE pin prevodníka musí sedieť s firmware. Pri ESP32 verziách sa najčastejšie používa RTS 5 alebo 14.", "The converter RTS/DE pin must match the firmware. ESP32 versions most often use RTS 5 or 14.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-wiring-card">
+                <h3>@T("2. Cloudová časť", "2. Cloud side")</h3>
+                <ul class="gs-checklist">
+                    <li>@T("V Supabase musí existovať SYSTEM so správnym sn_number.", "Supabase must contain a SYSTEM row with the correct sn_number.")</li>
+                    <li>@T("Do firmware nastav PROJECT_URL, API_KEY a SN_NUMBER. SN_NUMBER je spojovací kľúč medzi meničom, tabuľkami a používateľom.", "Set PROJECT_URL, API_KEY, and SN_NUMBER in firmware. SN_NUMBER is the linking key between inverter, tables, and user.")</li>
+                    <li>@T("Pre zber dát over zápis do PV_INFORMATION, GRID_INFORMATION, BATTERY_INFORMATION a STATISTICAL_INFORMATION.", "For data collection verify writes into PV_INFORMATION, GRID_INFORMATION, BATTERY_INFORMATION, and STATISTICAL_INFORMATION.")</li>
+                    <li>@T("Ak node riadi WattRouter, over aj WATTROUTER_INFO.", "If the node controls WattRouter, also verify WATTROUTER_INFO.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-wiring-card">
+                <h3>@T("3. Silová časť", "3. Power control side")</h3>
+                <ul class="gs-checklist">
+                    <li>@T("Použi zero-crossing SSR relé pre AC odporovú záťaž, nie náhodné DC SSR. Príklad: Carlo Gavazzi RGC1A23D15KKE približne pre 3 kW na fázu alebo RGS1A23D25KKEDIN približne pre 2 kW na fázu.", "Use zero-crossing SSR relays for AC resistive loads, not random DC SSRs. Example: Carlo Gavazzi RGC1A23D15KKE for roughly 3 kW per phase or RGS1A23D25KKEDIN for roughly 2 kW per phase.")</li>
+                    <li>@T("SSR výstupy zapájaj cez vhodné istenie a chladič. Silovú časť nech robí osoba s elektrotechnickou kvalifikáciou.", "Connect SSR outputs with proper protection and heatsinking. The mains side should be handled by a qualified electrician.")</li>
+                    <li>@T("Modulovaný SSR výstup používaj na plynulé smerovanie prebytku, pevné SSR stupne na dopnutie výkonu po krokoch.", "Use the modulated SSR output for smooth surplus routing and fixed SSR stages for step-based power increases.")</li>
+                    <li>@T("Termostatický vstup používaj ako bezpečnostnú podmienku pre ohrev vody.", "Use the thermostat input as a safety condition for water heating.")</li>
+                    <li>@T("Pri wallboxe alebo analógovom regulátore najprv nastav minimálny a maximálny výkon zariadenia, až potom povoľ automatiku.", "For wallbox or analog control, first set the device minimum and maximum power, then enable automation.")</li>
+                </ul>
+            </article>
+
+            <article class="gs-wiring-card">
+                <h3>@T("4. Overenie pred ostrou prevádzkou", "4. Verification before live operation")</h3>
+                <ul class="gs-checklist">
+                    <li>@T("V sériovom monitore skontroluj Wi-Fi, Modbus odpovede a HTTP/Supabase status.", "In serial monitor check Wi-Fi, Modbus replies, and HTTP/Supabase status.")</li>
+                    <li>@T("V dashboarde porovnaj FV výkon, import/export a batériu s aplikáciou meniča.", "In the dashboard compare PV power, import/export, and battery with the inverter app.")</li>
+                    <li>@T("Na prvé spustenie nechaj riadenie vypnuté alebo odpojené od výkonovej časti.", "For first startup keep control disabled or disconnected from the power side.")</li>
+                    <li>@T("Až keď dáta sedia, povoľ SSR alebo batériový regulátor a sleduj správanie aspoň jeden celý cyklus.", "Only when data is correct, enable SSR or the battery regulator and watch behavior for at least one full cycle.")</li>
+                </ul>
+            </article>
+        </div>
+
+        <div class="gs-schema">
+            <img src="/SCHEMA.png" alt="@T("Schéma zapojenia NestStats node, SOFAR meniča, RS485 prevodníka, ESP32 a zero-crossing SSR relé pre bojler", "Wiring diagram for NestStats node, SOFAR inverter, RS485 converter, ESP32, and zero-crossing SSR relay for boiler")" loading="lazy" />
+        </div>
+
+        <table class="gs-pin-table" aria-label="@T("Prehľad pinov", "Pin overview")">
+            <thead>
+                <tr>
+                    <th>@T("Firmware", "Firmware")</th>
+                    <th>@T("RS485 / Modbus", "RS485 / Modbus")</th>
+                    <th>@T("Výstupy", "Outputs")</th>
+                    <th>@T("Poznámka", "Note")</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>Inverter_fetch_node.ino</code></td>
+                    <td>
+                        <code>RTS D1</code><br />
+                        <code>RX D2</code>, <code>TX D3</code><br />
+                        @T("ESP8266/NodeMCU SoftwareSerial, Modbus slave ID 1, 9600 baud.", "ESP8266/NodeMCU SoftwareSerial, Modbus slave ID 1, 9600 baud.")
+                    </td>
+                    <td>
+                        @T("Bez výkonových výstupov. Node iba číta registre meniča a zapisuje dáta do Supabase.", "No power outputs. The node only reads inverter registers and writes data into Supabase.")
+                    </td>
+                    <td>
+                        @T("Najbezpečnejší prvý node. Číta FV MPPT, batériu, sieťové hodnoty a denné štatistiky. Použi ho na overenie Wi-Fi, RS485 polarity, SN_NUMBER a zápisu do tabuliek PV_INFORMATION, GRID_INFORMATION, BATTERY_INFORMATION a STATISTICAL_INFORMATION.", "Safest first node. It reads PV MPPT, battery, grid values, and daily statistics. Use it to verify Wi-Fi, RS485 polarity, SN_NUMBER, and writes into PV_INFORMATION, GRID_INFORMATION, BATTERY_INFORMATION, and STATISTICAL_INFORMATION.")
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>wattrouter_2SSR_UDP_node.ino</code></td>
+                    <td>
+                        <code>RTS 5</code><br />
+                        <code>RX 17</code>, <code>TX 16</code><br />
+                        @T("ESP32 Serial2, číta grid register meniča každých približne 200 ms.", "ESP32 Serial2, reads the inverter grid register roughly every 200 ms.")
+                    </td>
+                    <td>
+                        <code>RELAY1 / SSR 4</code> @T("modulovaný SSR 0 až 2 kW", "modulated SSR 0 to 2 kW")<br />
+                        <code>RELAY2 / SSR 15</code> @T("pevný SSR stupeň približne 2 kW", "fixed SSR stage around 2 kW")<br />
+                        <code>THERMOSTAT 26</code> @T("INPUT_PULLUP, LOW = požiadavka kúrenia", "INPUT_PULLUP, LOW = heat demand")<br />
+                        <code>LED1 13</code>, <code>LED2 12</code>, <code>LED_ALERT 33</code><br />
+                        <code>TM1637 27/14</code>, <code>TM1637_SYS 18/21</code>
+                    </td>
+                    <td>
+                        @T("Reguluje prebytok okolo setpointu 400 W. RELAY1 sa moduluje, RELAY2 sa pripína kaskádovo. Pri zlyhaní Modbus čítania po viacerých pokusoch vypína výstupy. Zároveň posiela UDP broadcast na port 4210 vo formáte G<watts>,P<pct>,R<0|1>, kde R=1 znamená saturovaný WattRouter.", "Regulates surplus around a 400 W setpoint. RELAY1 is modulated and RELAY2 is cascaded. After repeated Modbus read failures it turns outputs off. It also sends UDP broadcast on port 4210 in format G<watts>,P<pct>,R<0|1>, where R=1 means saturated WattRouter.")
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>wattrouter_3SSR_node.ino</code></td>
+                    <td>
+                        <code>RTS 14</code><br />
+                        <code>RX 27</code>, <code>TX 26</code><br />
+                        @T("ESP32 Serial2, Modbus cez hardvérový UART, slave ID 1, 9600 baud.", "ESP32 Serial2, Modbus through hardware UART, slave ID 1, 9600 baud.")
+                    </td>
+                    <td>
+                        <code>RELAY1 / SSR 32</code> @T("modulovaný základný stupeň", "modulated base stage")<br />
+                        <code>RELAY2 / SSR 33</code> @T("pevný druhý stupeň", "fixed second stage")<br />
+                        <code>RELAY3 / SSR 25</code> @T("pevný tretí stupeň", "fixed third stage")<br />
+                        <code>THERMOSTAT 1</code> @T("INPUT_PULLUP", "INPUT_PULLUP")<br />
+                        <code>LED1 15</code>, <code>LED2 2</code>, <code>LED3 4</code><br />
+                        <code>TM1637 18/19</code>
+                    </td>
+                    <td>
+                        @T("Tri stupne regulácie pre vyšší alebo rozdelený odporový výkon. RELAY1 sa časovo moduluje podľa prebytku, RELAY2 a RELAY3 sa pripínajú kaskádovo. Firmware zapisuje stav relé a výkonové percento do WATTROUTER_INFO a súčasne používa Modbus mutex, aby sa čítanie meniča nebilo s uploadom a reguláciou.", "Three regulation stages for higher or split resistive load. RELAY1 is time-modulated according to surplus, RELAY2 and RELAY3 are cascaded. Firmware writes relay state and power percentage into WATTROUTER_INFO and uses a Modbus mutex so inverter reads do not conflict with upload and regulation.")
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>Battery_regulator_UDP_node.ino</code></td>
+                    <td>
+                        <code>RTS 5</code><br />
+                        <code>RX 17</code>, <code>TX 16</code><br />
+                        @T("ESP32 Serial2 do SOFAR ME3000SP. Prijíma UDP stav zo siete na porte 4210.", "ESP32 Serial2 to SOFAR ME3000SP. Receives UDP grid state on port 4210.")
+                    </td>
+                    <td>
+                        @T("Nepoužíva SSR výstupy. Posiela Modbus príkazy do ME3000SP: standby, charge, discharge a auto/passive režimy.", "Does not use SSR outputs. Sends Modbus commands to ME3000SP: standby, charge, discharge, and auto/passive modes.")<br />
+                        <code>OLED SDA 21</code>, <code>SCL 22</code>, <code>0x3C</code>
+                    </td>
+                    <td>
+                        @T("Batéria sa nabíja iba pri potvrdenom prebytku a saturovanom WattRouteri. Node vyžaduje viac potvrdených tickov pred zmenou stavu, drží posledný príkaz pri krátkom výpadku UDP a až po dlhšej strate dát prejde do standby. Tým sa zabraňuje prepínaniu batérie pri krátkych výkyvoch siete.", "Battery charges only on confirmed surplus and saturated WattRouter. The node requires multiple confirmation ticks before state change, holds the last command during a short UDP gap, and switches to standby only after a longer data loss. This prevents battery flapping during short grid fluctuations.")
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </section>
+
+    <section class="gs-flow">
+        <div class="gs-section-head">
+            <span class="gs-eyebrow">@T("Ako to spolu komunikuje", "How the devices talk")</span>
+            <h2>@T("Od meniča po dashboard", "From inverter to dashboard")</h2>
+        </div>
+        <div class="gs-flow__line">
+            <div class="gs-flow__node"><strong>@T("SOFAR menič", "SOFAR inverter")</strong><span>@T("Zdroj FV, batérie, siete a denných počítadiel.", "Source of PV, battery, grid, and daily counters.")</span></div>
+            <div class="gs-flow__node"><strong>@T("ESP32 node", "ESP32 node")</strong><span>@T("Číta Modbus a normalizuje hodnoty.", "Reads Modbus and normalizes values.")</span></div>
+            <div class="gs-flow__node"><strong>Supabase</strong><span>@T("Ukladá časové rady podľa sn_number.", "Stores time series by sn_number.")</span></div>
+            <div class="gs-flow__node"><strong>NestStats</strong><span>@T("Overí používateľa, načíta dáta a vypočíta KPI.", "Verifies the user, loads data, and computes KPI.")</span></div>
+            <div class="gs-flow__node"><strong>@T("Dashboard / displej", "Dashboard / display")</strong><span>@T("Zobrazí stav, grafy a odporúčania.", "Shows state, charts, and recommendations.")</span></div>
+        </div>
+    </section>
+
+    <section class="gs-callout">
+        <div>
+            <span class="gs-eyebrow">@T("Technická dokumentácia", "Technical documentation")</span>
+            <h2>@T("Chceš pochopiť, ako PWA aplikácia NestStats funguje v detaile?", "Want to understand how this PWA app NestStats works in detail?")</h2>
+            <p>@T("Detailný popis architektúry, Supabase napojenia, dátových kontraktov, dashboardu, používateľských prístupov a diagnostiky nájdeš v súbore NESTSTATS_TECHNICAL_DOCUMENTATION.md v GitHub repozitári. Tento dokument je hlavný technický zdroj k fungovaniu aplikácie.", "Detailed architecture, Supabase connection, data contracts, dashboard behavior, user access, and diagnostics are documented in NESTSTATS_TECHNICAL_DOCUMENTATION.md in the GitHub repository. This document is the main technical source for how the application works.")</p>
+        </div>
+        <div class="gs-actions">
+            <a class="gs-button gs-button--primary" href="@technicalDocsUrl" target="_blank" rel="noopener">@T("Otvoriť technickú dokumentáciu", "Open technical documentation")</a>
+        </div>
+    </section>
+</main>

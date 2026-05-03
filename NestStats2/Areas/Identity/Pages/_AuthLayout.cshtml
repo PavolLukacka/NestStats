@@ -1,0 +1,96 @@
+@{
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+    var returnUrl = $"{ViewContext.HttpContext.Request.Path}{ViewContext.HttpContext.Request.QueryString}";
+    var targetCulture = isEnglish ? "sk" : "en";
+}
+<!DOCTYPE html>
+<html lang="@Lang.HtmlLang(ViewContext.HttpContext)">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NestStats</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
+    <link rel="shortcut icon" href="~/favicon.ico" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/product-surfaces.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth-energy-scene.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/NestStats2.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth-responsive-fixes.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="auth-body">
+    <div class="shell-ambient shell-ambient--one" aria-hidden="true"></div>
+    <div class="shell-ambient shell-ambient--two" aria-hidden="true"></div>
+    <div class="shell-grid" aria-hidden="true"></div>
+
+    <div class="site-brand-corner">
+        <a class="site-brand-lockup" href="/">
+            <span class="site-brand-lockup__mark" aria-hidden="true">
+                <img src="~/logo.png" alt="" asp-append-version="true" />
+            </span>
+            <span class="site-brand-lockup__copy">
+                <strong class="site-brand-rotator" aria-label="NestStats">
+                    <span class="site-brand-rotator__item">NestStats</span>
+                    <span class="site-brand-rotator__item">@T("Prehľadný systém", "Energy overview")</span>
+                    <span class="site-brand-rotator__item">@T("Dáta pod kontrolou", "Data under control")</span>
+                    <span class="site-brand-rotator__item">@T("Predikcia výkonu", "Power forecast")</span>
+                </strong>
+
+                <small class="site-brand-subrotator" aria-hidden="true">
+                    <span class="site-brand-subrotator__item">@T("Open-source dohľad nad fotovoltikou", "Open-source PV monitoring")</span>
+                    <span class="site-brand-subrotator__item">@T("Všetky parametre v dashboarde", "All key metrics in the dashboard")</span>
+                    <span class="site-brand-subrotator__item">@T("Všetko o energii na jednom mieste", "Home energy data in one view")</span>
+                    <span class="site-brand-subrotator__item">@T("Odhad výkonu podľa počasia", "Weather-based power forecast")</span>
+                </small>
+            </span>
+        </a>
+    </div>
+
+    <div class="site-lang-corner">
+        <div class="lang-switch" aria-label="@T("Výber jazyka", "Language selector")">
+            <form class="lang-switch__form" action="/language/set" method="get">
+                <input type="hidden" name="culture" value="sk" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="lang-switch__btn @(!isEnglish ? "is-active" : string.Empty)" aria-label="@T("Prepnúť na slovenčinu", "Switch to Slovak")">
+                    <span class="lang-switch__flag" aria-hidden="true">
+                        <img src="https://flagcdn.com/w20/sk.png"
+                             srcset="https://flagcdn.com/w40/sk.png 2x"
+                             width="20" height="15" alt="" />
+                    </span>
+                    <span class="lang-switch__code">SK</span>
+                </button>
+            </form>
+            <form class="lang-switch__form" action="/language/set" method="get">
+                <input type="hidden" name="culture" value="en" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="lang-switch__btn @(isEnglish ? "is-active" : string.Empty)" aria-label="@T("Prepnúť do angličtiny", "Switch to English")">
+                    <span class="lang-switch__flag" aria-hidden="true">
+                        <img src="https://flagcdn.com/w20/gb.png"
+                             srcset="https://flagcdn.com/w40/gb.png 2x"
+                             width="20" height="15" alt="" />
+                    </span>
+                    <span class="lang-switch__code">EN</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <main class="auth-layout">
+        @RenderBody()
+    </main>
+
+    <script>
+        window.nestStatsUi = {
+            lang: '@(isEnglish ? "en" : "sk")',
+            locale: '@Lang.Locale(ViewContext.HttpContext)'
+        };
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth-energy-scene.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

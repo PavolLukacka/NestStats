@@ -1,0 +1,881 @@
+@page
+@model NestStats2.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = Lang.Pick(HttpContext, "Administrácia", "Administration");
+    string T(string sk, string en) => Lang.Pick(HttpContext, sk, en);
+
+    string Initials(string name) {
+        var p = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return p.Length >= 2
+            ? $"{char.ToUpper(p[0][0])}{char.ToUpper(p[^1][0])}"
+            : name.Length > 0 ? name[..Math.Min(2, name.Length)].ToUpper() : "??";
+    }
+
+    string AvatarHue(string name) {
+        var hues = new[] { "167", "220", "262", "330", "38", "152" };
+        return hues[(name.Length > 0 ? name[0] : 'A') % hues.Length];
+    }
+
+    string RelTime(DateTimeOffset? dt) {
+        if (!dt.HasValue) return T("Nikdy", "Never");
+        var d = DateTimeOffset.UtcNow - dt.Value;
+        if (d.TotalMinutes < 2)  return T("Práve teraz", "Just now");
+        if (d.TotalMinutes < 60) return T($"pred {(int)d.TotalMinutes} min", $"{(int)d.TotalMinutes}m ago");
+        if (d.TotalHours < 24)   return T($"pred {(int)d.TotalHours} hod", $"{(int)d.TotalHours}h ago");
+        if (d.TotalDays < 7)     return T($"pred {(int)d.TotalDays} d", $"{(int)d.TotalDays}d ago");
+        return dt.Value.ToLocalTime().ToString("dd.MM.yyyy");
+    }
+
+    bool hasIssues = Model.Overview.NeedsOnboardingUsers > 0 || Model.Overview.InactiveUsers > 0;
+    int freeCapacity = Model.Overview.TotalSystems - Model.Overview.ConnectedSystems;
+}
+
+<style>
+/* ── Admin Command Center ─────────────────────────────────── */
+.adm { display: grid; gap: 20px; }
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.adm-hero {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 20px;
+    align-items: center;
+    padding: clamp(20px,3vw,32px);
+    background:
+        radial-gradient(ellipse 70% 120% at 0% 50%, rgba(15,118,110,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 100% at 100% 0%, rgba(37,99,235,.09) 0%, transparent 55%),
+        linear-gradient(160deg, #ffffff 0%, #f7f8ff 100%);
+    border: 1px solid rgba(13,14,18,.07);
+    border-radius: 22px;
+    box-shadow: 0 16px 48px rgba(13,14,18,.07);
+}
+
+.adm-hero__body { display: grid; gap: 6px; }
+
+.adm-hero__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(15,118,110,.16);
+    background: rgba(15,118,110,.07);
+    color: #0a6159;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.adm-hero__title {
+    font-size: clamp(1.4rem, 3.2vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1.08;
+    color: var(--text);
+}
+
+.adm-hero__sub { color: var(--muted); font-size: .92rem; line-height: 1.55; }
+
+.adm-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+.adm-hero__snapshot {
+    display: grid;
+    gap: 10px;
+    min-width: 190px;
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,118,110,.14);
+    background: rgba(15,118,110,.06);
+}
+
+.adm-hero__snap-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.adm-hero__snap-label { font-size: .76rem; font-weight: 600; color: var(--muted); }
+.adm-hero__snap-val { font-size: 1.3rem; font-weight: 700; letter-spacing: -.04em; color: var(--text); }
+.adm-hero__snap-val--warn { color: #b45309; }
+
+/* ── KPI Grid ─────────────────────────────────────────────── */
+.adm-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.adm-kpi {
+    display: grid;
+    gap: 6px;
+    padding: 18px;
+    background: #fff;
+    border: 1px solid rgba(13,14,18,.07);
+    border-radius: 18px;
+    box-shadow: 0 4px 14px rgba(13,14,18,.04);
+    transition: box-shadow .18s, transform .18s;
+}
+
+.adm-kpi:hover { box-shadow: 0 8px 28px rgba(13,14,18,.09); transform: translateY(-1px); }
+
+.adm-kpi__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+}
+
+.adm-kpi__icon--teal  { background: rgba(15,118,110,.10);  color: #0f766e; }
+.adm-kpi__icon--blue  { background: rgba(37,99,235,.09);   color: #2563eb; }
+.adm-kpi__icon--amber { background: rgba(180,83,9,.10);    color: #b45309; }
+.adm-kpi__icon--red   { background: rgba(185,28,28,.09);   color: #b91c1c; }
+.adm-kpi__icon--slate { background: rgba(71,85,105,.09);   color: #475569; }
+.adm-kpi__icon--green { background: rgba(21,128,61,.09);   color: #15803d; }
+
+.adm-kpi__num { font-size: 2rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; color: var(--text); }
+.adm-kpi__num--warn { color: #b45309; }
+.adm-kpi__num--ok   { color: #15803d; }
+.adm-kpi__label { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.adm-kpi__sub { font-size: .76rem; color: var(--muted); line-height: 1.4; }
+
+/* ── Alert ─────────────────────────────────────────────────── */
+.adm-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(180,83,9,.09), rgba(255,255,255,.5));
+    border: 1px solid rgba(180,83,9,.18);
+    color: #92400e;
+}
+.adm-alert svg { flex-shrink: 0; }
+.adm-alert strong { font-size: .88rem; font-weight: 700; }
+.adm-alert span   { font-size: .84rem; }
+
+/* ── Body layout ─────────────────────────────────────────── */
+.adm-body {
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+/* ── Mobile filter toggle ────────────────────────────────── */
+.adm-filter-toggle {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid rgba(13,14,18,.10);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--text);
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(13,14,18,.04);
+    transition: background .15s;
+}
+.adm-filter-toggle:hover { background: rgba(13,14,18,.02); }
+.adm-filter-toggle svg { color: var(--muted); }
+.adm-filter-toggle__chevron {
+    margin-left: auto;
+    transition: transform .22s ease;
+    color: var(--muted);
+}
+.adm-filter-toggle[aria-expanded="true"] .adm-filter-toggle__chevron {
+    transform: rotate(180deg);
+}
+
+/* ── Filter sidebar ──────────────────────────────────────── */
+.adm-sidebar {
+    display: grid;
+    gap: 0;
+    background: #fff;
+    border: 1px solid rgba(13,14,18,.07);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(13,14,18,.04);
+}
+
+.adm-sidebar__head {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid rgba(13,14,18,.07);
+}
+
+.adm-sidebar__title {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.adm-sidebar__body { padding: 14px 16px; display: grid; gap: 12px; }
+
+.adm-seg-list { display: grid; gap: 3px; }
+
+.adm-seg-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    border: none;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    color: var(--muted);
+    font-size: .85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+.adm-seg-btn:hover { background: rgba(13,14,18,.04); color: var(--text); }
+.adm-seg-btn.is-active { background: rgba(15,118,110,.09); color: #0a6159; font-weight: 700; }
+
+.adm-seg-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(13,14,18,.07);
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.adm-seg-btn.is-active .adm-seg-count { background: rgba(15,118,110,.18); color: #0a6159; }
+
+.adm-search-wrap { position: relative; }
+.adm-search-wrap input {
+    width: 100%;
+    padding-left: 32px;
+    border: 1px solid rgba(13,14,18,.12);
+    border-radius: 9px;
+    background: rgba(13,14,18,.025);
+    color: var(--text);
+    font-size: .85rem;
+    height: 36px;
+    transition: border-color .15s, box-shadow .15s;
+}
+.adm-search-wrap input:focus {
+    outline: none;
+    border-color: rgba(15,118,110,.45);
+    box-shadow: 0 0 0 3px rgba(15,118,110,.10);
+}
+.adm-search-icon {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+}
+
+.adm-threshold { display: grid; gap: 5px; }
+.adm-threshold label { font-size: .76rem; font-weight: 600; color: var(--muted); }
+.adm-threshold input {
+    border: 1px solid rgba(13,14,18,.12);
+    border-radius: 9px;
+    height: 34px;
+    padding: 0 10px;
+    width: 100%;
+    font-size: .85rem;
+}
+.adm-filter-btn { margin-top: 2px; }
+
+/* ── User list main panel ────────────────────────────────── */
+.adm-main {
+    background: #fff;
+    border: 1px solid rgba(13,14,18,.07);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(13,14,18,.04);
+}
+
+.adm-main__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(13,14,18,.07);
+}
+.adm-main__title { font-size: 1rem; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
+.adm-main__count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(13,14,18,.06);
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ── Table ─────────────────────────────────────────────── */
+.adm-table-wrap { overflow-x: auto; }
+.adm-table { width: 100%; border-collapse: collapse; }
+
+.adm-table th {
+    padding: 9px 14px;
+    text-align: left;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid rgba(13,14,18,.07);
+    white-space: nowrap;
+    background: rgba(13,14,18,.015);
+}
+
+.adm-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(13,14,18,.045);
+    vertical-align: middle;
+    font-size: .88rem;
+}
+.adm-table tr:last-child td { border-bottom: 0; }
+.adm-table tbody tr:hover td { background: rgba(13,14,18,.018); }
+
+/* ── Avatar ─────────────────────────────────────────────── */
+.adm-user { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+.adm-avatar {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: .76rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.01em;
+}
+.adm-user__name { font-weight: 600; color: var(--text); line-height: 1.3; }
+.adm-user__email { font-size: .76rem; color: var(--muted); }
+
+/* ── Badges ──────────────────────────────────────────────── */
+.adm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.adm-badge--admin   { background: rgba(37,99,235,.10);  color: #1d4ed8; border-color: rgba(37,99,235,.15); }
+.adm-badge--client  { background: rgba(21,128,61,.09);  color: #15803d; border-color: rgba(21,128,61,.15); }
+.adm-badge--onboard { background: rgba(180,83,9,.10);   color: #92400e; border-color: rgba(180,83,9,.18); }
+.adm-badge--nosys   { background: rgba(185,28,28,.09);  color: #991b1b; border-color: rgba(185,28,28,.16); }
+.adm-badge--inactive{ background: rgba(71,85,105,.09);  color: #475569; border-color: rgba(71,85,105,.14); }
+.adm-badge--ok      { background: rgba(21,128,61,.08);  color: #15803d; border-color: rgba(21,128,61,.14); }
+
+.adm-sys-count { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--text); }
+.adm-sys-count--zero { color: var(--muted); }
+
+.adm-status-col { display: flex; flex-wrap: wrap; gap: 4px; min-width: 120px; }
+.adm-time { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+.adm-time--old { color: #b45309; }
+
+/* ── Empty state ─────────────────────────────────────────── */
+.adm-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.adm-empty svg { opacity: .35; }
+.adm-empty strong { font-size: .95rem; color: var(--text); }
+.adm-empty span   { font-size: .85rem; }
+
+/* ── Recent assignments ──────────────────────────────────── */
+.adm-recent { display: grid; gap: 10px; padding: 16px; }
+.adm-recent__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(13,14,18,.06);
+    background: rgba(13,14,18,.02);
+    transition: background .12s;
+}
+.adm-recent__row:hover { background: rgba(13,14,18,.04); }
+.adm-recent__sn {
+    font-family: var(--ff-mono, monospace);
+    font-size: .74rem;
+    color: var(--muted);
+    background: rgba(13,14,18,.06);
+    padding: 2px 6px;
+    border-radius: 5px;
+}
+.adm-recent__name { font-size: .84rem; font-weight: 600; color: var(--text); }
+.adm-recent__time { font-size: .74rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+
+/* ─────────────────── Responsive ─────────────────────────── */
+@@media (max-width: 1200px) {
+    .adm-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@@media (max-width: 960px) {
+    .adm-hero { grid-template-columns: 1fr; }
+    .adm-hero__snapshot { display: none; }
+    .adm-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .adm-body { grid-template-columns: 1fr; }
+
+    /* On tablet, show sidebar inline but compact */
+    .adm-sidebar { order: 2; }
+    .adm-main   { order: 1; }
+    .adm-filter-toggle { display: flex; }
+
+    /* Sidebar collapses on mobile — toggled by JS */
+    .adm-sidebar__body { display: none; }
+    .adm-sidebar.is-open .adm-sidebar__body { display: grid; }
+    .adm-sidebar__head { cursor: pointer; }
+}
+
+@@media (max-width: 700px) {
+    .adm-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .adm-kpi__num { font-size: 1.6rem; }
+
+    /* ── Table → card layout ── */
+    .adm-table-wrap { overflow: visible; }
+    .adm-table       { display: block; }
+    .adm-table thead { display: none; }
+    .adm-table tbody { display: grid; gap: 0; }
+
+    .adm-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 12px;
+        padding: 16px;
+        border-bottom: 1px solid rgba(13,14,18,.07);
+        transition: background .12s;
+    }
+    .adm-table tbody tr:last-child { border-bottom: 0; }
+    .adm-table tbody tr:hover { background: rgba(13,14,18,.018); }
+
+    .adm-table td {
+        border: none;
+        padding: 6px 0;
+        display: grid;
+        gap: 4px;
+        font-size: .86rem;
+        align-content: start;
+    }
+
+    .adm-table td::before {
+        content: attr(data-label);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    /* User cell: full width at top */
+    .adm-table td:first-child {
+        grid-column: 1 / -1;
+        border-bottom: 1px solid rgba(13,14,18,.06);
+        padding-bottom: 12px;
+        margin-bottom: 4px;
+    }
+    /* Show all previously hidden cols */
+    .adm-table td:nth-child(n+4) { display: grid; }
+    .adm-user { min-width: 0; }
+}
+
+@@media (max-width: 440px) {
+    .adm-hero { padding: 18px; border-radius: 16px; }
+    .adm-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .adm-kpi { padding: 14px; border-radius: 14px; }
+    .adm-table tbody tr { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="product-page adm">
+
+    <!-- Hero -->
+    <header class="adm-hero">
+        <div class="adm-hero__body">
+            <span class="adm-hero__kicker">
+                <svg width="12" height="12" fill="none" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="3" fill="currentColor"/>
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                </svg>
+                @T("Operačný prehľad", "Operations overview")
+            </span>
+            <h1 class="adm-hero__title">@T("Správa platformy", "Platform administration")</h1>
+            <p class="adm-hero__sub">@T("Prehľad účtov, systémov a onboarding statusu.", "User accounts, system assignments and onboarding health at a glance.")</p>
+            <div class="adm-hero__actions">
+                <a class="button button--primary" asp-page="/Admin/Assignments">@T("Správa priradení", "Manage assignments")</a>
+                <a class="button button--ghost"   asp-page="/Admin/Index">@T("Obnoviť", "Refresh")</a>
+            </div>
+        </div>
+
+        <aside class="adm-hero__snapshot" aria-label="@T("Rýchly prehľad", "Quick snapshot")">
+            <div class="adm-hero__snap-row">
+                <span class="adm-hero__snap-label">@T("Systémy v katalógu", "Catalog systems")</span>
+                <strong class="adm-hero__snap-val">@Model.Overview.TotalSystems</strong>
+            </div>
+            <div class="adm-hero__snap-row">
+                <span class="adm-hero__snap-label">@T("Priradené systémy", "Connected systems")</span>
+                <strong class="adm-hero__snap-val">@Model.Overview.ConnectedSystems</strong>
+            </div>
+            <div class="adm-hero__snap-row">
+                <span class="adm-hero__snap-label">@T("Celkový počet užívateľov", "Total users")</span>
+                <strong class="adm-hero__snap-val">@Model.Overview.TotalUsers</strong>
+            </div>
+            @if (hasIssues)
+            {
+                <div class="adm-hero__snap-row">
+                    <span class="adm-hero__snap-label">@T("Vyžaduje pozornosť", "Needs attention")</span>
+                    <strong class="adm-hero__snap-val adm-hero__snap-val--warn">@(Model.Overview.NeedsOnboardingUsers + Model.Overview.InactiveUsers)</strong>
+                </div>
+            }
+        </aside>
+    </header>
+
+    <!-- KPI Grid -->
+    <section class="adm-kpi-grid" aria-label="@T("Kľúčové ukazovatele", "Key metrics")">
+        <article class="adm-kpi">
+            <span class="adm-kpi__icon adm-kpi__icon--teal" aria-hidden="true">
+                <svg width="18" height="18" fill="none" viewBox="0 0 16 16">
+                    <rect x="1" y="2" width="14" height="11" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="adm-kpi__num">@Model.Overview.TotalSystems</span>
+            <span class="adm-kpi__label">@T("Systémy v katalógu", "Catalog systems")</span>
+            <span class="adm-kpi__sub">@T("Celkový počet inštalácií", "Total installations")</span>
+        </article>
+
+        <article class="adm-kpi">
+            <span class="adm-kpi__icon adm-kpi__icon--green" aria-hidden="true">
+                <svg width="18" height="18" fill="none" viewBox="0 0 16 16">
+                    <path d="M13 8A5 5 0 1 1 3 8a5 5 0 0 1 10 0Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M6 8l1.5 1.5L10 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="adm-kpi__num adm-kpi__num--ok">@Model.Overview.ConnectedSystems</span>
+            <span class="adm-kpi__label">@T("Priradené", "Connected")</span>
+            <span class="adm-kpi__sub">@T("Systémy priradené zákazníkom", "Assigned to customers")</span>
+        </article>
+
+        <article class="adm-kpi">
+            <span class="adm-kpi__icon adm-kpi__icon--slate" aria-hidden="true">
+                <svg width="18" height="18" fill="none" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-dasharray="3 2"/>
+                </svg>
+            </span>
+            <span class="adm-kpi__num">@freeCapacity</span>
+            <span class="adm-kpi__label">@T("Voľná kapacita", "Free capacity")</span>
+            <span class="adm-kpi__sub">@T("Dostupné pre onboarding", "Available for onboarding")</span>
+        </article>
+
+        <article class="adm-kpi">
+            <span class="adm-kpi__icon adm-kpi__icon--blue" aria-hidden="true">
+                <svg width="18" height="18" fill="none" viewBox="0 0 16 16">
+                    <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M2.5 13.5c0-3.038 2.462-5.5 5.5-5.5s5.5 2.462 5.5 5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+                </svg>
+            </span>
+            <span class="adm-kpi__num">@Model.Overview.TotalUsers</span>
+            <span class="adm-kpi__label">@T("Používatelia", "Users")</span>
+            <span class="adm-kpi__sub">@($"{Model.Overview.AdminUsers} admin · {Model.Overview.TotalUsers - Model.Overview.AdminUsers} {T("klient", "client")}")</span>
+        </article>
+
+        <article class="adm-kpi">
+            <span class="adm-kpi__icon @(Model.Overview.NeedsOnboardingUsers > 0 ? "adm-kpi__icon--amber" : "adm-kpi__icon--green")" aria-hidden="true">
+                <svg width="18" height="18" fill="none" viewBox="0 0 16 16">
+                    <path d="M8 2v4l3 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                </svg>
+            </span>
+            <span class="adm-kpi__num @(Model.Overview.NeedsOnboardingUsers > 0 ? "adm-kpi__num--warn" : "adm-kpi__num--ok")">@Model.Overview.NeedsOnboardingUsers</span>
+            <span class="adm-kpi__label">@T("Onboarding dlh", "Onboarding debt")</span>
+            <span class="adm-kpi__sub">@T("Nedokončená registrácia", "Setup not completed")</span>
+        </article>
+
+        <article class="adm-kpi">
+            <span class="adm-kpi__icon @(Model.Overview.InactiveUsers > 0 ? "adm-kpi__icon--amber" : "adm-kpi__icon--green")" aria-hidden="true">
+                <svg width="18" height="18" fill="none" viewBox="0 0 16 16">
+                    <path d="M8 4v4h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="adm-kpi__num @(Model.Overview.InactiveUsers > 0 ? "adm-kpi__num--warn" : "adm-kpi__num--ok")">@Model.Overview.InactiveUsers</span>
+            <span class="adm-kpi__label">@T("Neaktívni", "Inactive")</span>
+            <span class="adm-kpi__sub">@T($"Viac ako {Model.ActivityDays} dní bez aktivity", $"No visit in {Model.ActivityDays}+ days")</span>
+        </article>
+    </section>
+
+    <!-- Alert -->
+    @if (hasIssues)
+    {
+        <div class="adm-alert" role="alert">
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                <path d="M8 1L15 14H1L8 1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+                <path d="M8 6v3M8 11v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <strong>@T("Akcia potrebná", "Action needed")</strong>
+            <span>
+                @if (Model.Overview.NeedsOnboardingUsers > 0)
+                {
+                    @T($"{Model.Overview.NeedsOnboardingUsers} zákazník(ov) nedokončilo onboarding. ", $"{Model.Overview.NeedsOnboardingUsers} customer(s) have incomplete onboarding. ")
+                }
+                @if (Model.Overview.InactiveUsers > 0)
+                {
+                    @T($"{Model.Overview.InactiveUsers} účet(ov) je neaktívnych dlhšie ako {Model.ActivityDays} dní.", $"{Model.Overview.InactiveUsers} account(s) inactive for {Model.ActivityDays}+ days.")
+                }
+            </span>
+            <a class="button button--ghost" asp-page="/Admin/Assignments" style="margin-left:auto;white-space:nowrap;">
+                @T("Riešiť priradenia", "Fix assignments")
+            </a>
+        </div>
+    }
+
+    <!-- Body: sidebar + main -->
+    <div class="adm-body">
+
+        <!-- Filter sidebar -->
+        <aside class="adm-sidebar" id="adm-sidebar" aria-label="@T("Filtre", "Filters")">
+            <div class="adm-sidebar__head" id="adm-sidebar-toggle-head">
+                <span class="adm-sidebar__title">@T("Filtre", "Filters")</span>
+            </div>
+            <div class="adm-sidebar__body">
+                <form method="get" id="adm-filter-form">
+                    <div class="adm-search-wrap">
+                        <svg class="adm-search-icon" width="14" height="14" fill="none" viewBox="0 0 16 16">
+                            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <input type="text" name="Search" value="@Model.Search"
+                               placeholder="@T("Meno, e-mail, SN…", "Name, email, SN…")"
+                               autocomplete="off" />
+                    </div>
+
+                    <nav class="adm-seg-list" aria-label="@T("Segment", "Segment filter")">
+                        @{
+                            var segs = new (string val, string sk, string en, int count)[] {
+                                ("all",              "Všetci",        "Everyone",   Model.Overview.TotalUsers),
+                                ("needs-onboarding", "Onboarding",    "Onboarding", Model.Overview.NeedsOnboardingUsers),
+                                ("no-systems",       "Bez systémov",  "No systems", Model.Overview.UsersWithoutSystems),
+                                ("inactive",         "Neaktívni",     "Inactive",   Model.Overview.InactiveUsers),
+                                ("admins",           "Admins",        "Admins only",Model.Overview.AdminUsers),
+                            };
+                        }
+                        @foreach (var seg in segs)
+                        {
+                            var isActive = string.Equals(Model.Filter, seg.val, StringComparison.OrdinalIgnoreCase);
+                            <a class="adm-seg-btn @(isActive ? "is-active" : "")"
+                               asp-page="/Admin/Index"
+                               asp-route-search="@Model.Search"
+                               asp-route-filter="@seg.val"
+                               asp-route-activityDays="@Model.ActivityDays">
+                                @T(seg.sk, seg.en)
+                                <span class="adm-seg-count">@seg.count</span>
+                            </a>
+                        }
+                    </nav>
+
+                    <div class="adm-threshold">
+                        <label for="adm-days">@T("Hranica neaktivity (dni)", "Inactivity threshold (days)")</label>
+                        <input type="number" id="adm-days" name="ActivityDays" min="1" max="365" value="@Model.ActivityDays" />
+                    </div>
+
+                    <input type="hidden" name="Filter" value="@Model.Filter" />
+                    <button type="submit" class="button button--primary adm-filter-btn" style="width:100%;">
+                        @T("Použiť", "Apply")
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- User table -->
+        <main class="adm-main">
+            <div class="adm-main__head">
+                <h2 class="adm-main__title">@T("Zákazníci", "Customers")</h2>
+                <span class="adm-main__count">@Model.Overview.FilteredUsersCount @T("výsledkov", "results")</span>
+            </div>
+
+            @if (Model.Overview.Users.Count == 0)
+            {
+                <div class="adm-empty">
+                    <svg width="40" height="40" fill="none" viewBox="0 0 40 40">
+                        <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <circle cx="20" cy="14" r="5"  stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <path d="M8 33c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    </svg>
+                    <strong>@T("Žiadne výsledky", "No matches")</strong>
+                    <span>@T("Skúste rozšíriť vyhľadávanie alebo zmeniť segment.", "Try widening the search or changing the segment.")</span>
+                </div>
+            }
+            else
+            {
+                <div class="adm-table-wrap">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>@T("Používateľ", "User")</th>
+                                <th>@T("Roly", "Roles")</th>
+                                <th>@T("Systémy", "Systems")</th>
+                                <th>@T("Stav", "Status")</th>
+                                <th>@T("Naposledy aktívny", "Last seen")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.Overview.Users)
+                            {
+                                var hue = AvatarHue(user.DisplayName);
+                                <tr>
+                                    <td data-label="@T("Používateľ","User")">
+                                        <div class="adm-user">
+                                            <span class="adm-avatar"
+                                                  style="background:hsl(@hue,45%,40%)"
+                                                  aria-hidden="true">@Initials(user.DisplayName)</span>
+                                            <div>
+                                                <div class="adm-user__name">@user.DisplayName</div>
+                                                <div class="adm-user__email">@user.Email</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td data-label="@T("Roly","Roles")">
+                                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="adm-badge @(role == "Admin" ? "adm-badge--admin" : "adm-badge--client")">@role</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td data-label="@T("Systémy","Systems")">
+                                        <span class="adm-sys-count @(user.ConnectedSystems == 0 ? "adm-sys-count--zero" : "")">
+                                            @if (user.ConnectedSystems > 0)
+                                            {
+                                                <svg width="13" height="13" fill="none" viewBox="0 0 16 16">
+                                                    <rect x="2" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                                                    <path d="M5 12v2M11 12v2M3 14h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                                                </svg>
+                                            }
+                                            @user.ConnectedSystems
+                                            @if (user.ConnectedSystems > 0)
+                                            {
+                                                <small style="font-weight:400;color:var(--muted);">
+                                                    @foreach (var sys in user.Systems.Take(2))
+                                                    {
+                                                        <span style="display:block;font-size:.72rem;">@sys.SystemName</span>
+                                                    }
+                                                    @if (user.Systems.Count > 2)
+                                                    {
+                                                        <span style="font-size:.72rem;color:var(--muted);">+@(user.Systems.Count - 2) @T("ďalšie", "more")</span>
+                                                    }
+                                                </small>
+                                            }
+                                        </span>
+                                    </td>
+                                    <td data-label="@T("Stav","Status")">
+                                        <div class="adm-status-col">
+                                            @if (!user.OnboardingCompleted)
+                                            {
+                                                <span class="adm-badge adm-badge--onboard">@T("Onboarding", "Onboarding")</span>
+                                            }
+                                            @if (user.ConnectedSystems == 0)
+                                            {
+                                                <span class="adm-badge adm-badge--nosys">@T("Bez systémov", "No systems")</span>
+                                            }
+                                            @if (user.IsInactive)
+                                            {
+                                                <span class="adm-badge adm-badge--inactive">@T("Neaktívny", "Inactive")</span>
+                                            }
+                                            @if (user.OnboardingCompleted && user.ConnectedSystems > 0 && !user.IsInactive)
+                                            {
+                                                <span class="adm-badge adm-badge--ok">@T("OK", "OK")</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td data-label="@T("Naposledy aktívny","Last seen")">
+                                        <span class="adm-time @(user.IsInactive ? "adm-time--old" : "")">
+                                            @RelTime(user.LastSeenUtc)
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </main>
+    </div>
+
+    <!-- Recent assignments -->
+    @if (Model.Overview.RecentAssignments.Count > 0)
+    {
+        <section class="adm-main" style="border-radius:18px;">
+            <div class="adm-main__head">
+                <h2 class="adm-main__title">@T("Nedávne priradenia", "Recent assignments")</h2>
+                <a class="button button--ghost" asp-page="/Admin/Assignments" style="font-size:.8rem;">@T("Všetky priradenia →", "All assignments →")</a>
+            </div>
+            <div class="adm-recent">
+                @foreach (var a in Model.Overview.RecentAssignments)
+                {
+                    <div class="adm-recent__row">
+                        <span class="adm-recent__sn">@a.SnNumber</span>
+                        <span class="adm-recent__name">@a.SystemName</span>
+                        @if (a.IsPrimary)
+                        {
+                            <span class="adm-badge adm-badge--ok" style="font-size:.66rem;">@T("Primárny", "Primary")</span>
+                        }
+                        <span class="adm-recent__time">@a.ConnectedUtc.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+</div>
+
+<script>
+(function () {
+    var sidebar = document.getElementById('adm-sidebar');
+    var head    = document.getElementById('adm-sidebar-toggle-head');
+    if (!sidebar || !head) return;
+
+    function isMobile() { return window.innerWidth <= 960; }
+
+    function initToggle() {
+        if (!isMobile()) {
+            sidebar.classList.remove('is-open');
+            var body = sidebar.querySelector('.adm-sidebar__body');
+            if (body) body.style.display = '';
+            return;
+        }
+    }
+
+    head.addEventListener('click', function () {
+        if (!isMobile()) return;
+        sidebar.classList.toggle('is-open');
+    });
+
+    window.addEventListener('resize', initToggle);
+    initToggle();
+}());
+</script>

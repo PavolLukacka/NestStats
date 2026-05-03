@@ -1,0 +1,58 @@
+# Build output
+bin/
+obj/
+build-verify/
+obj-verify/
+publish/
+artifacts/
+*.zip
+*.log
+*.tmp
+output-edge.png
+
+# IDE and local editor state
+.vs/
+.vscode/
+.idea/
+.claude/
+*.user
+*.suo
+*.DotSettings.user
+
+# Local runtime data
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Application secrets
+appsettings.Local.json
+appsettings.*.Local.json
+.env
+.env.*
+!.env.example
+*.secrets.json
+secrets.*
+*.pem
+*.pfx
+*.key
+
+# Firmware generated output and private credentials
+Firmwares/**/build/
+Firmwares/**/.pio/
+Firmwares/**/.vscode/
+Firmwares/**/sdkconfig
+Firmwares/**/sdkconfig.*
+Firmwares/**/managed_components/
+Firmwares/**/dependencies.lock
+Firmwares/**/config.env
+Firmwares/**/secret*.h
+Firmwares/**/secrets*.h
+Firmwares/**/wifi_credentials*.h
+
+# Personal project material that is not part of the public NestStats app
+Dipomovka/
+RYSTATS2_new/
+New rystats/

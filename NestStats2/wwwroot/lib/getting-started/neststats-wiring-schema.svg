@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1120" viewBox="0 0 1500 1120" role="img" aria-labelledby="title desc">
+  <title id="title">NestStats prehladna schema zapojenia</title>
+  <desc id="desc">Prehladna schema pre SOFAR menic, RS485 prevodnik, ESP32 node, Supabase a zero crossing SSR vystup pre bojler.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f7fafc}
+      .panel{fill:#fff;stroke:#d9e4ee;stroke-width:2}
+      .dataPanel{fill:#f0f9ff;stroke:#bae6fd;stroke-width:2}
+      .cloudPanel{fill:#f0fdf4;stroke:#bbf7d0;stroke-width:2}
+      .powerPanel{fill:#fff7ed;stroke:#fed7aa;stroke-width:2}
+      .dangerPanel{fill:#fff1f2;stroke:#fecdd3;stroke-width:2}
+      .box{fill:#fff;stroke:#cbd5e1;stroke-width:2}
+      .boxSoft{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2}
+      .boxGreen{fill:#ecfdf5;stroke:#86efac;stroke-width:2}
+      .boxBlue{fill:#eff6ff;stroke:#93c5fd;stroke-width:2}
+      .boxOrange{fill:#fff7ed;stroke:#fdba74;stroke-width:2}
+      .boxRed{fill:#fff1f2;stroke:#fda4af;stroke-width:2}
+      .title{font:800 30px Arial,Helvetica,sans-serif;fill:#111827}
+      .subtitle{font:500 17px Arial,Helvetica,sans-serif;fill:#475569}
+      .section{font:800 23px Arial,Helvetica,sans-serif;fill:#111827}
+      .h{font:800 20px Arial,Helvetica,sans-serif;fill:#111827}
+      .t{font:500 15px Arial,Helvetica,sans-serif;fill:#475569}
+      .small{font:700 13px Arial,Helvetica,sans-serif;fill:#64748b}
+      .pinText{font:800 14px Consolas,Monaco,monospace;fill:#111827}
+      .wireLabel{font:800 14px Arial,Helvetica,sans-serif;fill:#111827}
+      .note{font:700 15px Arial,Helvetica,sans-serif;fill:#334155}
+      .warn{font:800 15px Arial,Helvetica,sans-serif;fill:#991b1b}
+      .chip{fill:#fff;stroke:#cbd5e1;stroke-width:1.5}
+      .pinA{fill:#dbeafe;stroke:#60a5fa;stroke-width:1.5}
+      .pinB{fill:#dbeafe;stroke:#60a5fa;stroke-width:1.5}
+      .pinGnd{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+      .pinPower{fill:#fee2e2;stroke:#fb7185;stroke-width:1.5}
+      .pinNeutral{fill:#e2e8f0;stroke:#94a3b8;stroke-width:1.5}
+      .pinEarth{fill:#dcfce7;stroke:#4ade80;stroke-width:1.5}
+      .wire{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+      .thin{stroke-width:3}
+      .blue{stroke:#2563eb}
+      .green{stroke:#059669}
+      .orange{stroke:#ea580c}
+      .red{stroke:#dc2626}
+      .gray{stroke:#64748b}
+      .earth{stroke:#16a34a}
+      .dash{stroke-dasharray:10 9}
+    </style>
+    <marker id="arrowBlue" markerWidth="13" markerHeight="13" refX="11" refY="6.5" orient="auto">
+      <path d="M2 2 L11 6.5 L2 11 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="13" markerHeight="13" refX="11" refY="6.5" orient="auto">
+      <path d="M2 2 L11 6.5 L2 11 Z" fill="#059669"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="13" markerHeight="13" refX="11" refY="6.5" orient="auto">
+      <path d="M2 2 L11 6.5 L2 11 Z" fill="#ea580c"/>
+    </marker>
+  </defs>
+
+  <rect width="1500" height="1120" class="bg"/>
+
+  <text x="56" y="62" class="title">NestStats zapojenie systému</text>
+  <text x="56" y="94" class="subtitle">Najprv spusti dátový zber. Silové SSR a záťaž pripájaj až po overení hodnôt v Supabase a dashboarde.</text>
+
+  <rect x="56" y="128" width="1388" height="365" rx="28" class="dataPanel"/>
+  <text x="88" y="176" class="section">1. Dátová komunikácia meniča</text>
+  <text x="88" y="204" class="t">Modbus/RS485 číta hodnoty z meniča. Táto časť neovláda výkonové výstupy.</text>
+
+  <rect x="88" y="244" width="250" height="172" rx="22" class="boxBlue"/>
+  <text x="118" y="284" class="h">SOFAR menič</text>
+  <text x="118" y="312" class="t">HYD KTL-3PH, ME3000SP alebo KTLX-G3</text>
+  <rect x="118" y="344" width="58" height="34" rx="9" class="pinA"/><text x="142" y="366" class="pinText">A</text>
+  <rect x="190" y="344" width="58" height="34" rx="9" class="pinB"/><text x="214" y="366" class="pinText">B</text>
+  <rect x="262" y="344" width="58" height="34" rx="9" class="pinGnd"/><text x="272" y="366" class="pinText">GND</text>
+
+  <rect x="448" y="244" width="265" height="172" rx="22" class="box"/>
+  <text x="478" y="284" class="h">RS485 TTL prevodník</text>
+  <text x="478" y="312" class="t">MAX485 alebo kompatibilný modul</text>
+  <rect x="478" y="344" width="58" height="34" rx="9" class="pinA"/><text x="502" y="366" class="pinText">A</text>
+  <rect x="550" y="344" width="58" height="34" rx="9" class="pinB"/><text x="574" y="366" class="pinText">B</text>
+  <rect x="622" y="344" width="58" height="34" rx="9" class="pinGnd"/><text x="632" y="366" class="pinText">GND</text>
+  <rect x="478" y="392" width="58" height="34" rx="9" class="chip"/><text x="496" y="414" class="pinText">RO</text>
+  <rect x="550" y="392" width="58" height="34" rx="9" class="chip"/><text x="568" y="414" class="pinText">DI</text>
+  <rect x="622" y="392" width="58" height="34" rx="9" class="chip"/><text x="631" y="414" class="pinText">DE</text>
+
+  <rect x="828" y="244" width="278" height="172" rx="22" class="boxGreen"/>
+  <text x="858" y="284" class="h">ESP32 dátový node</text>
+  <text x="858" y="312" class="t">Inverter_fetch_node firmware</text>
+  <rect x="858" y="344" width="58" height="34" rx="9" class="chip"/><text x="876" y="366" class="pinText">RX</text>
+  <rect x="930" y="344" width="58" height="34" rx="9" class="chip"/><text x="948" y="366" class="pinText">TX</text>
+  <rect x="1002" y="344" width="74" height="34" rx="9" class="chip"/><text x="1012" y="366" class="pinText">RTS/DE</text>
+  <rect x="858" y="392" width="218" height="34" rx="9" class="chip"/><text x="884" y="414" class="pinText">Wi-Fi klient</text>
+
+  <polyline points="176,361 384,361 384,331 478,331 478,361" class="wire blue"/>
+  <text x="270" y="344" class="wireLabel">A vodič</text>
+  <polyline points="248,361 392,361 392,386 550,386 550,361" class="wire blue"/>
+  <text x="350" y="404" class="wireLabel">B vodič</text>
+  <polyline points="320,361 400,361 400,438 622,438 622,361" class="wire gray"/>
+  <text x="430" y="459" class="wireLabel">GND referencia</text>
+
+  <polyline points="536,409 736,409 736,438 858,438 858,361" class="wire green" marker-end="url(#arrowGreen)"/>
+  <text x="642" y="429" class="wireLabel">RO → ESP RX</text>
+  <polyline points="930,361 930,454 608,454 608,409" class="wire green" marker-end="url(#arrowGreen)"/>
+  <text x="706" y="475" class="wireLabel">ESP TX → DI</text>
+  <polyline points="1002,361 1002,472 680,472 680,409" class="wire green" marker-end="url(#arrowGreen)"/>
+  <text x="738" y="493" class="wireLabel">ESP RTS/DE → DE/RE</text>
+
+  <rect x="56" y="520" width="1388" height="250" rx="28" class="cloudPanel"/>
+  <text x="88" y="568" class="section">2. Cloudový zápis a zobrazenie v aplikácii</text>
+  <text x="88" y="596" class="t">ESP32 odošle normalizované hodnoty cez HTTPS. NestStats ich načíta podľa rovnakého SN_NUMBER.</text>
+
+  <rect x="158" y="642" width="260" height="86" rx="20" class="boxGreen"/>
+  <text x="188" y="679" class="h">ESP32 node</text>
+  <text x="188" y="705" class="t">Wi-Fi + Supabase anon key</text>
+
+  <rect x="610" y="642" width="300" height="86" rx="20" class="box"/>
+  <text x="640" y="679" class="h">Supabase tabuľky</text>
+  <text x="640" y="705" class="t">SYSTEM, PV, GRID, BATTERY, STATISTICAL, WATTROUTER</text>
+
+  <rect x="1100" y="642" width="260" height="86" rx="20" class="boxBlue"/>
+  <text x="1130" y="679" class="h">NestStats dashboard</text>
+  <text x="1130" y="705" class="t">live tok, KPI, grafy</text>
+
+  <line x1="418" y1="685" x2="610" y2="685" class="wire blue dash" marker-end="url(#arrowBlue)"/>
+  <text x="468" y="666" class="wireLabel">HTTPS POST / REST</text>
+  <line x1="910" y1="685" x2="1100" y2="685" class="wire blue dash" marker-end="url(#arrowBlue)"/>
+  <text x="963" y="666" class="wireLabel">read by sn_number</text>
+
+  <rect x="88" y="724" width="1324" height="28" rx="10" fill="#ecfdf5" stroke="#86efac"/>
+  <text x="110" y="744" class="note">Kontrola: v Supabase musia pribúdať riadky so správnym SN_NUMBER. Až potom má zmysel riešiť dashboard alebo reguláciu.</text>
+
+  <rect x="56" y="798" width="1388" height="270" rx="28" class="powerPanel"/>
+  <text x="88" y="846" class="section">3. Výkonové zapojenie pre WattRouter SSR</text>
+  <text x="88" y="874" class="t">Táto časť je iba pre reguláciu prebytkov. AC zapojenie musí spraviť kvalifikovaná osoba.</text>
+
+  <rect x="88" y="920" width="210" height="106" rx="20" class="dangerPanel"/>
+  <text x="118" y="956" class="h">AC prívod</text>
+  <rect x="118" y="978" width="44" height="30" rx="8" class="pinPower"/><text x="132" y="998" class="pinText">L</text>
+  <rect x="176" y="978" width="44" height="30" rx="8" class="pinNeutral"/><text x="190" y="998" class="pinText">N</text>
+  <rect x="234" y="978" width="44" height="30" rx="8" class="pinEarth"/><text x="242" y="998" class="pinText">PE</text>
+
+  <rect x="420" y="920" width="270" height="106" rx="20" class="boxOrange"/>
+  <text x="450" y="956" class="h">Zero-crossing SSR</text>
+  <rect x="450" y="978" width="64" height="30" rx="8" class="chip"/><text x="462" y="998" class="pinText">AC IN</text>
+  <rect x="528" y="978" width="74" height="30" rx="8" class="chip"/><text x="538" y="998" class="pinText">AC OUT</text>
+  <rect x="616" y="978" width="34" height="30" rx="8" class="chip"/><text x="626" y="998" class="pinText">+</text>
+  <rect x="656" y="978" width="34" height="30" rx="8" class="chip"/><text x="668" y="998" class="pinText">-</text>
+
+  <rect x="812" y="920" width="230" height="106" rx="20" class="boxGreen"/>
+  <text x="842" y="956" class="h">ESP32 WattRouter</text>
+  <rect x="842" y="978" width="70" height="30" rx="8" class="chip"/><text x="856" y="998" class="pinText">GPIO</text>
+  <rect x="926" y="978" width="70" height="30" rx="8" class="chip"/><text x="940" y="998" class="pinText">GND</text>
+
+  <rect x="1168" y="920" width="220" height="106" rx="20" class="box"/>
+  <text x="1198" y="956" class="h">Bojler / záťaž</text>
+  <rect x="1198" y="978" width="50" height="30" rx="8" class="pinPower"/><text x="1214" y="998" class="pinText">L</text>
+  <rect x="1262" y="978" width="50" height="30" rx="8" class="pinNeutral"/><text x="1278" y="998" class="pinText">N</text>
+  <rect x="1326" y="978" width="50" height="30" rx="8" class="pinEarth"/><text x="1334" y="998" class="pinText">PE</text>
+
+  <line x1="162" y1="993" x2="450" y2="993" class="wire red"/>
+  <text x="250" y="976" class="wireLabel">L cez istič/RCD</text>
+  <line x1="602" y1="993" x2="1198" y2="993" class="wire red" marker-end="url(#arrowOrange)"/>
+  <text x="744" y="976" class="wireLabel">spínaná fáza L zo SSR</text>
+
+  <polyline points="220,993 220,1042 1287,1042 1287,1008" class="wire gray"/>
+  <text x="625" y="1062" class="wireLabel">N ide priamo na záťaž</text>
+  <polyline points="278,993 278,1088 1351,1088 1351,1008" class="wire earth"/>
+  <text x="625" y="1106" class="wireLabel">PE ide priamo na kostru zariadenia</text>
+
+  <line x1="842" y1="993" x2="650" y2="993" class="wire orange" marker-end="url(#arrowOrange)"/>
+  <text x="704" y="976" class="wireLabel">GPIO → SSR +</text>
+  <line x1="926" y1="993" x2="690" y2="993" class="wire gray"/>
+  <text x="720" y="1022" class="wireLabel">GND → SSR -</text>
+
+  <rect x="88" y="884" width="430" height="26" rx="10" fill="#fff" stroke="#fdba74"/>
+  <text x="108" y="903" class="small">Príklad SSR: Carlo Gavazzi RGC1A23D15KKE alebo RGS1A23D25KKEDIN.</text>
+  <rect x="536" y="884" width="876" height="26" rx="10" fill="#fff1f2" stroke="#fecdd3"/>
+  <text x="556" y="903" class="warn">Nepoužívaj DC SSR na AC bojler. Termostat a tepelná ochrana bojlera ostávajú v sérii.</text>
+</svg>

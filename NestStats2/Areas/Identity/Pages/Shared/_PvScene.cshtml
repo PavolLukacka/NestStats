@@ -1,0 +1,60 @@
+@* PV scene: smooth day/night energy cycle – solar panels on house, inverter, battery *@
+
+<div class="pvs-sky"      aria-hidden="true"></div>
+
+<div class="pvs-sun" aria-hidden="true">
+    <div class="pvs-sun__rays"></div>
+</div>
+<div class="pvs-moon"  aria-hidden="true"></div>
+<div class="pvs-stars" aria-hidden="true">
+    <span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span>
+</div>
+<div class="pvs-cloud" aria-hidden="true"></div>
+
+<div class="pvs-ground" aria-hidden="true"></div>
+
+<figure class="pvs-house" aria-hidden="true">
+    <img class="pvs-house__img" src="/house.png" alt="" />
+    <span class="pvs-house__shine" aria-hidden="true"></span>
+    <span class="pvs-house__glow"  aria-hidden="true"></span>
+</figure>
+
+<div class="pvs-inverter" aria-hidden="true">
+    <div class="pvs-inverter__screen" aria-hidden="true"></div>
+    <span class="pvs-inverter__led"   aria-hidden="true"></span>
+    <span class="pvs-inverter__label" aria-hidden="true">Inverter</span>
+</div>
+
+<div class="pvs-battery" aria-hidden="true">
+    <div class="pvs-battery__cap"  aria-hidden="true"></div>
+    <div class="pvs-battery__body" aria-hidden="true">
+        <div class="pvs-battery__fill" aria-hidden="true"></div>
+        <span class="pvs-battery__bolt" aria-hidden="true"></span>
+    </div>
+    <span class="pvs-battery__label" aria-hidden="true">Battery</span>
+</div>
+
+<div class="pvs-flow pvs-flow--solar"  aria-hidden="true"><span></span><span></span></div>
+<div class="pvs-flow pvs-flow--charge" aria-hidden="true"><span></span><span></span></div>
+<div class="pvs-flow pvs-flow--night"  aria-hidden="true"><span></span><span></span></div>
+
+<div class="pvs-timeline js-pv-cycle-bar"
+     role="slider"
+     aria-label="Day / night cycle"
+     aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+     tabindex="0">
+    <span class="pvs-timeline__bg" aria-hidden="true"></span>
+    <div class="pvs-timeline__inner" aria-hidden="true">
+        <div class="pvs-timeline__icons" aria-hidden="true">
+            <span style="--i:3%">🌅</span>
+            <span style="--i:17%">☀️</span>
+            <span style="--i:44%">🌆</span>
+            <span style="--i:70%">🌙</span>
+        </div>
+        <div class="pvs-timeline__track js-pv-cycle-track">
+            <div class="pvs-timeline__fill  js-pv-cycle-fill"></div>
+            <div class="pvs-timeline__thumb js-pv-cycle-head"></div>
+        </div>
+    </div>
+</div>

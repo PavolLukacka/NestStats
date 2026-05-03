@@ -1,0 +1,935 @@
+@page
+@model PrivacyModel
+@{
+    var signedIn = User?.Identity?.IsAuthenticated == true;
+    if (!signedIn)
+    {
+        Layout = "/Areas/Identity/Pages/_AuthLayout.cshtml";
+    }
+
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+
+    ViewData["Title"] = T("Ochrana údajov", "Privacy");
+    var lastUpdated = T("3. mája 2026", "May 3, 2026");
+}
+
+@section Head {
+<style>
+    :root {
+        --privacy-panel: rgba(255,255,255,.92);
+        --privacy-soft: rgba(249,248,246,.82);
+        --privacy-ink: #0d0e12;
+        --privacy-muted: #6b6f82;
+        --privacy-border: #e8e5de;
+        --privacy-green: #1e9e6e;
+        --privacy-blue: #2563eb;
+        --privacy-amber: #e8a020;
+    }
+
+    .auth-layout {
+        display: block;
+        align-items: unset;
+        padding-top: max(5rem, 7vh);
+        padding-bottom: 2rem;
+    }
+
+    .privacy-page {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 34px 28px 76px;
+        display: grid;
+        gap: 24px;
+        font-family: var(--ff-sans, Figtree, system-ui, sans-serif);
+    }
+
+    .privacy-page *,
+    .privacy-page *::before,
+    .privacy-page *::after {
+        box-sizing: border-box;
+    }
+
+    .privacy-hero {
+        position: relative;
+        min-height: 460px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 28px;
+        padding: 42px;
+        overflow: hidden;
+        border: 1px solid var(--privacy-border);
+        border-radius: 30px;
+        background:
+            radial-gradient(circle at 100% 100%, rgba(30,158,110,.12), transparent 55%),
+            radial-gradient(circle at 0% 0%, rgba(37,99,235,.08), transparent 50%),
+            linear-gradient(135deg, rgba(255,255,255,.96), rgba(249,248,246,.88));
+        box-shadow: var(--ns-shadow-md, 0 4px 16px rgba(13,14,18,.07), 0 2px 6px rgba(13,14,18,.05));
+    }
+
+    .privacy-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(90deg, rgba(13,14,18,.045) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(13,14,18,.035) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: linear-gradient(90deg, rgba(0,0,0,.70), transparent 80%);
+        pointer-events: none;
+    }
+
+    .privacy-hero__body,
+    .privacy-hero__panel {
+        position: relative;
+        z-index: 1;
+    }
+
+    .privacy-kicker,
+    .privacy-eyebrow {
+        width: fit-content;
+        color: #0c6e48;
+        font: 800 .68rem/1 var(--ff-mono, "Geist Mono", monospace);
+        letter-spacing: .11em;
+        text-transform: uppercase;
+    }
+
+    .privacy-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid rgba(30,158,110,.18);
+        border-radius: 999px;
+        background: rgba(30,158,110,.08);
+    }
+
+    .privacy-kicker::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        flex: 0 0 8px;
+        border-radius: 50%;
+        background: var(--privacy-green);
+        box-shadow: 0 0 0 4px rgba(30,158,110,.16);
+    }
+
+    .privacy-title {
+        max-width: 820px;
+        margin: 20px 0 16px;
+        color: var(--privacy-ink);
+        font-size: 4.5rem;
+        line-height: .98;
+        letter-spacing: -.055em;
+    }
+
+    .privacy-title span {
+        display: block;
+        margin-top: 8px;
+        color: transparent;
+        background: linear-gradient(92deg, var(--privacy-green), #0f766e 44%, var(--privacy-amber));
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-family: var(--ff-mono, "Geist Mono", monospace);
+        font-size: .66em;
+        letter-spacing: 0;
+    }
+
+    .privacy-lead {
+        max-width: 710px;
+        margin: 0;
+        color: var(--privacy-muted);
+        font-size: 1rem;
+        line-height: 1.72;
+    }
+
+    .privacy-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .privacy-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 11px 16px;
+        border: 1px solid var(--privacy-border);
+        border-radius: 999px;
+        background: rgba(255,255,255,.92);
+        color: var(--privacy-ink);
+        font-weight: 800;
+        font-size: .88rem;
+        text-decoration: none;
+        transition: transform .16s var(--ease-out, cubic-bezier(.16,1,.3,1)), box-shadow .16s, border-color .16s, background .16s;
+    }
+
+    .privacy-button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(30,158,110,.35);
+        box-shadow: var(--ns-shadow-sm, 0 1px 3px rgba(13,14,18,.05));
+        color: var(--privacy-ink);
+    }
+
+    .privacy-button--primary {
+        border-color: var(--privacy-ink);
+        background: var(--privacy-ink);
+        color: #fff;
+    }
+
+    .privacy-button--primary:hover {
+        color: #fff;
+        background: #171923;
+    }
+
+    .privacy-hero__panel {
+        align-self: stretch;
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,.78);
+        border-radius: 24px;
+        background: rgba(255,255,255,.74);
+        box-shadow: var(--ns-shadow-sm, 0 1px 3px rgba(13,14,18,.05));
+        backdrop-filter: blur(16px);
+    }
+
+    .privacy-signal {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid var(--privacy-border);
+        border-radius: 18px;
+        background: rgba(255,255,255,.92);
+    }
+
+    .privacy-signal span {
+        color: var(--privacy-muted);
+        font: 800 .66rem/1 var(--ff-mono, "Geist Mono", monospace);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .privacy-signal strong {
+        color: var(--privacy-ink);
+        font-size: 1.05rem;
+        line-height: 1.25;
+    }
+
+    .privacy-signal p {
+        margin: 0;
+        color: var(--privacy-muted);
+        font-size: .84rem;
+        line-height: 1.48;
+    }
+
+    .privacy-updated {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        min-height: 34px;
+        padding: 8px 12px;
+        border: 1px solid var(--privacy-border);
+        border-radius: 999px;
+        background: var(--privacy-soft);
+        color: var(--privacy-muted);
+        font: 800 .72rem/1 var(--ff-mono, "Geist Mono", monospace);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .privacy-principles {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .privacy-principle,
+    .privacy-card,
+    .privacy-section,
+    .privacy-open-source {
+        border: 1px solid var(--privacy-border);
+        border-radius: 22px;
+        background: var(--privacy-panel);
+        box-shadow: var(--ns-shadow-sm, 0 1px 3px rgba(13,14,18,.05));
+    }
+
+    .privacy-principle {
+        min-height: 148px;
+        padding: 18px;
+        display: grid;
+        align-content: space-between;
+        gap: 14px;
+    }
+
+    .privacy-principle span {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 13px;
+        background: var(--privacy-ink);
+        color: #fff;
+        font: 900 .8rem/1 var(--ff-mono, "Geist Mono", monospace);
+    }
+
+    .privacy-principle strong {
+        color: var(--privacy-ink);
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .privacy-principle small {
+        color: var(--privacy-muted);
+        line-height: 1.5;
+    }
+
+    .privacy-layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .privacy-toc {
+        position: sticky;
+        top: 90px;
+        display: grid;
+        gap: 10px;
+        padding: 18px;
+        border: 1px solid var(--privacy-border);
+        border-radius: 22px;
+        background: rgba(255,255,255,.9);
+        box-shadow: var(--ns-shadow-sm, 0 1px 3px rgba(13,14,18,.05));
+    }
+
+    .privacy-toc strong {
+        color: var(--privacy-ink);
+        font-size: .92rem;
+    }
+
+    .privacy-toc a {
+        display: block;
+        padding: 9px 10px;
+        border-radius: 12px;
+        color: var(--privacy-muted);
+        font-size: .84rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background .16s, color .16s;
+    }
+
+    .privacy-toc a:hover {
+        color: var(--privacy-ink);
+        background: var(--privacy-soft);
+    }
+
+    .privacy-content {
+        display: grid;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .privacy-section {
+        padding: 24px;
+        scroll-margin-top: 88px;
+    }
+
+    .privacy-section h2 {
+        margin: 8px 0 12px;
+        color: var(--privacy-ink);
+        font-size: 1.45rem;
+        line-height: 1.15;
+        letter-spacing: -.025em;
+    }
+
+    .privacy-section p {
+        margin: 0 0 12px;
+        color: var(--privacy-muted);
+        font-size: .94rem;
+        line-height: 1.7;
+    }
+
+    .privacy-section p:last-child {
+        margin-bottom: 0;
+    }
+
+    .privacy-list {
+        display: grid;
+        gap: 8px;
+        margin: 12px 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .privacy-list li {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        color: var(--privacy-muted);
+        font-size: .92rem;
+        line-height: 1.58;
+    }
+
+    .privacy-list li::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        margin-top: 8px;
+        border-radius: 50%;
+        background: var(--privacy-amber);
+        box-shadow: 0 0 0 4px rgba(232,160,32,.14);
+    }
+
+    .privacy-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 14px 0;
+    }
+
+    .privacy-card {
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(249,248,246,.78));
+    }
+
+    .privacy-card strong {
+        display: block;
+        color: var(--privacy-ink);
+        font-size: .95rem;
+        margin-bottom: 6px;
+    }
+
+    .privacy-card span {
+        color: var(--privacy-muted);
+        font-size: .84rem;
+        line-height: 1.55;
+    }
+
+    .privacy-table {
+        width: 100%;
+        margin: 14px 0;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid var(--privacy-border);
+        border-radius: 16px;
+        background: #fff;
+        font-size: .88rem;
+    }
+
+    .privacy-table th,
+    .privacy-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--privacy-border);
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .privacy-table th {
+        color: var(--privacy-ink);
+        background: var(--privacy-soft);
+        font: 800 .68rem/1 var(--ff-mono, "Geist Mono", monospace);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .privacy-table td {
+        color: var(--privacy-muted);
+        line-height: 1.5;
+    }
+
+    .privacy-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .privacy-table code,
+    .privacy-code {
+        font-family: var(--ff-mono, "Geist Mono", monospace);
+        font-size: .82em;
+        color: var(--privacy-ink);
+        padding: 2px 6px;
+        border: 1px solid rgba(13,14,18,.08);
+        border-radius: 8px;
+        background: rgba(249,248,246,.95);
+    }
+
+    .privacy-open-source {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 18px;
+        padding: 24px;
+        background:
+            radial-gradient(circle at 100% 0%, rgba(37,99,235,.10), transparent 42%),
+            linear-gradient(135deg, rgba(239,244,255,.88), rgba(255,255,255,.94));
+    }
+
+    .privacy-open-source h2 {
+        margin: 8px 0 12px;
+        color: var(--privacy-ink);
+        font-size: 1.55rem;
+        letter-spacing: -.03em;
+    }
+
+    .privacy-open-source p {
+        margin: 0;
+        color: var(--privacy-muted);
+        line-height: 1.7;
+    }
+
+    .privacy-checklist {
+        display: grid;
+        gap: 8px;
+        align-content: start;
+    }
+
+    .privacy-check {
+        padding: 10px 12px;
+        border: 1px solid rgba(37,99,235,.14);
+        border-radius: 14px;
+        background: rgba(255,255,255,.78);
+        color: var(--privacy-ink);
+        font-size: .84rem;
+        font-weight: 800;
+    }
+
+    .privacy-contact {
+        padding: 18px;
+        border: 1px solid rgba(30,158,110,.18);
+        border-radius: 18px;
+        background: rgba(230,247,241,.72);
+    }
+
+    .privacy-contact a {
+        color: #0c6e48;
+        font-weight: 800;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+    }
+
+    .privacy-contact a:hover {
+        text-decoration: underline;
+    }
+
+    .privacy-note {
+        padding: 14px 16px;
+        border: 1px solid rgba(232,160,32,.20);
+        border-radius: 16px;
+        background: rgba(250,240,217,.72);
+        color: #7a4b00;
+        font-size: .88rem;
+        line-height: 1.6;
+    }
+
+    @@media (max-width: 1080px) {
+        .privacy-hero,
+        .privacy-layout,
+        .privacy-open-source {
+            grid-template-columns: 1fr;
+        }
+
+        .privacy-hero {
+            min-height: auto;
+        }
+
+        .privacy-toc {
+            position: static;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .privacy-toc strong {
+            grid-column: 1 / -1;
+        }
+
+        .privacy-principles {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .auth-layout {
+            padding-top: max(4.5rem, 6vh);
+        }
+
+        .privacy-page {
+            width: 100%;
+            max-width: 100%;
+            padding: 18px 14px 58px;
+            gap: 18px;
+            overflow-x: hidden;
+        }
+
+        .privacy-page *,
+        .privacy-page *::before,
+        .privacy-page *::after {
+            min-width: 0;
+        }
+
+        .privacy-hero {
+            width: 100%;
+            max-width: 100%;
+            padding: 22px 18px;
+            border-radius: 22px;
+            gap: 18px;
+        }
+
+        .privacy-title {
+            margin: 18px 0 14px;
+            font-size: 2.35rem;
+            line-height: 1.03;
+            letter-spacing: -.038em;
+        }
+
+        .privacy-title span {
+            font-size: .72em;
+        }
+
+        .privacy-lead,
+        .privacy-section p,
+        .privacy-open-source p {
+            font-size: .9rem;
+            line-height: 1.58;
+        }
+
+        .privacy-principles,
+        .privacy-grid,
+        .privacy-toc {
+            grid-template-columns: 1fr;
+        }
+
+        .privacy-hero__panel,
+        .privacy-principle,
+        .privacy-section,
+        .privacy-card,
+        .privacy-open-source {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 18px;
+        }
+
+        .privacy-section,
+        .privacy-open-source {
+            padding: 18px;
+        }
+
+        .privacy-actions .privacy-button {
+            width: 100%;
+        }
+
+        .privacy-table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 14px;
+        }
+
+        .privacy-table th,
+        .privacy-table td {
+            min-width: 150px;
+            padding: 10px 12px;
+        }
+    }
+
+    @@media (max-width: 420px) {
+        .privacy-page {
+            padding-inline: 10px;
+        }
+
+        .privacy-hero {
+            padding: 20px 14px;
+        }
+
+        .privacy-title {
+            font-size: 2.05rem;
+        }
+
+        .privacy-section h2,
+        .privacy-open-source h2 {
+            font-size: 1.28rem;
+        }
+    }
+</style>
+}
+
+<section class="privacy-page">
+    <header class="privacy-hero">
+        <div class="privacy-hero__body">
+            <span class="privacy-kicker">@T("Ochrana údajov", "Privacy and data")</span>
+            <h1 class="privacy-title">
+                @T("Transparentné pravidlá pre otvorený energetický systém.", "Transparent rules for an open energy system.")
+                <span>@T("Vieš, čo sa spracúva a prečo.", "Know what is processed and why.")</span>
+            </h1>
+            <p class="privacy-lead">
+                @T(
+                    "NestStats pracuje s účtom používateľa, priradením energetického systému a technickými dátami potrebnými na dashboard. Táto stránka vysvetľuje, čo aplikácia potrebuje, čo nepredáva, čo neodosiela na reklamné účely a ako si môže vlastnú inštanciu nastaviť každý, kto projekt použije ako open-source základ.",
+                    "NestStats works with user accounts, assigned energy systems, and technical data needed for the dashboard. This page explains what the app needs, what it does not sell, what it does not send for advertising, and how anyone using the project as an open-source base can configure their own instance.")
+            </p>
+            <div class="privacy-actions">
+                <a class="privacy-button privacy-button--primary" href="#open-source">@T("Open-source reprodukovateľnosť", "Open-source reproducibility")</a>
+                <a class="privacy-button" href="mailto:pavollukacka.l@gmail.com">@T("Kontaktovať vývojára", "Contact developer")</a>
+            </div>
+        </div>
+
+        <aside class="privacy-hero__panel" aria-label="@T("Zhrnutie ochrany údajov", "Privacy summary")">
+            <div class="privacy-signal">
+                <span>@T("Posledná úprava", "Last updated")</span>
+                <strong>@lastUpdated</strong>
+                <p>@T("Dokument je písaný pre aktuálnu verziu NestStats a pre vlastné self-hosted inštancie projektu.", "This document is written for the current NestStats version and for custom self-hosted instances of the project.")</p>
+            </div>
+            <div class="privacy-signal">
+                <span>@T("Zásada", "Principle")</span>
+                <strong>@T("Minimum údajov pre maximum kontroly", "Minimum data for maximum control")</strong>
+                <p>@T("Aplikácia má spracúvať len to, čo potrebuje na login, priradenie systému, dashboard a prevádzku.", "The app should process only what it needs for login, system assignment, dashboard, and operation.")</p>
+            </div>
+        </aside>
+    </header>
+
+    <span class="privacy-updated">@T("Aktualizované", "Updated"): @lastUpdated</span>
+
+    <section class="privacy-principles" aria-label="@T("Základné zásady", "Core principles")">
+        <article class="privacy-principle">
+            <span>01</span>
+            <div>
+                <strong>@T("Žiadny predaj údajov", "No data sale")</strong>
+                <small>@T("Údaje používateľov a systémov nie sú produktom na predaj.", "User and system data is not a product for sale.")</small>
+            </div>
+        </article>
+        <article class="privacy-principle">
+            <span>02</span>
+            <div>
+                <strong>@T("Bez reklamného sledovania", "No ad tracking")</strong>
+                <small>@T("Projekt nepoužíva reklamné cookies ani profilovanie pre marketing.", "The project does not use ad cookies or marketing profiling.")</small>
+            </div>
+        </article>
+        <article class="privacy-principle">
+            <span>03</span>
+            <div>
+                <strong>@T("Reprodukovateľná inštancia", "Reproducible instance")</strong>
+                <small>@T("Každý fork má mať vlastné kľúče, kontakty, hosting a pravidlá.", "Each fork should have its own keys, contacts, hosting, and rules.")</small>
+            </div>
+        </article>
+        <article class="privacy-principle">
+            <span>04</span>
+            <div>
+                <strong>@T("Používateľ má kontrolu", "User stays in control")</strong>
+                <small>@T("Používateľ môže žiadať prístup, opravu, export alebo vymazanie údajov.", "The user can request access, correction, export, or deletion.")</small>
+            </div>
+        </article>
+    </section>
+
+    <section class="privacy-open-source" id="open-source">
+        <div>
+            <span class="privacy-eyebrow">@T("Open-source poznámka", "Open-source note")</span>
+            <h2>@T("Táto stránka je navrhnutá tak, aby ju vedel použiť aj vlastný fork projektu.", "This page is designed so a project fork can reuse it.")</h2>
+            <p>
+                @T(
+                    "NestStats môže bežať ako vlastná inštancia. Ak si projekt niekto nasadí sám, táto stránka má slúžiť ako čitateľná šablóna. Prevádzkovateľ vlastnej inštancie však musí doplniť vlastné kontaktné údaje, hosting, databázový región, zoznam spracovateľov, dobu uchovávania a reálne používané integrácie. README a technická dokumentácia vysvetľujú, ktoré konfiguračné hodnoty nemajú skončiť vo verejnom repozitári.",
+                    "NestStats can run as a custom instance. If someone self-hosts the project, this page is meant to be a readable template. The operator of a custom instance still has to fill in their own contact details, hosting, database region, processors, retention periods, and real integrations. The README and technical documentation explain which configuration values must not end up in a public repository.")
+            </p>
+        </div>
+        <div class="privacy-checklist">
+            <div class="privacy-check">@T("Vymeniť kontakt prevádzkovateľa", "Replace controller contact")</div>
+            <div class="privacy-check">@T("Použiť vlastné Supabase kľúče", "Use own Supabase keys")</div>
+            <div class="privacy-check">@T("Nastaviť vlastný hosting", "Configure own hosting")</div>
+            <div class="privacy-check">@T("Skontrolovať cookies a integrácie", "Review cookies and integrations")</div>
+        </div>
+    </section>
+
+    <div class="privacy-layout">
+        <nav class="privacy-toc" aria-label="@T("Obsah dokumentu", "Table of contents")">
+            <strong>@T("Obsah", "Contents")</strong>
+            <a href="#controller">01 @T("Prevádzkovateľ", "Controller")</a>
+            <a href="#data">02 @T("Spracúvané údaje", "Processed data")</a>
+            <a href="#purpose">03 @T("Účel spracúvania", "Purpose")</a>
+            <a href="#integrations">04 @T("Integrácie", "Integrations")</a>
+            <a href="#cookies">05 @T("Cookies", "Cookies")</a>
+            <a href="#security">06 @T("Bezpečnosť", "Security")</a>
+            <a href="#rights">07 @T("Práva používateľa", "User rights")</a>
+            <a href="#retention">08 @T("Uchovávanie", "Retention")</a>
+            <a href="#contact">09 @T("Kontakt", "Contact")</a>
+        </nav>
+
+        <div class="privacy-content">
+            <section class="privacy-section" id="controller">
+                <span class="privacy-eyebrow">01</span>
+                <h2>@T("Prevádzkovateľ a rozsah dokumentu", "Controller and scope")</h2>
+                <p>@T("Túto konkrétnu inštanciu projektu vyvíja Pavol Lukačka. Kontakt pre otázky k ochrane údajov je pavollukacka.l@gmail.com.", "This concrete project instance is developed by Pavol Lukačka. The contact for privacy questions is pavollukacka.l@gmail.com.")</p>
+                <p>@T("Ak projekt forkuješ alebo nasadíš pod vlastnou organizáciou, prevádzkovateľom tvojej inštancie si ty alebo tvoja organizácia. Vtedy musíš túto časť upraviť podľa reality vlastného nasadenia.", "If you fork or deploy the project under your own organization, you or your organization become the controller of your instance. In that case, this section must be adapted to your real deployment.")</p>
+                <div class="privacy-note">@T("Táto stránka nie je právne poradenstvo. Je to praktická, ľudsky čitateľná privacy šablóna pre projekt NestStats a jeho self-hosted použitie.", "This page is not legal advice. It is a practical, human-readable privacy template for NestStats and its self-hosted use.")</div>
+            </section>
+
+            <section class="privacy-section" id="data">
+                <span class="privacy-eyebrow">02</span>
+                <h2>@T("Aké údaje aplikácia spracúva", "What data the app processes")</h2>
+                <p>@T("NestStats potrebuje údaje len na to, aby vedel používateľa prihlásiť, priradiť mu správny energetický systém a zobraziť mu relevantný dashboard.", "NestStats needs data only to sign the user in, assign the correct energy system, and display the relevant dashboard.")</p>
+                <table class="privacy-table">
+                    <thead>
+                        <tr>
+                            <th>@T("Kategória", "Category")</th>
+                            <th>@T("Príklady", "Examples")</th>
+                            <th>@T("Dôvod", "Reason")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@T("Účet", "Account")</td>
+                            <td>@T("Email, meno, rola, stav onboardingu", "Email, name, role, onboarding state")</td>
+                            <td>@T("Login, správa účtu a prístup do chránenej časti", "Login, account management, and protected access")</td>
+                        </tr>
+                        <tr>
+                            <td>@T("Systém", "System")</td>
+                            <td>@T("Sériové číslo, alias, adresa systému, primárny systém", "Serial number, alias, system address, primary system")</td>
+                            <td>@T("Priradenie dát k správnej inštalácii", "Linking data to the correct installation")</td>
+                        </tr>
+                        <tr>
+                            <td>@T("Energetická telemetria", "Energy telemetry")</td>
+                            <td>@T("PV výkon, import, export, batéria, WattRouter, denné KPI", "PV power, import, export, battery, WattRouter, daily KPI")</td>
+                            <td>@T("Dashboard, grafy, štatistika a kontrola prevádzky", "Dashboard, charts, statistics, and operational checks")</td>
+                        </tr>
+                        <tr>
+                            <td>@T("Preferencie", "Preferences")</td>
+                            <td>@T("Jazyk, interval automatickej obnovy, používateľské voľby", "Language, auto refresh interval, user choices")</td>
+                            <td>@T("Lepší používateľský zážitok bez opakovaného nastavovania", "Better user experience without repeated setup")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="privacy-section" id="purpose">
+                <span class="privacy-eyebrow">03</span>
+                <h2>@T("Na čo údaje používame", "What the data is used for")</h2>
+                <ul class="privacy-list">
+                    <li>@T("na vytvorenie a zabezpečenie používateľského účtu,", "to create and secure the user account,")</li>
+                    <li>@T("na priradenie konkrétneho energetického systému k používateľovi,", "to assign a concrete energy system to the user,")</li>
+                    <li>@T("na zobrazenie live dashboardu, denných KPI a historických grafov,", "to display the live dashboard, daily KPI, and historical charts,")</li>
+                    <li>@T("na uloženie základných preferencií, napríklad jazyka alebo automatickej obnovy,", "to store basic preferences such as language or auto refresh,")</li>
+                    <li>@T("na bezpečnostnú diagnostiku a ochranu aplikácie pred zneužitím.", "for security diagnostics and protection of the app against abuse.")</li>
+                </ul>
+                <p>@T("Údaje nepoužívame na predaj, reklamné profilovanie ani behaviorálne sledovanie. Ak si prevádzkovateľ vlastnej inštancie pridá analytiku alebo marketingové nástroje, musí to doplniť do tejto stránky.", "Data is not used for sale, advertising profiling, or behavioral tracking. If the operator of a custom instance adds analytics or marketing tools, this page must be updated.")</p>
+            </section>
+
+            <section class="privacy-section" id="integrations">
+                <span class="privacy-eyebrow">04</span>
+                <h2>@T("Externé služby a integrácie", "External services and integrations")</h2>
+                <div class="privacy-grid">
+                    <div class="privacy-card">
+                        <strong>Supabase</strong>
+                        <span>@T("Telemetrická databáza pre energetické dáta a systémové tabuľky.", "Telemetry database for energy data and system tables.")</span>
+                    </div>
+                    <div class="privacy-card">
+                        <strong>Open-Meteo</strong>
+                        <span>@T("Počasie a predikčný kontext podľa adresy alebo lokality systému.", "Weather and prediction context based on address or system location.")</span>
+                    </div>
+                    <div class="privacy-card">
+                        <strong>OKTE</strong>
+                        <span>@T("Verejné dáta slovenského spotového trhu s elektrinou.", "Public Slovak electricity spot market data.")</span>
+                    </div>
+                    <div class="privacy-card">
+                        <strong>SMTP / OAuth</strong>
+                        <span>@T("Voliteľný email sender a externé prihlásenie podľa konfigurácie inštancie.", "Optional email sender and external login depending on instance configuration.")</span>
+                    </div>
+                </div>
+                <p>@T("Self-hosted prevádzkovateľ musí používať vlastné účty, vlastné API kľúče a vlastnú konfiguráciu. Verejný repozitár nemá obsahovať produkčné tajomstvá.", "A self-hosted operator must use their own accounts, API keys, and configuration. The public repository must not contain production secrets.")</p>
+            </section>
+
+            <section class="privacy-section" id="cookies">
+                <span class="privacy-eyebrow">05</span>
+                <h2>@T("Cookies a lokálne preferencie", "Cookies and local preferences")</h2>
+                <p>@T("NestStats používa technické cookies potrebné na prihlásenie, bezpečnosť formulárov, jazyk a používateľské preferencie. Reklamné cookies nie sú súčasťou projektu.", "NestStats uses technical cookies needed for sign-in, form security, language, and user preferences. Advertising cookies are not part of the project.")</p>
+                <table class="privacy-table">
+                    <thead>
+                        <tr>
+                            <th>Cookie</th>
+                            <th>@T("Účel", "Purpose")</th>
+                            <th>@T("Poznámka", "Note")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>.AspNetCore.Identity.Application</code></td>
+                            <td>@T("Stav prihlásenia používateľa", "User sign-in state")</td>
+                            <td>@T("Potrebné pre chránené stránky", "Required for protected pages")</td>
+                        </tr>
+                        <tr>
+                            <td><code>ASPNETCORE_CULTURE</code></td>
+                            <td>@T("Výber jazyka SK/EN", "SK/EN language choice")</td>
+                            <td>@T("Umožňuje reprodukovateľný jazykový režim", "Keeps the selected language mode reproducible")</td>
+                        </tr>
+                        <tr>
+                            <td><code>.AspNetCore.Antiforgery.*</code></td>
+                            <td>@T("Ochrana formulárov pred CSRF útokmi", "Protects forms against CSRF attacks")</td>
+                            <td>@T("Technicky nevyhnutné", "Technically necessary")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="privacy-section" id="security">
+                <span class="privacy-eyebrow">06</span>
+                <h2>@T("Bezpečnostné opatrenia", "Security measures")</h2>
+                <ul class="privacy-list">
+                    <li>@T("heslá používateľov sú spracované cez ASP.NET Core Identity,", "user passwords are handled through ASP.NET Core Identity,")</li>
+                    <li>@T("formuláre používajú antiforgery ochranu,", "forms use antiforgery protection,")</li>
+                    <li>@T("citlivé konfiguračné hodnoty majú byť uložené v user-secrets alebo environment premenných,", "sensitive configuration values should be stored in user-secrets or environment variables,")</li>
+                    <li>@T("firmware exporty majú byť sanitizované od Wi-Fi hesiel a databázových kľúčov,", "firmware exports should be sanitized from Wi-Fi passwords and database keys,")</li>
+                    <li>@T("prístup k systémom je viazaný na používateľské priradenia a roly.", "system access is bound to user assignments and roles.")</li>
+                </ul>
+                <div class="privacy-note">@T("Ak sa tajomstvo dostalo do verejného repozitára, treba ho považovať za kompromitované a vygenerovať nové. Nestačí ho iba zmazať z aktuálnej verzie súboru.", "If a secret reaches a public repository, treat it as compromised and rotate it. Removing it only from the current file version is not enough.")</div>
+            </section>
+
+            <section class="privacy-section" id="rights">
+                <span class="privacy-eyebrow">07</span>
+                <h2>@T("Práva používateľa", "User rights")</h2>
+                <p>@T("Používateľ môže požiadať o prístup k údajom, opravu, export alebo vymazanie účtu a priradení. Pri vlastnej inštancii musí tieto práva zabezpečiť jej prevádzkovateľ.", "A user can request access, correction, export, or deletion of the account and assignments. In a custom instance, these rights must be handled by that instance operator.")</p>
+                <div class="privacy-grid">
+                    <div class="privacy-card"><strong>@T("Prístup", "Access")</strong><span>@T("Zistiť, aké údaje sú uložené.", "See what data is stored.")</span></div>
+                    <div class="privacy-card"><strong>@T("Oprava", "Correction")</strong><span>@T("Opraviť nepresné údaje účtu alebo systému.", "Correct inaccurate account or system data.")</span></div>
+                    <div class="privacy-card"><strong>@T("Vymazanie", "Deletion")</strong><span>@T("Požiadať o odstránenie účtu alebo priradenia systému.", "Request account or system assignment deletion.")</span></div>
+                    <div class="privacy-card"><strong>@T("Prenosnosť", "Portability")</strong><span>@T("Získať export údajov v primeranom formáte.", "Receive an export in a reasonable format.")</span></div>
+                </div>
+            </section>
+
+            <section class="privacy-section" id="retention">
+                <span class="privacy-eyebrow">08</span>
+                <h2>@T("Uchovávanie údajov", "Data retention")</h2>
+                <table class="privacy-table">
+                    <thead>
+                        <tr>
+                            <th>@T("Údaj", "Data")</th>
+                            <th>@T("Odporúčané uchovávanie", "Suggested retention")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@T("Používateľský účet", "User account")</td>
+                            <td>@T("Počas aktívneho účtu a krátko po jeho zrušení kvôli obnove alebo podpore.", "During account activity and briefly after deletion for recovery or support.")</td>
+                        </tr>
+                        <tr>
+                            <td>@T("Priradenie systému", "System assignment")</td>
+                            <td>@T("Počas priradenia k účtu. Po odpojení sa nemá ďalej používať pre dashboard.", "During assignment to the account. After disconnecting it should no longer be used for the dashboard.")</td>
+                        </tr>
+                        <tr>
+                            <td>@T("Technické logy", "Technical logs")</td>
+                            <td>@T("Len tak dlho, ako je potrebné na bezpečnosť a diagnostiku.", "Only as long as needed for security and diagnostics.")</td>
+                        </tr>
+                        <tr>
+                            <td>@T("Telemetria systému", "System telemetry")</td>
+                            <td>@T("Podľa účelu prevádzkovateľa. Pri open-source nasadení to musí určiť vlastník inštancie.", "According to the operator purpose. In open-source deployment this must be defined by the instance owner.")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="privacy-section" id="contact">
+                <span class="privacy-eyebrow">09</span>
+                <h2>@T("Kontakt a úprava pre vlastnú inštanciu", "Contact and customization for your own instance")</h2>
+                <p>@T("Pre túto vývojovú inštanciu je kontaktná adresa:", "For this development instance, the contact address is:")</p>
+                <div class="privacy-contact">
+                    <a href="mailto:pavollukacka.l@gmail.com">pavollukacka.l@gmail.com</a>
+                </div>
+                <p>@T("Ak nasadíš vlastný fork, nahraď tento kontakt vlastným kontaktom, uprav názov prevádzkovateľa, skontroluj hostingové služby a uisti sa, že táto stránka opisuje tvoju reálnu prevádzku. Privacy stránka má byť pravdivá, nie iba skopírovaná.", "If you deploy your own fork, replace this contact with your own, update the controller name, review hosting services, and make sure this page describes your real operation. A privacy page should be truthful, not merely copied.")</p>
+            </section>
+        </div>
+    </div>
+</section>

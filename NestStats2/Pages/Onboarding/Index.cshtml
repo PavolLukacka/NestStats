@@ -1,0 +1,767 @@
+@page
+@model NestStats2.Pages.Onboarding.IndexModel
+@{
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+
+    ViewData["Title"] = T("Prvé spustenie", "Launch");
+    var gettingStartedUrl = isEnglish ? "/getting-started" : "/ako-zacat";
+}
+
+@section Head {
+<style>
+    .onboarding-page {
+        --ob-panel: rgba(255,255,255,.92);
+        --ob-soft: rgba(249,248,246,.82);
+        --ob-green: #1e9e6e;
+        --ob-blue: #2563eb;
+        --ob-amber: #e8a020;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 34px 28px 76px;
+        display: grid;
+        gap: 24px;
+    }
+
+    .onboarding-page *,
+    .onboarding-page *::before,
+    .onboarding-page *::after {
+        box-sizing: border-box;
+    }
+
+    .ob-hero {
+        position: relative;
+        min-height: 450px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 28px;
+        padding: 42px;
+        overflow: hidden;
+        border: 1px solid var(--ns-border);
+        border-radius: 30px;
+        background:
+            radial-gradient(circle at 100% 100%, rgba(30,158,110,.12), transparent 55%),
+            radial-gradient(circle at 0% 0%, rgba(37,99,235,.08), transparent 50%),
+            linear-gradient(135deg, rgba(255,255,255,.96), rgba(249,248,246,.88));
+        box-shadow: var(--ns-shadow-md);
+    }
+
+    .ob-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(90deg, rgba(13,14,18,.045) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(13,14,18,.035) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: linear-gradient(90deg, rgba(0,0,0,.70), transparent 80%);
+        pointer-events: none;
+    }
+
+    .ob-hero__body,
+    .ob-hero__panel {
+        position: relative;
+        z-index: 1;
+    }
+
+    .ob-kicker,
+    .ob-eyebrow {
+        width: fit-content;
+        color: #0c6e48;
+        font: 800 .68rem/1 var(--ff-mono);
+        letter-spacing: .11em;
+        text-transform: uppercase;
+    }
+
+    .ob-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid rgba(30,158,110,.18);
+        border-radius: 999px;
+        background: rgba(30,158,110,.08);
+    }
+
+    .ob-kicker::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        flex: 0 0 8px;
+        border-radius: 50%;
+        background: var(--ob-green);
+        box-shadow: 0 0 0 4px rgba(30,158,110,.16);
+    }
+
+    .ob-title {
+        max-width: 820px;
+        margin: 20px 0 16px;
+        color: var(--ns-ink);
+        font-size: 4.45rem;
+        line-height: .98;
+        letter-spacing: -.055em;
+    }
+
+    .ob-title span {
+        display: block;
+        margin-top: 8px;
+        color: transparent;
+        background: linear-gradient(92deg, var(--ob-green), #0f766e 44%, var(--ob-amber));
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-family: var(--ff-mono);
+        font-size: .68em;
+        letter-spacing: 0;
+    }
+
+    .ob-lead {
+        max-width: 700px;
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: 1rem;
+        line-height: 1.72;
+    }
+
+    .ob-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .ob-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 11px 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 999px;
+        background: rgba(255,255,255,.92);
+        color: var(--ns-ink);
+        font-weight: 800;
+        font-size: .88rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .16s var(--ease-out), box-shadow .16s, border-color .16s, background .16s;
+    }
+
+    .ob-button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(30,158,110,.35);
+        box-shadow: var(--ns-shadow-sm);
+        color: var(--ns-ink);
+    }
+
+    .ob-button--primary {
+        border-color: var(--ns-ink);
+        background: var(--ns-ink);
+        color: #fff;
+    }
+
+    .ob-button--primary:hover {
+        color: #fff;
+        background: #171923;
+    }
+
+    .ob-hero__panel {
+        align-self: stretch;
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,.78);
+        border-radius: 24px;
+        background: rgba(255,255,255,.74);
+        box-shadow: var(--ns-shadow-sm);
+        backdrop-filter: blur(16px);
+    }
+
+    .ob-signal {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 18px;
+        background: rgba(255,255,255,.92);
+    }
+
+    .ob-signal span {
+        color: var(--ns-ink-3);
+        font: 800 .66rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .ob-signal strong {
+        color: var(--ns-ink);
+        font-size: 1.05rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .ob-signal p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .84rem;
+        line-height: 1.48;
+    }
+
+    .ob-progress {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .ob-progress-card {
+        min-height: 138px;
+        padding: 18px;
+        display: grid;
+        align-content: space-between;
+        gap: 14px;
+        border: 1px solid var(--ns-border);
+        border-radius: 22px;
+        background: var(--ob-panel);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .ob-progress-card.is-done {
+        border-color: rgba(30,158,110,.25);
+        background: linear-gradient(135deg, rgba(230,247,241,.86), rgba(255,255,255,.92));
+    }
+
+    .ob-progress-card span {
+        color: var(--ns-ink-3);
+        font: 800 .66rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .ob-progress-card strong {
+        color: var(--ns-ink);
+        font-size: 1.15rem;
+        line-height: 1.18;
+    }
+
+    .ob-progress-card small {
+        color: var(--ns-ink-3);
+        line-height: 1.5;
+    }
+
+    .ob-workspace {
+        display: grid;
+        grid-template-columns: minmax(340px, .84fr) minmax(0, 1.16fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .ob-panel,
+    .ob-card {
+        border: 1px solid var(--ns-border);
+        border-radius: 24px;
+        background: var(--ob-panel);
+        box-shadow: var(--ns-shadow-sm);
+        overflow: hidden;
+    }
+
+    .ob-panel__head {
+        padding: 22px 22px 0;
+    }
+
+    .ob-panel__head h2,
+    .ob-card h3,
+    .ob-step h3 {
+        margin: 6px 0 0;
+        color: var(--ns-ink);
+        font-size: 1.35rem;
+        line-height: 1.15;
+        letter-spacing: -.025em;
+    }
+
+    .ob-panel__head p {
+        max-width: 560px;
+        margin: 8px 0 0;
+        color: var(--ns-ink-3);
+        font-size: .92rem;
+        line-height: 1.58;
+    }
+
+    .ob-form {
+        display: grid;
+        gap: 16px;
+        padding: 22px;
+    }
+
+    .ob-field {
+        display: grid;
+        gap: 8px;
+    }
+
+    .ob-field label {
+        color: var(--ns-ink);
+        font-weight: 800;
+        font-size: .86rem;
+    }
+
+    .ob-field input[type="text"],
+    .ob-field input[disabled] {
+        width: 100%;
+        min-height: 50px;
+        padding: 13px 14px;
+        border: 1px solid var(--ns-border);
+        border-radius: 15px;
+        background: rgba(255,255,255,.92);
+        color: var(--ns-ink);
+        font: 600 .95rem/1.2 var(--ff-sans);
+        outline: none;
+        transition: border-color .16s, box-shadow .16s, background .16s;
+    }
+
+    .ob-field input[disabled] {
+        color: var(--ns-ink-3);
+        background: rgba(249,248,246,.72);
+    }
+
+    .ob-field input[type="text"]:focus {
+        border-color: rgba(30,158,110,.52);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(30,158,110,.12);
+    }
+
+    .ob-field small,
+    .ob-validation {
+        color: var(--ns-ink-3);
+        font-size: .78rem;
+        line-height: 1.45;
+    }
+
+    .ob-validation {
+        color: #b42318;
+        font-weight: 800;
+    }
+
+    .validation-summary {
+        padding: 14px;
+        border: 1px solid rgba(180,35,24,.18);
+        border-radius: 16px;
+        background: rgba(254,242,242,.82);
+        color: #991b1b;
+        font-size: .88rem;
+        line-height: 1.5;
+    }
+
+    .validation-summary:empty {
+        display: none;
+    }
+
+    .ob-choice-grid {
+        display: grid;
+        gap: 10px;
+    }
+
+    .ob-choice {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 34px;
+        gap: 14px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 18px;
+        background: rgba(255,255,255,.88);
+        cursor: pointer;
+        transition: border-color .16s, background .16s, box-shadow .16s;
+    }
+
+    .ob-choice:has(input:checked) {
+        border-color: rgba(30,158,110,.34);
+        background: rgba(230,247,241,.82);
+        box-shadow: 0 0 0 4px rgba(30,158,110,.08);
+    }
+
+    .ob-choice strong {
+        display: block;
+        color: var(--ns-ink);
+        font-size: .96rem;
+        line-height: 1.25;
+    }
+
+    .ob-choice small {
+        display: block;
+        margin-top: 6px;
+        color: var(--ns-ink-3);
+        font-size: .82rem;
+        line-height: 1.5;
+    }
+
+    .ob-choice input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--ob-green);
+        justify-self: center;
+    }
+
+    .ob-hint {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid rgba(37,99,235,.14);
+        border-radius: 18px;
+        background: rgba(239,244,255,.8);
+    }
+
+    .ob-hint strong {
+        color: var(--ns-ink);
+        font-size: .9rem;
+    }
+
+    .ob-hint p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .84rem;
+        line-height: 1.55;
+    }
+
+    .ob-stack {
+        display: grid;
+        gap: 18px;
+    }
+
+    .ob-timeline {
+        display: grid;
+        gap: 12px;
+        padding: 22px;
+    }
+
+    .ob-step {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--ns-border);
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(249,248,246,.78));
+    }
+
+    .ob-step__number {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: var(--ns-ink);
+        color: #fff;
+        font: 900 .82rem/1 var(--ff-mono);
+    }
+
+    .ob-step p {
+        margin: 8px 0 0;
+        color: var(--ns-ink-3);
+        font-size: .88rem;
+        line-height: 1.55;
+    }
+
+    .ob-card-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .ob-card {
+        min-height: 180px;
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        padding: 18px;
+    }
+
+    .ob-card--accent {
+        border-color: rgba(30,158,110,.22);
+        background: linear-gradient(145deg, rgba(230,247,241,.86), rgba(255,255,255,.92));
+    }
+
+    .ob-card p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .88rem;
+        line-height: 1.55;
+    }
+
+    @@media (max-width: 1080px) {
+        .ob-hero,
+        .ob-workspace {
+            grid-template-columns: 1fr;
+        }
+
+        .ob-hero {
+            min-height: auto;
+        }
+
+        .ob-progress,
+        .ob-card-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .onboarding-page {
+            width: 100%;
+            max-width: 100%;
+            padding: 18px 14px 58px;
+            gap: 18px;
+            overflow-x: hidden;
+        }
+
+        .onboarding-page *,
+        .onboarding-page *::before,
+        .onboarding-page *::after {
+            min-width: 0;
+        }
+
+        .ob-hero {
+            width: 100%;
+            max-width: 100%;
+            padding: 22px 18px;
+            border-radius: 22px;
+            gap: 18px;
+        }
+
+        .ob-title {
+            margin: 18px 0 14px;
+            font-size: 2.35rem;
+            line-height: 1.03;
+            letter-spacing: -.038em;
+        }
+
+        .ob-title span {
+            font-size: .72em;
+        }
+
+        .ob-lead,
+        .ob-panel__head p,
+        .ob-card p,
+        .ob-hint p,
+        .ob-step p {
+            font-size: .9rem;
+            line-height: 1.58;
+        }
+
+        .ob-progress,
+        .ob-card-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ob-hero__panel,
+        .ob-progress-card,
+        .ob-panel,
+        .ob-card,
+        .ob-step {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 18px;
+        }
+
+        .ob-panel__head {
+            padding: 18px 18px 0;
+        }
+
+        .ob-form,
+        .ob-timeline {
+            padding: 18px;
+        }
+
+        .ob-choice {
+            grid-template-columns: minmax(0, 1fr) 28px;
+            padding: 14px;
+        }
+
+        .ob-step {
+            grid-template-columns: 42px minmax(0, 1fr);
+            padding: 14px;
+        }
+
+        .ob-actions .ob-button,
+        .ob-form > .ob-button {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 420px) {
+        .onboarding-page {
+            padding-inline: 10px;
+        }
+
+        .ob-hero {
+            padding: 20px 14px;
+        }
+
+        .ob-title {
+            font-size: 2.05rem;
+        }
+    }
+</style>
+}
+
+<section class="onboarding-page">
+    <header class="ob-hero">
+        <div class="ob-hero__body">
+            <span class="ob-kicker">@T("Prvé spustenie", "First launch")</span>
+            <h1 class="ob-title">
+                @T("Premeníme nový účet na energetický workspace.", "Turn a fresh account into an energy workspace.")
+                <span>@T("Najprv názov. Potom systém. Nakoniec dashboard.", "Name first. System next. Dashboard after.")</span>
+            </h1>
+            <p class="ob-lead">
+                @T(
+                    "Onboarding nastaví identitu účtu a vyberie, či chceš hneď pripojiť fotovoltickú inštaláciu. Ak máš sériové číslo a systémové heslo, najlepšia cesta je pokračovať rovno do pripojenia systému.",
+                    "Onboarding sets the account identity and lets you decide whether to connect a photovoltaic installation right away. If you already have the serial number and system password, the best path is to continue directly into system pairing.")
+            </p>
+            <div class="ob-actions">
+                <a class="ob-button ob-button--primary" href="#onboarding-form">@T("Začať nastavenie", "Start setup")</a>
+                <a class="ob-button" href="@gettingStartedUrl">@T("Pozrieť Ako začať", "Open Getting started")</a>
+            </div>
+        </div>
+
+        <aside class="ob-hero__panel" aria-label="@T("Stav prvého spustenia", "Launch status")">
+            <div class="ob-signal">
+                <span>@T("Prihlásený účet", "Signed-in account")</span>
+                <strong>@Model.UserEmail</strong>
+                <p>@T("Tento účet bude vlastníkom alebo používateľom pripojených energetických systémov.", "This account will own or use connected energy systems.")</p>
+            </div>
+            <div class="ob-signal">
+                <span>@T("Systémy", "Systems")</span>
+                <strong>@Model.ConnectedSystemsCount</strong>
+                <p>@(Model.HasPrimarySystem
+                    ? T($"Hlavný systém: {Model.PrimarySystemName}", $"Primary system: {Model.PrimarySystemName}")
+                    : T("Zatiaľ nie je nastavený hlavný systém.", "No primary system is selected yet."))</p>
+            </div>
+        </aside>
+    </header>
+
+    <section class="ob-progress" aria-label="@T("Priebeh nastavenia", "Setup progress")">
+        <article class="ob-progress-card is-done">
+            <span>01</span>
+            <strong>@T("Účet existuje", "Account exists")</strong>
+            <small>@T("Login je pripravený. Teraz mu dáme zrozumiteľný názov.", "Login is ready. Now we give it a readable name.")</small>
+        </article>
+        <article class="ob-progress-card @(Model.HasPrimarySystem ? "is-done" : string.Empty)">
+            <span>02</span>
+            <strong>@T("Systém", "System")</strong>
+            <small>@(Model.HasPrimarySystem
+                ? T("Energetický systém je priradený.", "Energy system is assigned.")
+                : T("Pripojenie systému je ďalší odporúčaný krok.", "System pairing is the next recommended step."))</small>
+        </article>
+        <article class="ob-progress-card">
+            <span>03</span>
+            <strong>@T("Dashboard", "Dashboard")</strong>
+            <small>@T("Po dokončení sa otvorí pracovné prostredie s dátami a grafmi.", "After setup, the workspace opens with data and charts.")</small>
+        </article>
+    </section>
+
+    <div class="ob-workspace">
+        <article class="ob-panel" id="onboarding-form">
+            <div class="ob-panel__head">
+                <span class="ob-eyebrow">@T("Nastavenie účtu", "Account setup")</span>
+                <h2>@T("Pomenuj workspace a vyber ďalší krok", "Name the workspace and choose the next step")</h2>
+                <p>@T("Názov sa zobrazí v navigácii a pomôže rozlíšiť, kto alebo čo účet reprezentuje.", "The name appears in navigation and helps identify who or what the account represents.")</p>
+            </div>
+
+            <form method="post" class="ob-form">
+                <div asp-validation-summary="All" class="validation-summary"></div>
+
+                <div class="ob-field">
+                    <label asp-for="Input.DisplayName">@T("Názov pracovného priestoru", "Workspace name")</label>
+                    <input asp-for="Input.DisplayName" type="text" autocomplete="name" placeholder="@T("Napríklad Dom Lukačka alebo Pavol Lukačka", "For example Lukacka home or Pavol Lukacka")" />
+                    <small>@T("Použi názov, ktorý bude jasný aj o mesiac neskôr.", "Use a name that will still make sense a month from now.")</small>
+                    <span asp-validation-for="Input.DisplayName" class="ob-validation"></span>
+                </div>
+
+                <div class="ob-field">
+                    <label>@T("Prihlásený e-mail", "Signed-in email")</label>
+                    <input value="@Model.UserEmail" disabled />
+                </div>
+
+                <div class="ob-field">
+                    <label>@T("Ako chceš pokračovať?", "How do you want to continue?")</label>
+                    <div class="ob-choice-grid">
+                        <label class="ob-choice">
+                            <span>
+                                <strong>@T("Pripojiť systém teraz", "Connect a system now")</strong>
+                                <small>@T("Najlepšie, ak už máš sériové číslo, systémové heslo a chceš hneď živý dashboard.", "Best if you already have the serial number, system password, and want a live dashboard immediately.")</small>
+                            </span>
+                            <input type="radio" asp-for="Input.ConnectNow" value="true" />
+                        </label>
+                        <label class="ob-choice">
+                            <span>
+                                <strong>@T("Preskočiť pripojenie zatiaľ", "Skip system pairing for now")</strong>
+                                <small>@T("Uložíme názov účtu a otvoríme Ako začať. Dashboard bude čakať, kým pripojíš reálny systém.", "We save the account name and open Getting started. The dashboard will wait until a real system is connected.")</small>
+                            </span>
+                            <input type="radio" asp-for="Input.ConnectNow" value="false" />
+                        </label>
+                    </div>
+                </div>
+
+                <div class="ob-hint">
+                    <strong>@T("Malá logická zmena", "A small logic improvement")</strong>
+                    <p>@T("Onboarding sa nebude považovať za hotový, kým nebude existovať reálny priradený systém. Ak pripojenie preskočíš, uložíme názov a pošleme ťa na Ako začať.", "Onboarding will not be considered complete until a real assigned system exists. If you skip pairing, we save the name and send you to Getting started.")</p>
+                </div>
+
+                <button type="submit" class="ob-button ob-button--primary">@T("Pokračovať", "Continue")</button>
+            </form>
+        </article>
+
+        <div class="ob-stack">
+            <article class="ob-panel">
+                <div class="ob-panel__head">
+                    <span class="ob-eyebrow">@T("Čo sa deje potom", "What happens next")</span>
+                    <h2>@T("Tri vrstvy prvého spustenia", "Three layers of first launch")</h2>
+                    <p>@T("Onboarding nie je len pekná obrazovka. Určuje, či aplikácia pozná používateľa, systém a predvolený dátový kontext.", "Onboarding is not just a pretty screen. It determines whether the app knows the user, the system, and the default data context.")</p>
+                </div>
+
+                <div class="ob-timeline">
+                    <div class="ob-step">
+                        <span class="ob-step__number">01</span>
+                        <div>
+                            <h3>@T("Účet dostane meno", "The account gets a name")</h3>
+                            <p>@T("Navigácia, admin pohľad a používateľské workflow prestanú pracovať s anonymným loginom.", "Navigation, admin views, and user workflows stop working with an anonymous login.")</p>
+                        </div>
+                    </div>
+                    <div class="ob-step">
+                        <span class="ob-step__number">02</span>
+                        <div>
+                            <h3>@T("Systém sa priradí k používateľovi", "The system gets assigned to the user")</h3>
+                            <p>@T("Sériové číslo vytvorí väzbu medzi databázou, firmware nodmi a dashboardom.", "The serial number links the database, firmware nodes, and dashboard.")</p>
+                        </div>
+                    </div>
+                    <div class="ob-step">
+                        <span class="ob-step__number">03</span>
+                        <div>
+                            <h3>@T("Dashboard dostane reálny kontext", "The dashboard gets real context")</h3>
+                            <p>@T("Po pripojení systému môže aplikácia načítať live tok, denné KPI, históriu a telemetriu.", "After system pairing, the app can load live flow, daily KPI, history, and telemetry.")</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <section class="ob-card-grid" aria-label="@T("Čo onboarding odomkne", "What onboarding unlocks")">
+                <article class="ob-card ob-card--accent">
+                    <span class="ob-eyebrow">@T("Monitoring", "Monitoring")</span>
+                    <h3>@T("Live energia na jednej obrazovke", "Live energy on one screen")</h3>
+                    <p>@T("FV, domácnosť, batéria, sieť a WattRouter sa zobrazia ako jeden pracovný kontext.", "PV, home, battery, grid, and WattRouter appear as one workspace context.")</p>
+                </article>
+                <article class="ob-card">
+                    <span class="ob-eyebrow">@T("Nástroje", "Tools")</span>
+                    <h3>@T("Návrh pred rozhodnutím", "Design before deciding")</h3>
+                    <p>@T("Používateľ môže prejsť na návrh FV, TČ alebo analýzu 15-minútových dát.", "The user can move into PV design, heat pump design, or 15-minute data analysis.")</p>
+                </article>
+                <article class="ob-card">
+                    <span class="ob-eyebrow">@T("Podpora", "Support")</span>
+                    <h3>@T("Menej nejasností pre admina", "Less ambiguity for admin")</h3>
+                    <p>@T("Keď účet má meno a systém, administrácia vie rýchlejšie pochopiť, komu dáta patria.", "When the account has a name and a system, admin can understand faster who the data belongs to.")</p>
+                </article>
+            </section>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

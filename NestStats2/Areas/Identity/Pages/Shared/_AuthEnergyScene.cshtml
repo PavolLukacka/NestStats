@@ -1,0 +1,73 @@
+@* Day/night energy cycle: solar panels on house → inverter → battery, scrubable timeline *@
+<div class="pv-visual" aria-hidden="true">
+
+    <div class="pvs-sky"></div>
+
+    <div class="pvs-sun">
+        <div class="pvs-sun__rays"></div>
+    </div>
+    <div class="pvs-moon"></div>
+    <div class="pvs-stars">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="pvs-cloud"></div>
+
+    <div class="pvs-ground"></div>
+
+    <figure class="pvs-house">
+        <img class="pvs-house__img" src="/house.png" alt="" />
+        <span class="pvs-house__shine"></span>
+        <span class="pvs-house__glow"></span>
+    </figure>
+
+    <div class="pvs-slogans">
+        <span>Live solar insights</span>
+        <span>Smarter surplus control</span>
+        <span>Battery-ready automation</span>
+        <span>Every sunny kWh counts</span>
+    </div>
+
+    <div class="pvs-inverter">
+        <div class="pvs-inverter__screen">
+            <span class="pvs-inverter__mode">SOLAR</span>
+            <span class="pvs-inverter__kw">-- kW</span>
+        </div>
+        <span class="pvs-inverter__led"></span>
+        <span class="pvs-inverter__label">Inverter</span>
+    </div>
+
+    <div class="pvs-battery">
+        <div class="pvs-battery__cap"></div>
+        <div class="pvs-battery__body">
+            <div class="pvs-battery__fill"></div>
+            <span class="pvs-battery__bolt"></span>
+        </div>
+        <span class="pvs-battery__label">Battery</span>
+    </div>
+
+    <div class="pvs-flow pvs-flow--solar"><span></span><span></span></div>
+    <div class="pvs-flow pvs-flow--charge"><span></span><span></span></div>
+    <div class="pvs-flow pvs-flow--night"><span></span><span></span></div>
+
+    <div class="pvs-timeline js-pv-cycle-bar"
+         role="slider"
+         aria-label="Day / night cycle"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+         tabindex="0">
+        <span class="pvs-timeline__bg"></span>
+        <div class="pvs-timeline__inner">
+            <div class="pvs-timeline__icons">
+                <span style="--i:3%">🌅</span>
+                <span style="--i:17%">☀️</span>
+                <span style="--i:44%">🌆</span>
+                <span style="--i:70%">🌙</span>
+            </div>
+            <div class="pvs-timeline__track js-pv-cycle-track">
+                <div class="pvs-timeline__fill js-pv-cycle-fill"></div>
+                <div class="pvs-timeline__thumb js-pv-cycle-head"></div>
+            </div>
+        </div>
+    </div>
+
+</div>

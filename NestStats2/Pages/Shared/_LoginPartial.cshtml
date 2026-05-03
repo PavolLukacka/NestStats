@@ -1,0 +1,31 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using NestStats2.Models
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    var signedIn = SignInManager.IsSignedIn(User);
+    var currentUser = signedIn ? await UserManager.GetUserAsync(User) : null;
+    var displayName = currentUser?.DisplayName ?? currentUser?.Email ?? User.Identity?.Name ?? "Používateľ";
+}
+
+<ul class="identity-partial">
+    @if (signedIn)
+    {
+        <li class="identity-partial__user">@displayName</li>
+        <li>
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index")" method="post">
+                <button type="submit" class="button button--ghost">Odhlásiť sa</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li>
+            <a class="button button--ghost" asp-area="Identity" asp-page="/Account/Login">Prihlásiť sa</a>
+        </li>
+        <li>
+            <a class="button button--primary" asp-area="Identity" asp-page="/Account/Register">Vytvoriť účet</a>
+        </li>
+    }
+</ul>

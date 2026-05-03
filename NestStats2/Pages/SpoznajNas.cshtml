@@ -1,0 +1,729 @@
+@page "/spoznaj-nas"
+@{
+    ViewData["LandingLangOnly"] = true;
+    var signedIn = User?.Identity?.IsAuthenticated == true;
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    var slovakPageUrl = "/spoznaj-nas";
+    var englishPageUrl = "/about-us";
+    var workspaceUrl = Url.Page("/Index") ?? "/";
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+    string Img(string sk, string en) => isEnglish ? en : sk;
+    ViewData["Title"] = T("Spoznaj nás", "Meet NestStats");
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/spoznaj-nas.css" asp-append-version="true" />
+}
+
+<section class="ns-landing">
+
+    <header class="ns-topbar">
+        <a class="ns-brand" href="@(isEnglish ? englishPageUrl : slovakPageUrl)" aria-label="NestStats">
+            <span class="ns-brand__mark" aria-hidden="true">
+                <img src="~/logo.png" alt="" asp-append-version="true" />
+            </span>
+            <strong>NestStats</strong>
+        </a>
+
+        <nav class="ns-nav" aria-label="Landing navigation">
+            <a href="@workspaceUrl">Workspace</a>
+            <a href="#produkt">@T("Produkt", "Product")</a>
+            <a href="#pre-koho">@T("Pre koho", "For whom")</a>
+            <a href="#funkcie">@T("Funkcie", "Features")</a>
+            <a href="#porovnanie">@T("Porovnanie", "Comparison")</a>
+            <a href="https://github.com/PavolLukacka/NestStats" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+
+        <div class="ns-topbar__lang" aria-label="@T("Výber jazyka", "Language selector")">
+            <a class="@(!isEnglish ? "is-active" : string.Empty)" href="@slovakPageUrl" aria-label="@T("Prepnúť na slovenčinu", "Switch to Slovak")">
+                <img src="~/SK.svg" alt="" asp-append-version="true" />
+                <span>SK</span>
+            </a>
+            <a class="@(isEnglish ? "is-active" : string.Empty)" href="@englishPageUrl" aria-label="@T("Prepnúť do angličtiny", "Switch to English")">
+                <img src="~/EN.svg" alt="" asp-append-version="true" />
+                <span>EN</span>
+            </a>
+        </div>
+    </header>
+
+    <section class="ns-hero" id="produkt">
+        <div class="ns-hero__copy">
+            <h1>
+                @T("Staviame softvér pre ľudí, ktorí chcú mať energiu", "We build software for people who want real control over")
+                <span>@T("pod kontrolou.", "energy.")</span>
+            </h1>
+
+            <p class="ns-hero__lead">
+                @T(
+                    "NestStats prepája live monitoring, lokálne riadenie a odporúčania do jedného pracovného priestoru. Nie je to len dashboard. Pomáha pochopiť výrobu, spotrebu, batériu, sieť, WattRouter aj ďalší najlepší krok.",
+                    "NestStats connects live monitoring, local control, and recommendations into one workspace. It is not just a dashboard. It helps you understand generation, consumption, battery behavior, grid flow, WattRouter, and the next best action."
+                )
+            </p>
+
+            <div class="ns-hero__actions">
+                @if (signedIn)
+                {
+                    <a class="ns-button ns-button--primary" asp-page="/Index">
+                        <span aria-hidden="true">⚡</span>
+                        @T("Otvoriť workspace", "Open workspace")
+                    </a>
+                }
+                else
+                {
+                    <a class="ns-button ns-button--primary" asp-area="Identity" asp-page="/Account/Register">
+                        <span aria-hidden="true">⚡</span>
+                        @T("Vyskúšať NestStats", "Try NestStats")
+                    </a>
+                }
+
+                <a class="ns-button ns-button--secondary" href="https://github.com/PavolLukacka/NestStats" target="_blank" rel="noopener noreferrer">
+                    <span aria-hidden="true">●</span>
+                    @T("Pozrieť na GitHub", "View on GitHub")
+                </a>
+            </div>
+        </div>
+
+        <div class="ns-hero__visual" aria-label="NestStats dashboard preview">
+            <div class="ns-dashboard-shell">
+                <aside class="ns-dash-sidebar">
+                    <div class="ns-dash-logo">
+                        <span class="ns-mini-mark"></span>
+                        <strong>NestStats</strong>
+                    </div>
+
+                    <nav>
+                        <span class="is-active">⌂ @T("Prehľad", "Overview")</span>
+                        <span>▣ Dashboard</span>
+                        <span>⌁ @T("Grafy", "Charts")</span>
+                        <span>◈ @T("Zariadenia", "Devices")</span>
+                        <span>⚙ @T("Automatizácie", "Automation")</span>
+                        <span>⌁ WattRouter</span>
+                        <span>◌ @T("Diagnostika", "Diagnostics")</span>
+                        <span>◇ @T("Systém", "System")</span>
+                    </nav>
+
+                    <div class="ns-dash-online">
+                        <i></i>
+                        <span>@T("Online", "Online")</span>
+                    </div>
+                </aside>
+
+                <div class="ns-dash-main">
+                    <div class="ns-dash-top">
+                        <div>
+                            <strong>@T("Energia v čase", "Energy over time")</strong>
+                            <span>@T("Lokálne dáta · interval 10:23", "Local data · interval 10:23")</span>
+                        </div>
+                        <button type="button">@T("Dnes", "Today")</button>
+                    </div>
+
+                    <div class="ns-metric-grid">
+                        <article class="ns-metric">
+                            <span>@T("FV výkon", "PV output")</span>
+                            <strong>4.83 kW</strong>
+                            <small class="up">+12%</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>@T("Spotreba", "Consumption")</span>
+                            <strong>1.48 kW</strong>
+                            <small>stable</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>@T("Prebytok", "Surplus")</span>
+                            <strong>3.35 kW</strong>
+                            <small class="up">@T("riadiť", "control")</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>@T("Batéria", "Battery")</span>
+                            <strong>80%</strong>
+                            <small>2.8 kW</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>@T("Sieť", "Grid")</span>
+                            <strong>4.76 kW</strong>
+                            <small>@T("import", "import")</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>Export</span>
+                            <strong>4.76 kW</strong>
+                            <small class="warn">peak</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>SOC</span>
+                            <strong>100%</strong>
+                            <small>@T("plné", "full")</small>
+                        </article>
+                        <article class="ns-metric">
+                            <span>WattRouter</span>
+                            <strong>35%</strong>
+                            <small>2 SSR</small>
+                        </article>
+                    </div>
+
+                    <article class="ns-chart-card">
+                        <div class="ns-card-head">
+                            <div>
+                                <strong>@T("Tok energie", "Energy flow")</strong>
+                                <span>@T("Výroba · spotreba · prebytok · batéria", "PV · consumption · surplus · battery")</span>
+                            </div>
+                            <div class="ns-legend">
+                                <i class="pv"></i><span>FV</span>
+                                <i class="home"></i><span>@T("Dom", "Home")</span>
+                                <i class="export"></i><span>Export</span>
+                            </div>
+                        </div>
+
+                        <div class="ns-chart" aria-hidden="true">
+                            <div class="ns-chart__grid"></div>
+                            <svg viewBox="0 0 640 220" preserveAspectRatio="none">
+                                <path class="area area-export" d="M0 180 C80 170 115 160 160 145 C220 118 260 100 300 82 C330 68 355 35 376 64 C392 86 410 130 450 145 C520 169 580 176 640 162 L640 220 L0 220 Z" />
+                                <path class="line line-pv" d="M0 180 C80 170 115 160 160 145 C220 118 260 100 300 82 C330 68 355 35 376 64 C392 86 410 130 450 145 C520 169 580 176 640 162" />
+                                <path class="line line-home" d="M0 150 C40 130 70 160 110 142 C150 125 185 151 230 136 C270 122 300 141 330 118 C370 92 410 132 450 118 C500 102 540 138 580 124 C610 114 625 130 640 122" />
+                                <path class="line line-battery" d="M0 188 C70 186 130 182 195 176 C260 165 310 145 360 126 C410 112 480 146 540 164 C585 178 615 176 640 170" />
+                            </svg>
+                        </div>
+                    </article>
+
+                    <div class="ns-status-grid">
+                        <article>
+                            <strong>@T("Riadenie a stav", "Control and state")</strong>
+                            <ul>
+                                <li><span></span> Boiler <b>2.1 kW</b></li>
+                                <li><span></span> TUV <b>1.2 kW</b></li>
+                                <li><span></span> EV @T("nabíjačka", "charger") <b>0.0 kW</b></li>
+                            </ul>
+                        </article>
+                        <article>
+                            <strong>@T("Aktuálne podmienky", "Current conditions")</strong>
+                            <div class="ns-weather-row">
+                                <span>☁ 15.2 °C</span>
+                                <span>70%</span>
+                                <span>9 km/h</span>
+                                <span>17 °C</span>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="ns-section ns-section--compact">
+        <div class="ns-section__title">
+            <h2>@T("Kde bežné energetické aplikácie prestávajú stačiť", "Where typical energy apps stop being useful")</h2>
+        </div>
+
+        <div class="ns-problem-grid">
+            <article class="ns-problem-card">
+                <span class="ns-icon ns-icon--green">▥</span>
+                <strong>@T("Veľa čísel, málo odpovedí", "Lots of numbers, few answers")</strong>
+                <p>@T("Vidíte výkon, SOC a grafy, ale stále musíte sami zistiť, či systém funguje dobre a čo spraviť ďalej.", "You can see power, SOC, and charts, but you still have to work out whether the system is healthy and what to do next.")</p>
+                <i>×</i>
+            </article>
+
+            <article class="ns-problem-card">
+                <span class="ns-icon ns-icon--blue">☷</span>
+                <strong>@T("Riadenie je oddelené", "Control is separated")</strong>
+                <p>@T("Monitoring je v jednej aplikácii, pravidlá v druhej a relé v ďalšom systéme. Keď niečo nesedí, hľadanie chyby trvá zbytočne dlho.", "Monitoring sits in one app, rules in another, and relays somewhere else. When something looks wrong, finding the cause takes too long.")</p>
+                <i>×</i>
+            </article>
+
+            <article class="ns-problem-card">
+                <span class="ns-icon ns-icon--blue">☁</span>
+                <strong>@T("Prílišná závislosť od cloudu", "Too much cloud dependency")</strong>
+                <p>@T("Ak internet alebo externá služba vypadne, nemá trpieť prehľad o dome ani základné riadenie prebytkov.", "If the internet or an external service goes down, the home view and basic surplus control should not fall apart.")</p>
+                <i>×</i>
+            </article>
+
+            <article class="ns-problem-card">
+                <span class="ns-icon ns-icon--gold">⌁</span>
+                <strong>@T("Tok energie nie je jasný", "Energy flow is hard to read")</strong>
+                <p>@T("Majiteľ potrebuje rýchlo pochopiť, čo vyrába FV, čo berie dom, čo ide do siete a čo práve využíva WattRouter.", "A homeowner needs to quickly understand what PV is producing, what the home is using, what goes to the grid, and what the WattRouter is capturing.")</p>
+                <i>×</i>
+            </article>
+        </div>
+    </section>
+
+    <section class="ns-section" id="funkcie">
+        <div class="ns-section__title">
+            <h2>@T("Čo NestStats dáva do jedného pracovného priestoru", "What NestStats brings into one workspace")</h2>
+            <p>@T("Live dáta, tok energie, predikcie, odporúčania a lokálne riadenie sú na jednom mieste. Menej prepínania, viac jasných rozhodnutí.", "Live data, energy flow, forecasts, recommendations, and local control live in one place. Less switching, clearer decisions.")</p>
+        </div>
+
+        <div class="ns-feature-grid">
+            <article class="ns-feature-card">
+                <div><span>01</span><i>⌁</i></div>
+                <h3>@T("Live stav bez hádania", "Live status without guessing")</h3>
+                <p>@T("FV pole, menič, dom, batéria, sieť a WattRouter sú čitateľné spolu, nie ako izolované čísla bez vysvetlenia.", "PV, inverter, home, battery, grid, and WattRouter are readable together, not as isolated numbers without explanation.")</p>
+            </article>
+
+            <article class="ns-feature-card">
+                <div><span>02</span><i>☷</i></div>
+                <h3>@T("Prebytky pod kontrolou", "Surplus under control")</h3>
+                <p>@T("WattRouter, bojler, TUV alebo EV nabíjanie dostanú kontext: koľko energie je navyše, čo robí batéria a či sa neoplatí čakať.", "WattRouter, boiler, hot water, or EV charging get context: how much surplus exists, what the battery is doing, and whether it is better to wait.")</p>
+            </article>
+
+            <article class="ns-feature-card">
+                <div><span>03</span><i>⌂</i></div>
+                <h3>@T("Dom ako jeden systém", "The home as one system")</h3>
+                <p>@T("NestStats ukáže, ako spolu súvisí výroba, odber, export, import a batéria. Vďaka tomu je jednoduchšie vysvetliť aj zložitejší deň.", "NestStats shows how production, load, export, import, and battery behavior connect. That makes even a complex day easier to explain.")</p>
+            </article>
+
+            <article class="ns-feature-card">
+                <div><span>04</span><i>✦</i></div>
+                <h3>@T("Pohľad dopredu", "A look ahead")</h3>
+                <p>@T("Počasie, odhad výroby a večerný import pomáhajú naplánovať spotrebu skôr, než sa prebytok stratí alebo príde drahý odber zo siete.", "Weather, production estimates, and evening import risk help plan consumption before surplus is wasted or expensive grid draw arrives.")</p>
+            </article>
+        </div>
+
+        <div class="ns-feature-showcase" aria-label="@T("Ukážky funkcií v aplikácii", "Feature screenshots from the app")">
+            <article class="ns-showcase-card">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Live prehľad", "Live overview")</span>
+                    <h3>@T("Jedna obrazovka pre rýchlu kontrolu systému", "One screen for a quick system check")</h3>
+                    <p>@T("Na prvý pohľad vidíte, či dáta prichádzajú, koľko vyrába FV pole, koľko berie dom, čo robí batéria a ako veľmi pracuje WattRouter. Nie je potrebné skladať odpoveď z viacerých grafov.", "At a glance, you see whether data is fresh, how much PV is producing, what the home is using, what the battery is doing, and how hard the WattRouter is working. You do not need to piece the answer together from several charts.")</p>
+                    <ul>
+                        <li>@T("Stav systému, batérie a dát na jednom mieste", "System, battery, and data status in one place")</li>
+                        <li>@T("Jasné rozdelenie výroby, spotreby, siete a prebytkov", "Clear split of production, consumption, grid, and surplus")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("indexquality_livesnapshot_energetickyrozpocet.png", "EN verzie/indexquality_livesnapshot_energetickyrozpocet_en.png")" alt="@T("NestStats live snapshot, system health score and energy budget screenshot", "NestStats live snapshot, system health score, and energy budget screenshot")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card ns-showcase-card--reverse ns-showcase-card--wide-media">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Tok energie", "Energy flow")</span>
+                    <h3>@T("Kam energia práve ide", "Where the energy is going right now")</h3>
+                    <p>@T("Tok energie prekladá technické merania do jednoduchej mapy. Vidíte FV pole, menič, dom, batériu, sieť aj WattRouter a hneď je jasné, či systém vyrába, exportuje, nabíja alebo odoberá.", "Energy flow turns technical measurements into a simple map. You see PV, inverter, home, battery, grid, and WattRouter, so it is immediately clear whether the system is producing, exporting, charging, or drawing power.")</p>
+                    <ul>
+                        <li>@T("Zrozumiteľné aj bez technického slovníka", "Understandable without technical vocabulary")</li>
+                        <li>@T("Rýchla kontrola, či dom, sieť a WattRouter dávajú zmysel", "Fast check that home, grid, and WattRouter values make sense")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("liveflow.png", "EN verzie/liveflow_en.png")" alt="@T("NestStats live energy flow diagram screenshot", "NestStats live energy flow diagram screenshot")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Predikcia", "Forecasting")</span>
+                    <h3>@T("Plánovanie podľa počasia a očakávanej výroby", "Planning around weather and expected production")</h3>
+                    <p>@T("Predikcia ukazuje, koľko môže fotovoltika vyrobiť dnes a zajtra a čo s tým spraviť. Pomáha načasovať ohrev vody, spotrebiče alebo nabíjanie tak, aby sa energia využila doma.", "The forecast shows how much PV may produce today and tomorrow and what that means in practice. It helps time water heating, appliances, or charging so more energy is used at home.")</p>
+                    <ul>
+                        <li>@T("Odhad kWh, špičky výkonu a priebehu dňa", "Estimated kWh, peak output, and daily shape")</li>
+                        <li>@T("Počasie vysvetľuje, prečo sa očakávanie mení", "Weather explains why the expectation changes")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("productionprediction.png", "EN verzie/productionprediction_en.png")" alt="@T("NestStats weather and PV production forecast screenshot", "NestStats weather and PV production forecast screenshot")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card ns-showcase-card--reverse">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Odporúčania", "Recommendations")</span>
+                    <h3>@T("Konkrétne ďalšie kroky", "Concrete next steps")</h3>
+                    <p>@T("NestStats neostáva pri upozornení. Z aktuálneho výkonu, exportu, batérie a predikcie poskladá odporúčanie, napríklad presunúť spotrebu do solárneho okna alebo chrániť večernú rezervu batérie.", "NestStats does not stop at an alert. It uses current output, export, battery state, and forecast to suggest a next step, such as moving load into the solar window or protecting the evening battery reserve.")</p>
+                    <ul>
+                        <li>@T("Krátke vysvetlenie, prečo odporúčanie vzniklo", "Short explanation of why the recommendation appeared")</li>
+                        <li>@T("Praktické kroky namiesto všeobecných hlášok", "Practical steps instead of generic messages")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("actions.png", "EN verzie/actions_en.png")" alt="@T("NestStats action recommendations screenshot", "NestStats action recommendations screenshot")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("História a štatistiky", "History and statistics")</span>
+                    <h3>@T("Čo sa stalo dnes, tento týždeň a v trende", "What happened today, this week, and over time")</h3>
+                    <p>@T("História ukáže výrobu, spotrebu, import, export a sebestačnosť v súvislostiach. Namiesto samostatných tabuliek vidíte, či sa systém zlepšuje, kedy bol najsilnejší deň a ako často ešte potreboval sieť.", "History shows production, consumption, import, export, and self-sufficiency in context. Instead of disconnected tables, you see whether the system is improving, when the best day happened, and how often it still needed the grid.")</p>
+                    <ul>
+                        <li>@T("Denné výsledky bez ručného počítania", "Daily results without manual calculation")</li>
+                        <li>@T("Trendy, ktoré sa dajú vysvetliť majiteľovi domu", "Trends that can be explained to a homeowner")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("graphs9.png", "EN verzie/graphs9_en.png")" alt="@T("NestStats snímka denných výsledkov a štatistík za obdobie", "NestStats daily results and period statistics screenshot")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card ns-showcase-card--reverse ns-showcase-card--wide-media">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Štatistická analýza", "Statistical analysis")</span>
+                    <h3>@T("Keď treba ísť hlbšie do čísel", "When you need to go deeper into the numbers")</h3>
+                    <p>@T("Pre technickú kontrolu sú dostupné minimá, priemery, maximá a percentily výkonu, spotreby, batérie aj siete. Pomáhajú odhaliť špičky, slabé dni, nevyrovnané fázy alebo nezvyčajné správanie batérie.", "For technical checks, you get minimums, averages, maximums, and percentiles for power, consumption, battery, and grid values. They help reveal peaks, weak days, phase imbalance, or unusual battery behavior.")</p>
+                    <ul>
+                        <li>@T("Rýchle porovnanie bežného a extrémneho správania", "Quick comparison of normal and extreme behavior")</li>
+                        <li>@T("Technické metriky bez exportu do tabuľky", "Technical metrics without exporting to a spreadsheet")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("statisticalanalysis.png", "EN verzie/statisticalanalysis_en.png")" alt="@T("NestStats štatistická analýza FV, spotreby, batérie a siete", "NestStats statistical analysis of PV output, consumption, battery SOC, and grid")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Inteligentné riadenie", "Intelligent control")</span>
+                    <h3>@T("Skoré upozornenia pred problémom", "Early warnings before a problem grows")</h3>
+                    <p>@T("Prediktívna vrstva sleduje očakávaný prebytok, import, stav batérie a anomálie v správaní systému. Ak niečo vyzerá neefektívne, ukáže to včas a navrhne praktický zásah.", "The predictive layer watches expected surplus, import, battery state, and anomalies in system behavior. If something looks inefficient, it surfaces it early and suggests a practical intervention.")</p>
+                    <ul>
+                        <li>@T("Odhad prebytku a rizika importu dopredu", "Surplus and import-risk estimate ahead of time")</li>
+                        <li>@T("Anomálie vysvetlené ako prevádzkový problém, nie iba číslo", "Anomalies explained as operational issues, not just numbers")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("predictive.png", "EN verzie/predictive_en.png")" alt="@T("NestStats prediktívna vrstva a prevádzkový dohľad anomálií", "NestStats predictive layer and operational anomaly monitoring")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card ns-showcase-card--reverse">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Predikcia importu", "Import prediction")</span>
+                    <h3>@T("Bude večer stačiť batéria?", "Will the battery be enough tonight?")</h3>
+                    <p>@T("Večerná predikcia prekladá SOC, očakávanú spotrebu a zvyšnú výrobu do jednoduchého rizika importu. Pomáha rozhodnúť, či ešte púšťať veľké odbery, alebo si nechať rezervu na noc.", "The evening forecast turns SOC, expected consumption, and remaining production into a simple import-risk view. It helps decide whether to run large loads or keep reserve for the night.")</p>
+                    <ul>
+                        <li>@T("Odhad dostupnej energie pred večernou špičkou", "Estimated available energy before the evening peak")</li>
+                        <li>@T("Jasný odhad možného importu v kWh", "Clear estimate of possible import in kWh")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("predictions.png", "EN verzie/predictions_en.png")" alt="@T("NestStats predikcia rizika večerného importu zo siete", "NestStats evening grid import risk prediction")" asp-append-version="true" />
+                </figure>
+            </article>
+
+            <article class="ns-showcase-card">
+                <div class="ns-showcase-copy">
+                    <span class="ns-showcase-copy__eyebrow">@T("Denný príbeh", "Daily story")</span>
+                    <h3>@T("Energetický deň povedaný normálnou rečou", "The energy day explained in plain language")</h3>
+                    <p>@T("Denný príbeh zhrnie, koľko systém vyrobil, koľko dom spotreboval, koľko energie odišlo do siete a aká bola sebestačnosť. Je to rýchly komentár pre človeka, nie len ďalšia tabuľka.", "The daily story summarizes how much the system produced, how much the home used, how much went to the grid, and how self-sufficient the home was. It is a quick human-readable note, not another table.")</p>
+                    <ul>
+                        <li>@T("Krátke zhrnutie dňa bez ručného čítania grafov", "Short daily summary without manually reading charts")</li>
+                        <li>@T("Výroba, spotreba, export a sebestačnosť v jednej vete", "Production, consumption, export, and self-sufficiency in one narrative")</li>
+                    </ul>
+                </div>
+                <figure class="ns-showcase-media">
+                    <img src="~/lib/appscreenshots/@Img("spotplusstory.png", "EN verzie/spotplusstory_en.png")" alt="@T("NestStats OKTE spot ceny a denný energetický príbeh", "NestStats OKTE spot prices and daily energy story")" asp-append-version="true" />
+                </figure>
+            </article>
+        </div>
+    </section>
+
+    <section class="ns-section" id="grafy">
+        <div class="ns-section__title">
+            <h2>@T("Grafy pre kontrolu, servis aj vysvetlenie", "Charts for checking, service, and explanation")</h2>
+            <p>@T("Keď nestačí rýchly prehľad, NestStats otvorí detail: FV trackery, batériu, AC fázy, sieť, WattRouter aj ekologický dopad systému.", "When the quick overview is not enough, NestStats opens the detail: PV trackers, battery, AC phases, grid, WattRouter, and the system's environmental impact.")</p>
+        </div>
+
+        <article class="ns-graph-card ns-graph-card--featured">
+            <figure>
+                <img src="~/lib/appscreenshots/@Img("prehlad_vykonu.png", "EN verzie/prehlad_vykonu_en.png")" alt="@T("Prehľad výkonu – hlavný graf dashboardu", "Performance overview – main dashboard chart")" asp-append-version="true" />
+            </figure>
+            <div class="ns-graph-card__copy">
+                <span class="ns-graph-card__eyebrow">@T("Hlavný graf dashboardu", "Main dashboard chart")</span>
+                <h4>@T("Prehľad výkonu", "Performance overview")</h4>
+                <p>@T("Hlavný graf ukáže celý energetický deň v jednom pohľade: výrobu FV, odber domu, batériu, import aj export. Je to prvé miesto, kde vidno, či systém pracoval plynulo alebo mal špičky.", "The main chart shows the whole energy day in one view: PV production, home load, battery, import, and export. It is the first place to see whether the system ran smoothly or had spikes.")</p>
+            </div>
+        </article>
+
+        <div class="ns-env-intro">
+            <div class="ns-env-intro__head">
+                <span class="ns-graph-card__eyebrow">@T("Environmentálny dopad", "Environmental impact")</span>
+                <h3>@T("Ekologický dopad v zrozumiteľných jednotkách", "Environmental impact in understandable units")</h3>
+                <p>@T("Aplikácia prepočíta vyrobenú energiu na úsporu CO₂, ekvivalent uhlia a počet ušetrených stromov. Majiteľ tak nevidí len kWh, ale aj dlhodobý dopad systému.", "The app converts produced energy into CO₂ savings, coal equivalent, and trees saved. The owner sees not only kWh, but also the long-term impact of the system.")</p>
+                <div class="ns-env-stats">
+                    <div class="ns-env-stat"><span>@T("CO₂ za deň", "CO₂ per day")</span></div>
+                    <div class="ns-env-stat"><span>@T("CO₂ za mesiac", "CO₂ per month")</span></div>
+                    <div class="ns-env-stat"><span>@T("CO₂ za rok", "CO₂ per year")</span></div>
+                    <div class="ns-env-stat"><span>@T("CO₂ od spustenia", "CO₂ since start")</span></div>
+                    <div class="ns-env-stat"><span>@T("Ekvivalent uhlia", "Coal equivalent")</span></div>
+                    <div class="ns-env-stat"><span>@T("Ušetrené stromy", "Trees saved")</span></div>
+                </div>
+            </div>
+            <figure class="ns-env-intro__figure">
+                <img src="~/lib/appscreenshots/@Img("graphs8.png", "EN verzie/graphs8_en.png")" alt="@T("Environmentálny dopad CO2 uhlie stromy a ekologický trend", "Environmental impact CO2 coal trees and ecological trend")" asp-append-version="true" />
+            </figure>
+        </div>
+
+        <div class="ns-graphs-pair">
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs0.png", "EN verzie/graphs0_en.png")" alt="@T("FV výkon a saturácia – živý výkon a percentuálne využitie inštalácie", "PV power and saturation – live output and utilisation percentage of the installation")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("Solárna produkcia", "Solar production")</span>
+                    <h4>@T("FV výkon a saturácia", "PV power and saturation")</h4>
+                    <p>@T("Graf ukáže aktuálny aj špičkový výkon FV poľa a percentuálne využitie inštalácie. Pomáha rýchlo rozoznať, či bol deň slabý pre počasie, alebo či je problém v samotnom systéme.", "The chart shows current and peak PV output and the installation utilization percentage. It helps distinguish a weak weather day from a possible system issue.")</p>
+                </div>
+            </article>
+
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs1.png", "EN verzie/graphs1_en.png")" alt="@T("Smer a objem siete – import a export voči distribučnej sieti", "Grid direction and volume – import and export against the distribution grid")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("Import / Export", "Import / Export")</span>
+                    <h4>@T("Smer a objem siete", "Grid direction and volume")</h4>
+                    <p>@T("Tento graf ukáže, kedy dom bral energiu zo siete a kedy do nej posielal prebytok. Je užitočný pri hľadaní špičiek, nečakaného importu alebo nevyužitého exportu.", "This chart shows when the home drew power from the grid and when it sent surplus back. It is useful for finding peaks, unexpected import, or unused export.")</p>
+                </div>
+            </article>
+        </div>
+
+        <div class="ns-graphs-grid">
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs2.png", "EN verzie/graphs2_en.png")" alt="@T("Mix spotreby podľa zdroja a vývoj SOC batérie", "Consumption mix by source and battery SOC over time")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("Mix spotreby + batéria", "Consumption mix + battery")</span>
+                    <h4>@T("Zdroje krytia spotreby a vývoj SOC", "Consumption sources and SOC over time")</h4>
+                    <p>@T("Vidíte, akú časť spotreby pokryla FV výroba, batéria alebo sieť. Krivka SOC zároveň ukáže, kedy sa batéria nabíjala, kedy pomáhala domu a kedy už bola na hrane.", "You see how much consumption was covered by PV, battery, or the grid. The SOC curve also shows when the battery charged, supported the home, or started running low.")</p>
+                </div>
+            </article>
+
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs3.png", "EN verzie/graphs3_en.png")" alt="@T("MPPT výkon napätie a prúd po trackeroch", "MPPT power voltage and current per tracker")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("Telemetria FV", "PV telemetry")</span>
+                    <h4>@T("MPPT výkon, napätie a prúd", "MPPT power, voltage, and current")</h4>
+                    <p>@T("MPPT grafy ukazujú, či oba FV vstupy pracujú primerane. Keď jeden tracker zaostáva, je jednoduchšie nájsť tienenie, chybu stringu alebo problém v regulátore.", "MPPT charts show whether both PV inputs are behaving as expected. If one tracker lags behind, it is easier to find shading, a string issue, or a regulator problem.")</p>
+                </div>
+            </article>
+
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs4.png", "EN verzie/graphs4_en.png")" alt="@T("DC parametre batérie a frekvencia AC siete", "Battery DC parameters and AC grid frequency")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("Telemetria batérie a AC siete", "Battery and AC grid telemetry")</span>
+                    <h4>@T("DC parametre batérie a frekvencia siete", "Battery DC parameters and grid frequency")</h4>
+                    <p>@T("Batériové a sieťové parametre pomáhajú overiť, či batéria reaguje správne a či menič drží stabilný výkon. Hodí sa to pri servise aj pri bežnej kontrole.", "Battery and grid parameters help verify whether the battery reacts correctly and whether the inverter keeps stable output. It is useful for service work and regular checks.")</p>
+                </div>
+            </article>
+
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs5.png", "EN verzie/graphs5_en.png")" alt="@T("WattRouter výkon relé a symetria AC fáz", "WattRouter power relays and AC phase symmetry")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("WattRouter + symetria fáz", "WattRouter + phase symmetry")</span>
+                    <h4>@T("Riadenie záťaží a symetria AC fáz", "Load control and AC phase symmetry")</h4>
+                    <p>@T("Tu vidno, koľko prebytku zachytil WattRouter a ktoré relé boli aktívne. Spolu so symetriou fáz pomáha odhaliť, či regulácia záťaží nezaťažuje systém nerovnomerne.", "This shows how much surplus the WattRouter captured and which relays were active. Together with phase symmetry, it helps reveal whether load control is stressing the system unevenly.")</p>
+                </div>
+            </article>
+
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs6.png", "EN verzie/graphs6_en.png")" alt="@T("Teplota SOH cykly batérie a napätie fáz RST", "Battery temperature SOH cycles and RST phase voltages")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("Zdravie batérie + fázy", "Battery health + phases")</span>
+                    <h4>@T("Teplota, SOH, cykly a napätie R/S/T", "Temperature, SOH, cycles, and R/S/T voltages")</h4>
+                    <p>@T("Teplota, SOH a cykly ukazujú, ako sa batéria správa dlhodobo. Napätia fáz R, S a T zároveň pomáhajú rozlíšiť problém batérie od problému v sieti.", "Temperature, SOH, and cycles show long-term battery behavior. R, S, and T phase voltages help separate battery issues from grid issues.")</p>
+                </div>
+            </article>
+
+            <article class="ns-graph-card">
+                <figure>
+                    <img src="~/lib/appscreenshots/@Img("graphs7.png", "EN verzie/graphs7_en.png")" alt="@T("Fázové prúdy a výkon RST výstup vs PCC", "Phase currents and power RST output vs PCC")" asp-append-version="true" />
+                </figure>
+                <div class="ns-graph-card__copy">
+                    <span class="ns-graph-card__eyebrow">@T("AC fázy – výstup vs PCC", "AC phases – output vs PCC")</span>
+                    <h4>@T("Prúdy a výkon R/S/T (výstup vs sieť)", "R/S/T currents and power (output vs grid)")</h4>
+                    <p>@T("Porovnanie výstupu meniča a PCC merania ukáže, čo sa deje na každej fáze zvlášť. Pri trojfázových systémoch je to dôležité pre správnu diagnostiku odberu aj exportu.", "Comparing inverter output and PCC measurements shows what happens on each phase. In three-phase systems, this is important for correct load and export diagnostics.")</p>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <section class="ns-section ns-section--flow">
+        <div class="ns-section__title">
+            <h2>@T("Ako sa z merania stane rozhodnutie", "How measurements become decisions")</h2>
+        </div>
+
+        <div class="ns-flow">
+            <article>
+                <strong>@T("Zber reality", "Collect reality")</strong>
+                <p>@T("NestStats načíta lokálne hodnoty z FV, meniča, batérie, siete, WattRoutera a počasia.", "NestStats reads local values from PV, inverter, battery, grid, WattRouter, and weather.")</p>
+                <div>▦ ◫ ⌂ ☁</div>
+            </article>
+
+            <span class="ns-flow__arrow">→</span>
+
+            <article>
+                <strong>@T("Pochopenie stavu", "Understand the state")</strong>
+                <p>@T("Spojí hodnoty do súvislostí: čo je výroba, čo je odber, čo je prebytok a čo je riziko importu.", "It connects values into context: what is production, what is load, what is surplus, and what is import risk.")</p>
+                <div>▥ ⌁ ✦</div>
+            </article>
+
+            <span class="ns-flow__arrow">→</span>
+
+            <article>
+                <strong>@T("Odporúčanie", "Recommendation")</strong>
+                <p>@T("Navrhne ďalší krok, napríklad využiť solárne okno, chrániť batériu alebo skontrolovať riadenú záťaž.", "It suggests the next step, such as using the solar window, protecting the battery, or checking a controlled load.")</p>
+                <div>✓ ⟳ ☷</div>
+            </article>
+
+            <span class="ns-flow__arrow">→</span>
+
+            <article>
+                <strong>@T("Akcia a kontrola", "Action and check")</strong>
+                <p>@T("Po zásahu sledujete, či sa zmenil tok energie, import, export alebo správanie WattRoutera.", "After the action, you can see whether energy flow, import, export, or WattRouter behavior changed.")</p>
+                <div>▣ ⚡ ↻</div>
+            </article>
+        </div>
+    </section>
+
+    <section class="ns-section" id="porovnanie">
+        <div class="ns-section__title">
+            <h2>@T("Prečo je to praktickejšie než bežný cloud dashboard", "Why this is more practical than a typical cloud dashboard")</h2>
+        </div>
+
+        <div class="ns-compare">
+            <div class="ns-compare__header">
+                <span>@T("Oblasť", "Area")</span>
+                <span>NestStats <small>local-first</small></span>
+                <span>@T("Typický cloud dashboard", "Typical cloud dashboard")</span>
+            </div>
+
+            <div class="ns-compare__row">
+                <strong>@T("Kontrola nad systémom", "System control")</strong>
+                <span><i class="ok">✓</i>@T("Dáta a pravidlá ostávajú bližšie k domu a dajú sa overiť bez zbytočného preklikávania.", "Data and rules stay closer to the home and can be checked without unnecessary switching.")</span>
+                <span><i class="bad">–</i>@T("Veľa vecí závisí od cloudu, účtu dodávateľa alebo uzavretého rozhrania.", "Many things depend on cloud services, vendor accounts, or closed interfaces.")</span>
+            </div>
+
+            <div class="ns-compare__row">
+                <strong>@T("Riadenie prebytkov", "Surplus control")</strong>
+                <span><i class="ok">✓</i>@T("Tok energie, WattRouter a odporúčania sú prepojené s live stavom domu.", "Energy flow, WattRouter, and recommendations are tied to the live home state.")</span>
+                <span><i class="bad">–</i>@T("Prebytky často vidíte až spätne alebo ich riadi úplne iný nástroj.", "Surplus is often shown afterwards or controlled by a completely separate tool.")</span>
+            </div>
+
+            <div class="ns-compare__row">
+                <strong>@T("Otvorenosť", "Openness")</strong>
+                <span><i class="ok">✓</i>@T("Open-source základ, otvorené API a priestor na vlastné integrácie.", "An open-source base, open API, and room for custom integrations.")</span>
+                <span><i class="bad">–</i>@T("Uzavreté ekosystémy komplikujú servis aj vlastné úpravy.", "Closed ecosystems make service and custom changes harder.")</span>
+            </div>
+
+            <div class="ns-compare__row">
+                <strong>@T("Servis a diagnostika", "Service and diagnostics")</strong>
+                <span><i class="ok">✓</i>@T("Technik rýchlo vidí tok, MPPT, batériu, fázy a WattRouter bez skladania obrazu z viacerých miest.", "A technician can quickly see flow, MPPT, battery, phases, and WattRouter without piecing it together from multiple places.")</span>
+                <span><i class="bad">–</i>@T("Diagnostika je roztrúsená, často bez detailu alebo lokálneho prístupu.", "Diagnostics are scattered, often without detail or local access.")</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="ns-section" id="pre-koho">
+        <div class="ns-section__title">
+            <h2>@T("Pre koho je NestStats", "Who NestStats is for")</h2>
+        </div>
+
+        <div class="ns-audience-grid">
+            <article class="ns-audience-card">
+                <div class="ns-audience-card__image">
+                    <img src="~/lib/icons/home.png" alt="" asp-append-version="true" />
+                </div>
+                <div>
+                    <span class="ns-icon ns-icon--green">⌂</span>
+                    <h3>@T("Domácnosti", "Homeowners")</h3>
+                    <p>@T("Pre ľudí, ktorí chcú rozumieť tomu, kam ide energia v dome, kedy vzniká prebytok a čo má zmysel zapnúť práve teraz.", "For people who want to understand where energy is going in the home, when surplus appears, and what makes sense to turn on right now.")</p>
+                    <ul>
+                        <li>@T("Jasný live prehľad", "Clear live overview")</li>
+                        <li>@T("Menej zbytočného exportu", "Less wasted surplus")</li>
+                        <li>@T("Lepšie plánovanie spotreby", "Better load planning")</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="ns-audience-card">
+                <div class="ns-audience-card__image">
+                    <img src="~/lib/icons/repair-tool.png" alt="" asp-append-version="true" />
+                </div>
+                <div>
+                    <span class="ns-icon ns-icon--blue">⚙</span>
+                    <h3>@T("Inštalatéri", "Installers")</h3>
+                    <p>@T("Pre servis a inštalatérov, ktorí potrebujú rýchlo vysvetliť stav systému a nájsť problém bez prechádzania piatich aplikácií.", "For service teams and installers who need to explain system state quickly and find issues without jumping through five apps.")</p>
+                    <ul>
+                        <li>@T("Rýchla diagnostika", "Fast diagnostics")</li>
+                        <li>@T("Prehľad MPPT, batérie a fáz", "MPPT, battery, and phase overview")</li>
+                        <li>@T("Menej telefonátov bez dát", "Fewer calls without data")</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="ns-audience-card">
+                <div class="ns-audience-card__image">
+                    <img src="~/lib/icons/technology.png" alt="" asp-append-version="true" />
+                </div>
+                <div>
+                    <span class="ns-icon ns-icon--purple">⌘</span>
+                    <h3>@T("Technickí používatelia", "Technical users")</h3>
+                    <p>@T("Pre ľudí, ktorí chcú mať nad dátami a automatizáciami kontrolu, nie len hotový graf od výrobcu.", "For people who want control over data and automation, not only a ready-made vendor chart.")</p>
+                    <ul>
+                        <li>@T("Otvorené dáta", "Open data")</li>
+                        <li>@T("Vlastné integrácie", "Custom integrations")</li>
+                        <li>@T("Lokálne pravidlá", "Local rules")</li>
+                    </ul>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="ns-section ns-section--partners">
+        <div class="ns-section__title">
+            <h2>@T("Partneri, ktorí poznajú realitu inštalácií", "Partners who know real installations")</h2>
+        </div>
+
+        <div class="ns-partners">
+            <span class="ns-partner">
+                <img src="~/lib/partnery_img/partner1.png" alt="SOFOS energy" asp-append-version="true" />
+            </span>
+            <span class="ns-partner">
+                <img src="~/lib/partnery_img/partner2.png" alt="WATT CORE" asp-append-version="true" />
+            </span>
+            <span class="ns-partner">
+                <img src="~/lib/partnery_img/partner3.webp" alt="FUERGY" asp-append-version="true" />
+            </span>
+        </div>
+    </section>
+
+    <section class="ns-final-cta">
+        <div>
+            <h2>@T("Energia má byť zrozumiteľná aj riaditeľná.", "Energy should be understandable and controllable.")</h2>
+            <p>@T("NestStats vzniká ako otvorený nástroj pre domácnosti, inštalatérov a technických používateľov, ktorí chcú vidieť realitu systému a podľa nej konať. Dáta zostávajú bližšie k domu, riadenie je lokálne a produkt nie je zamknutý u jedného dodávateľa.", "NestStats is being built as an open tool for homes, installers, and technical users who want to see what the system is really doing and act on it. Data stays closer to the home, control is local, and the product is not locked to one vendor.")</p>
+        </div>
+
+        <div class="ns-final-cta__actions">
+            @if (signedIn)
+            {
+                <a class="ns-button ns-button--light" asp-page="/Index">@T("Otvoriť workspace", "Open workspace")</a>
+            }
+            else
+            {
+                <a class="ns-button ns-button--light" asp-area="Identity" asp-page="/Account/Register">@T("Vytvoriť účet", "Create account")</a>
+            }
+            <a class="ns-button ns-button--darkghost ns-button--with-logo" href="https://github.com/PavolLukacka/NestStats" target="_blank" rel="noopener noreferrer">
+                <img src="~/github_logo.png" alt="" asp-append-version="true" />
+                <span>GitHub</span>
+            </a>
+            <a class="ns-button ns-button--darkghost ns-button--with-logo" href="https://patreon.com/Lukacka_Pavol?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink" target="_blank" rel="noopener noreferrer">
+                <img src="~/Patreon_logo.png" alt="" asp-append-version="true" />
+                <span>Patreon</span>
+            </a>
+        </div>
+
+        <div class="ns-final-cta__chips">
+            <span>@T("Live prehľad", "Live overview")</span>
+            <span>@T("Lokálne riadenie", "Local control")</span>
+            <span>Open-source</span>
+            <span>@T("Bez vendor lock-in", "No vendor lock-in")</span>
+        </div>
+    </section>
+</section>

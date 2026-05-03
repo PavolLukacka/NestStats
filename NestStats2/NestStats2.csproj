@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>NestStats2-LocalAuth-8c7b8194-3d2d-4be9-a685-7b77d4d2d4ee</UserSecretsId>
+        <DefaultItemExcludes>$(DefaultItemExcludes);publish\**;build-verify\**;obj-verify\**;obj\**;bin\**;.vs\**;nep_kalkulacka\**;RYSTATS2_new\**</DefaultItemExcludes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Remove="publish\**;build-verify\**;obj-verify\**;obj\**;bin\**;nep_kalkulacka\**;RYSTATS2_new\**" />
+        <None Remove="publish\**;build-verify\**;obj-verify\**;obj\**;bin\**;nep_kalkulacka\**;RYSTATS2_new\**" />
+        <Compile Remove="publish\**;build-verify\**;obj-verify\**;obj\**;bin\**;nep_kalkulacka\**;RYSTATS2_new\**" />
+        <EmbeddedResource Remove="publish\**;build-verify\**;obj-verify\**;obj\**;bin\**;nep_kalkulacka\**;RYSTATS2_new\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.0" />
+        <PackageReference Include="CsvHelper" Version="33.1.0" />
+        <PackageReference Include="ExcelDataReader" Version="3.8.0" />
+        <PackageReference Include="ExcelDataReader.DataSet" Version="3.8.0" />
+        <PackageReference Include="itext7" Version="7.2.5" />
+        <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.2.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+        <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.0" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,63 @@
+@page
+@{
+    ViewData["Title"] = "Playbooks";
+    var signedIn = User?.Identity?.IsAuthenticated == true;
+}
+
+<section class="product-page product-page--immersive">
+    <header class="page-hero immersive-hero">
+        <div class="section-stack">
+            <span class="hero-kicker">Use-case playbooks</span>
+            <div>
+                <span class="section-eyebrow">Scenario library</span>
+                <h1>Playbooks for onboarding, support and software rollout conversations</h1>
+                <p>This page helps propagate the product. Instead of only describing pages, it shows how NestStats can be positioned and used during real customer, installer and admin workflows.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="button button--primary" asp-page="@(signedIn ? "/Index" : "/SpoznajNas")">@(signedIn ? "Back to workspace" : "Back to overview")</a>
+                <a class="button button--ghost" href="https://github.com/PavolLukacka/NestStats/blob/main/NESTSTATS_TECHNICAL_DOCUMENTATION.md" target="_blank" rel="noopener">Open technical documentation</a>
+            </div>
+        </div>
+        <aside class="hero-note hero-note--signal">
+            <strong>Playbook intent</strong>
+            <span>Use these narratives when you need the software to sound like a complete solution, not only a technical interface.</span>
+        </aside>
+    </header>
+
+    <div class="story-grid">
+        <article class="story-card">
+            <strong>Playbook 1: New residential install</strong>
+            <ul class="number-list">
+                <li>Create the account and complete Launch with a clean home or client identity.</li>
+                <li>Attach the installation in Systems and define the customer-friendly alias.</li>
+                <li>Set the tariff and primary site in Settings so the dashboard story becomes financially meaningful.</li>
+            </ul>
+        </article>
+        <article class="story-card story-card--cool">
+            <strong>Playbook 2: Support rescue</strong>
+            <ul class="number-list">
+                <li>Admin checks the overview for users with no systems or incomplete onboarding.</li>
+                <li>Use the assignment desk to bind the system centrally when the customer is blocked.</li>
+                <li>Send the customer back to the dashboard with a live, coherent workspace instead of a half-configured shell.</li>
+            </ul>
+        </article>
+    </div>
+
+    <section class="module-grid">
+        <article class="module-card module-card--accent">
+            <span class="section-eyebrow">Sales framing</span>
+            <h3>Lead with operating clarity</h3>
+            <p>Position NestStats as the layer that connects field telemetry with decisions, economics and support handoff.</p>
+        </article>
+        <article class="module-card">
+            <span class="section-eyebrow">Installer framing</span>
+            <h3>Reduce handoff friction</h3>
+            <p>The product helps installers move from physical completion into digital completion without losing customer context.</p>
+        </article>
+        <article class="module-card signal-card--cool">
+            <span class="section-eyebrow">Support framing</span>
+            <h3>Service without spreadsheet chaos</h3>
+            <p>Admin views, assignments and product documentation keep support actions in the same shell as the operational product.</p>
+        </article>
+    </section>
+</section>

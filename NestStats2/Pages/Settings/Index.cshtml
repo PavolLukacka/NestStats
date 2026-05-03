@@ -1,0 +1,684 @@
+@page
+@model NestStats2.Pages.Settings.IndexModel
+@{
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+    ViewData["Title"] = T("Nastavenia", "Settings");
+    var homeUrl = Url.Page("/Index") ?? "/";
+}
+
+@section Head {
+<style>
+    .settings-page {
+        --set-panel: rgba(255,255,255,.94);
+        --set-soft: rgba(247,248,250,.86);
+        --set-border: rgba(16,24,40,.10);
+        --set-green: #16845f;
+        --set-blue: #2563eb;
+        --set-red: #b42318;
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 72px;
+        display: grid;
+        gap: 18px;
+    }
+
+    .settings-page *,
+    .settings-page *::before,
+    .settings-page *::after {
+        box-sizing: border-box;
+    }
+
+    .settings-header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 24px;
+        border: 1px solid var(--set-border);
+        border-radius: 22px;
+        background: var(--set-panel);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .settings-header__copy {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .settings-eyebrow {
+        color: #667085;
+        font: 800 .68rem/1 var(--ff-mono);
+        letter-spacing: .11em;
+        text-transform: uppercase;
+    }
+
+    .settings-header h1 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: clamp(2rem, 4vw, 3.45rem);
+        line-height: 1.02;
+        letter-spacing: -.045em;
+    }
+
+    .settings-header p {
+        max-width: 680px;
+        margin: 0;
+        color: var(--ns-ink-3);
+        line-height: 1.58;
+    }
+
+    .settings-user-pill {
+        display: grid;
+        gap: 3px;
+        flex: 0 0 auto;
+        min-width: 230px;
+        padding: 14px 16px;
+        border: 1px solid var(--set-border);
+        border-radius: 16px;
+        background: rgba(248,250,252,.92);
+    }
+
+    .settings-user-pill span {
+        color: #667085;
+        font: 800 .64rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .settings-user-pill strong {
+        color: var(--ns-ink);
+        overflow-wrap: anywhere;
+    }
+
+    .settings-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid rgba(22,132,95,.20);
+        border-radius: 16px;
+        background: rgba(232,247,241,.92);
+        color: #0f6b49;
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .settings-status__dot {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 10px;
+        margin-top: 6px;
+        border-radius: 999px;
+        background: var(--set-green);
+        box-shadow: 0 0 0 5px rgba(22,132,95,.12);
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: 250px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .settings-nav,
+    .settings-panel,
+    .settings-card {
+        border: 1px solid var(--set-border);
+        border-radius: 20px;
+        background: var(--set-panel);
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .settings-nav {
+        position: sticky;
+        top: 112px;
+        padding: 10px;
+        display: grid;
+        gap: 4px;
+    }
+
+    .settings-nav a {
+        display: flex;
+        align-items: center;
+        min-height: 42px;
+        padding: 10px 12px;
+        border-radius: 13px;
+        color: var(--ns-ink);
+        font-weight: 800;
+        font-size: .9rem;
+        text-decoration: none;
+    }
+
+    .settings-nav a:hover {
+        background: rgba(22,132,95,.08);
+        color: #0f6b49;
+    }
+
+    .settings-stack {
+        display: grid;
+        gap: 18px;
+        min-width: 0;
+    }
+
+    .settings-panel {
+        overflow: hidden;
+    }
+
+    .settings-panel__head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 20px 22px 0;
+    }
+
+    .settings-panel__head h2 {
+        margin: 5px 0 0;
+        color: var(--ns-ink);
+        font-size: 1.32rem;
+        line-height: 1.2;
+        letter-spacing: -.02em;
+    }
+
+    .settings-panel__head p {
+        max-width: 640px;
+        margin: 7px 0 0;
+        color: var(--ns-ink-3);
+        font-size: .92rem;
+        line-height: 1.55;
+    }
+
+    .settings-form {
+        display: grid;
+        gap: 14px;
+        padding: 20px 22px 22px;
+    }
+
+    .settings-section {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--set-border);
+        border-radius: 16px;
+        background: var(--set-soft);
+    }
+
+    .settings-section h3 {
+        margin: 0;
+        color: var(--ns-ink);
+        font-size: 1rem;
+        letter-spacing: -.01em;
+    }
+
+    .settings-field {
+        display: grid;
+        gap: 7px;
+    }
+
+    .settings-field label {
+        color: var(--ns-ink);
+        font-weight: 850;
+        font-size: .86rem;
+    }
+
+    .settings-field input,
+    .settings-field select {
+        width: 100%;
+        min-height: 46px;
+        padding: 11px 13px;
+        border: 1px solid var(--set-border);
+        border-radius: 13px;
+        background: rgba(255,255,255,.94);
+        color: var(--ns-ink);
+        font: 650 .94rem/1.2 var(--ff-sans);
+        outline: none;
+    }
+
+    .settings-field input:focus,
+    .settings-field select:focus {
+        border-color: rgba(22,132,95,.45);
+        box-shadow: 0 0 0 4px rgba(22,132,95,.12);
+    }
+
+    .settings-field small,
+    .settings-toggle span,
+    .settings-muted {
+        color: var(--ns-ink-3);
+        font-size: .82rem;
+        line-height: 1.45;
+    }
+
+    .settings-validation {
+        color: var(--set-red);
+        font-weight: 800;
+        font-size: .78rem;
+    }
+
+    .validation-summary {
+        padding: 13px 14px;
+        border: 1px solid rgba(180,35,24,.18);
+        border-radius: 14px;
+        background: rgba(254,242,242,.92);
+        color: #991b1b;
+        font-size: .88rem;
+    }
+
+    .validation-summary:empty {
+        display: none;
+    }
+
+    .settings-toggle {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 13px;
+        border: 1px solid rgba(16,24,40,.08);
+        border-radius: 14px;
+        background: rgba(255,255,255,.78);
+        cursor: pointer;
+    }
+
+    .settings-toggle input {
+        appearance: none;
+        width: 42px;
+        height: 24px;
+        margin: 1px 0 0;
+        border-radius: 999px;
+        border: 1px solid rgba(16,24,40,.18);
+        background: #e5e7eb;
+        position: relative;
+        transition: background .16s, border-color .16s;
+    }
+
+    .settings-toggle input::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(16,24,40,.18);
+        transition: transform .16s;
+    }
+
+    .settings-toggle input:checked {
+        border-color: rgba(22,132,95,.45);
+        background: var(--set-green);
+    }
+
+    .settings-toggle input:checked::after {
+        transform: translateX(18px);
+    }
+
+    .settings-toggle strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--ns-ink);
+        font-size: .92rem;
+    }
+
+    .settings-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .settings-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 15px;
+        border: 1px solid var(--set-border);
+        border-radius: 13px;
+        background: rgba(255,255,255,.92);
+        color: var(--ns-ink);
+        font-weight: 850;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .settings-button:hover {
+        border-color: rgba(22,132,95,.32);
+        color: #0f6b49;
+        box-shadow: var(--ns-shadow-sm);
+    }
+
+    .settings-button--primary {
+        border-color: var(--ns-ink);
+        background: var(--ns-ink);
+        color: #fff;
+    }
+
+    .settings-button--primary:hover {
+        color: #fff;
+        background: #171923;
+    }
+
+    .settings-button--danger {
+        border-color: rgba(180,35,24,.22);
+        background: rgba(254,242,242,.9);
+        color: #991b1b;
+    }
+
+    .settings-info-grid,
+    .settings-system-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 20px 22px 22px;
+    }
+
+    .settings-card {
+        padding: 16px;
+        display: grid;
+        gap: 7px;
+        min-height: 112px;
+    }
+
+    .settings-card span {
+        color: #667085;
+        font: 800 .64rem/1 var(--ff-mono);
+        letter-spacing: .10em;
+        text-transform: uppercase;
+    }
+
+    .settings-card strong {
+        color: var(--ns-ink);
+        font-size: 1rem;
+        overflow-wrap: anywhere;
+    }
+
+    .settings-card p {
+        margin: 0;
+        color: var(--ns-ink-3);
+        font-size: .84rem;
+        line-height: 1.48;
+    }
+
+    .settings-empty {
+        margin: 20px 22px 22px;
+        padding: 18px;
+        border: 1px dashed rgba(16,24,40,.18);
+        border-radius: 16px;
+        background: rgba(248,250,252,.82);
+        color: var(--ns-ink-3);
+        line-height: 1.55;
+    }
+
+    .settings-chip {
+        width: fit-content;
+        padding: 5px 8px;
+        border: 1px solid rgba(22,132,95,.20);
+        border-radius: 999px;
+        background: rgba(22,132,95,.08);
+        color: #0f6b49;
+        font: 800 .62rem/1 var(--ff-mono);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    @@media (max-width: 880px) {
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-nav {
+            position: static;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .settings-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .settings-user-pill {
+            min-width: 0;
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .settings-page {
+            width: min(100% - 20px, 1120px);
+            padding-top: 18px;
+        }
+
+        .settings-header,
+        .settings-panel {
+            border-radius: 18px;
+        }
+
+        .settings-header,
+        .settings-panel__head,
+        .settings-form,
+        .settings-info-grid,
+        .settings-system-grid {
+            padding-inline: 16px;
+        }
+
+        .settings-info-grid,
+        .settings-system-grid,
+        .settings-nav {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-actions,
+        .settings-button {
+            width: 100%;
+        }
+    }
+</style>
+}
+
+<section class="settings-page">
+    <header class="settings-header">
+        <div class="settings-header__copy">
+            <span class="settings-eyebrow">@T("Používateľské nastavenia", "User settings")</span>
+            <h1>@T("Nastavenia", "Settings")</h1>
+            <p>@T("Tu nastavíš účet, predvolený systém, správanie relácie a prehliadačové voľby. Bez marketingu, len veci, ktoré menia používanie aplikácie.", "Control your account, default system, session behaviour, and browser preferences here. No marketing, just things that change how the app behaves.")</p>
+        </div>
+        <div class="settings-user-pill">
+            <span>@T("Prihlásený účet", "Signed-in account")</span>
+            <strong>@Model.UserEmail</strong>
+        </div>
+    </header>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="settings-status" role="status">
+            <span class="settings-status__dot" aria-hidden="true"></span>
+            <div>@message</div>
+        </div>
+    }
+
+    <div class="settings-grid">
+        <nav class="settings-nav" aria-label="@T("Sekcie nastavení", "Settings sections")">
+            <a href="#account">@T("Účet", "Account")</a>
+            <a href="#systems">@T("Systémy", "Systems")</a>
+            <a href="#session">@T("Relácia a cookies", "Session and cookies")</a>
+            <a href="#actions">@T("Akcie", "Actions")</a>
+        </nav>
+
+        <div class="settings-stack">
+            <article class="settings-panel" id="account">
+                <div class="settings-panel__head">
+                    <div>
+                        <span class="settings-eyebrow">@T("Účet", "Account")</span>
+                        <h2>@T("Profil a predvolený systém", "Profile and default system")</h2>
+                        <p>@T("Tieto hodnoty sú uložené k používateľovi. Dashboard ich použije ako prvý kontext po otvorení.", "These values are stored on the user. The dashboard uses them as the first context after opening.")</p>
+                    </div>
+                </div>
+
+                <form method="post" class="settings-form">
+                    <div asp-validation-summary="All" class="validation-summary"></div>
+
+                    <section class="settings-section">
+                        <h3>@T("Zobrazenie účtu", "Account display")</h3>
+                        <div class="settings-field">
+                            <label asp-for="Input.DisplayName">@T("Názov klienta alebo objektu", "Client or site label")</label>
+                            <input asp-for="Input.DisplayName" placeholder="@T("Napríklad Dom Lukačka", "For example Lukacka home")" />
+                            <small>@T("Krátky názov, ktorý sa zobrazí v aplikácii a v administrácii.", "A short label shown across the app and admin area.")</small>
+                            <span asp-validation-for="Input.DisplayName" class="settings-validation"></span>
+                        </div>
+                    </section>
+
+                    <section class="settings-section">
+                        <h3>@T("Energetický workspace", "Energy workspace")</h3>
+                        <div class="settings-field">
+                            <label asp-for="Input.PreferredSystemSn">@T("Predvolený systém", "Default system")</label>
+                            <select asp-for="Input.PreferredSystemSn">
+                                <option value="">@T("Vybrať systém", "Select a system")</option>
+                                @foreach (var system in Model.Systems)
+                                {
+                                    <option value="@system.SnNumber">@system.SystemName (@system.SnNumber)</option>
+                                }
+                            </select>
+                            <small>@T("Ak máš viac inštalácií, tento systém sa otvorí ako prvý.", "If you have multiple installations, this system opens first.")</small>
+                            <span asp-validation-for="Input.PreferredSystemSn" class="settings-validation"></span>
+                        </div>
+                    </section>
+
+                    <section class="settings-section" id="session">
+                        <h3>@T("Relácia a cookies", "Session and cookies")</h3>
+
+                        <label class="settings-toggle">
+                            <input asp-for="Input.KeepSignedInAfterClose" type="checkbox" />
+                            <span>
+                                <strong>@T("Automaticky zostať prihlásený po zatvorení aplikácie", "Stay signed in after closing the app")</strong>
+                                @T("Táto voľba sa použije ako predvolená hodnota na prihlasovacej obrazovke. Pri ďalšom prihlásení vytvorí trvalejšiu prihlasovaciu cookie.", "This is used as the default value on the login screen. On the next sign-in it creates a more persistent login cookie.")
+                            </span>
+                        </label>
+
+                        <label class="settings-toggle">
+                            <input asp-for="Input.CompactInterface" type="checkbox" />
+                            <span>
+                                <strong>@T("Kompaktnejšie rozhranie", "More compact interface")</strong>
+                                @T("Uloží sa ako prehliadačová preferencia pre budúce zobrazenia, kde sa hodí hustejší pracovný režim.", "Saved as a browser preference for future screens where a denser work mode makes sense.")
+                            </span>
+                        </label>
+
+                        <label class="settings-toggle">
+                            <input asp-for="Input.ReduceMotion" type="checkbox" />
+                            <span>
+                                <strong>@T("Obmedziť animácie", "Reduce motion")</strong>
+                                @T("Preferencia pre pokojnejšie správanie rozhrania v prehliadači.", "A browser preference for calmer UI behaviour.")
+                            </span>
+                        </label>
+
+                        <label class="settings-toggle">
+                            <input asp-for="Input.ClearLanguageCookie" type="checkbox" />
+                            <span>
+                                <strong>@T("Vymazať jazykovú cookie", "Clear language cookie")</strong>
+                                @T("Po uložení sa odstráni uložená voľba jazyka a aplikácia znova použije predvolený jazyk alebo aktuálnu URL.", "After saving, the stored language choice is removed and the app uses the default language or current URL again.")
+                            </span>
+                        </label>
+
+                        <label class="settings-toggle">
+                            <input asp-for="Input.ResetDashboardPreferences" type="checkbox" />
+                            <span>
+                                <strong>@T("Resetovať uložené nastavenia dashboardu", "Reset saved dashboard preferences")</strong>
+                                @T("Vymaže cookie s rozsahom grafov, stránkovaním a automatickou obnovou pre tento účet.", "Deletes the cookie with graph range, pagination, and auto-refresh preferences for this account.")
+                            </span>
+                        </label>
+                    </section>
+
+                    <div class="settings-actions">
+                        <button type="submit" class="settings-button settings-button--primary">@T("Uložiť nastavenia", "Save settings")</button>
+                        <a class="settings-button" asp-page="/Systems/Connect">@T("Spravovať systémy", "Manage systems")</a>
+                    </div>
+                </form>
+            </article>
+
+            <article class="settings-panel" id="systems">
+                <div class="settings-panel__head">
+                    <div>
+                        <span class="settings-eyebrow">@T("Systémy", "Systems")</span>
+                        <h2>@T("Pripojené inštalácie", "Connected installations")</h2>
+                        <p>@T("Rýchly prehľad systémov, ktoré sú priradené k tomuto účtu.", "A quick overview of systems assigned to this account.")</p>
+                    </div>
+                </div>
+
+                @if (Model.Systems.Count == 0)
+                {
+                    <div class="settings-empty">
+                        @T("Zatiaľ nie je pripojený žiadny systém. Najprv pripoj inštaláciu cez sériové číslo a systémové heslo.", "No system is connected yet. First pair an installation using its serial number and system password.")
+                    </div>
+                }
+                else
+                {
+                    <div class="settings-system-grid">
+                        @foreach (var system in Model.Systems)
+                        {
+                            <article class="settings-card">
+                                <span>@T("Systém", "System")</span>
+                                <strong>@system.SystemName</strong>
+                                <p>SN: @system.SnNumber</p>
+                                @if (system.IsPrimary)
+                                {
+                                    <div class="settings-chip">@T("Predvolený", "Default")</div>
+                                }
+                            </article>
+                        }
+                    </div>
+                }
+            </article>
+
+            <article class="settings-panel">
+                <div class="settings-panel__head">
+                    <div>
+                        <span class="settings-eyebrow">@T("Stav účtu", "Account state")</span>
+                        <h2>@T("Technické informácie", "Technical information")</h2>
+                    </div>
+                </div>
+                <div class="settings-info-grid">
+                    <article class="settings-card">
+                        <span>@T("Predvolený systém", "Default system")</span>
+                        <strong>@Model.PreferredSystemSummary</strong>
+                        <p>@T("Použije sa pri otvorení dashboardu.", "Used when opening the dashboard.")</p>
+                    </article>
+                    <article class="settings-card">
+                        <span>@T("Onboarding", "Onboarding")</span>
+                        <strong>@(Model.OnboardingCompleted ? T("Dokončený", "Completed") : T("Nedokončený", "Not completed"))</strong>
+                        <p>@T("Dokončený je až po pripojení reálneho systému.", "Completed only after a real system is connected.")</p>
+                    </article>
+                    <article class="settings-card">
+                        <span>@T("Vytvorený účet", "Account created")</span>
+                        <strong>@Model.AccountCreatedSummary</strong>
+                        <p>@T("Lokálny čas podľa servera.", "Local time according to the server.")</p>
+                    </article>
+                    <article class="settings-card">
+                        <span>@T("Posledná aktivita", "Last activity")</span>
+                        <strong>@Model.LastSeenSummary</strong>
+                        <p>@T("Pomáha rozlíšiť aktívne a spiace účty.", "Helps distinguish active and inactive accounts.")</p>
+                    </article>
+                </div>
+            </article>
+
+            <article class="settings-panel" id="actions">
+                <div class="settings-panel__head">
+                    <div>
+                        <span class="settings-eyebrow">@T("Akcie", "Actions")</span>
+                        <h2>@T("Prístup a odhlásenie", "Access and sign out")</h2>
+                        <p>@T("Odhlásenie ukončí aktuálnu reláciu v tomto prehliadači. Nastavenie automatického prihlásenia vyššie platí pre ďalšie prihlásenie.", "Signing out ends the current session in this browser. The automatic sign-in preference above applies to the next login.")</p>
+                    </div>
+                </div>
+                <div class="settings-form">
+                    <div class="settings-actions">
+                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@homeUrl" method="post">
+                            <button type="submit" class="settings-button settings-button--danger">@T("Odhlásiť sa", "Sign out")</button>
+                        </form>
+                        <a class="settings-button" asp-page="/Privacy">@T("Ochrana údajov", "Privacy")</a>
+                    </div>
+                    <p class="settings-muted">@T("Ak zdieľaš počítač, vypni automatické prihlásenie a po práci sa odhlás.", "If you share this computer, disable automatic sign-in and sign out when done.")</p>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

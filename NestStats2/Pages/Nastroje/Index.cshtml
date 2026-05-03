@@ -1,0 +1,540 @@
+@page "/nastroje"
+@{
+    var isEnglish = Lang.IsEnglish(ViewContext.HttpContext);
+    string T(string sk, string en) => Lang.Pick(ViewContext.HttpContext, sk, en);
+    var pvUrl      = isEnglish ? "/pv-design"                    : "/navrh-fotovoltaiky";
+    var hpUrl      = isEnglish ? "/heat-pump-design"             : "/navrh-tc";
+    var intervalUrl = isEnglish ? "/15-minute-interval-analysis"  : "/analyza-15-minutovych-intervalov";
+    ViewData["Title"] = T("Nástroje", "Tools");
+}
+
+@section Head {
+<style>
+/* ── Tools page ──────────────────────────────────────────────────── */
+.tl-pg {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 32px 32px 64px;
+    display: grid;
+    gap: 32px;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────── */
+.tl-hero {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 272px;
+    gap: 28px;
+    padding: clamp(32px,5vw,56px);
+    border-radius: 28px;
+    background:
+        radial-gradient(ellipse 90% 160% at 0% 65%, rgba(30,158,110,.08) 0%, transparent 52%),
+        radial-gradient(ellipse 65% 110% at 100% 0%, rgba(37,99,235,.06) 0%, transparent 48%),
+        linear-gradient(155deg, #ffffff 0%, #f9f8f6 100%);
+    border: 1px solid var(--ns-border);
+    box-shadow: var(--ns-shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle top-right decoration */
+.tl-hero::after {
+    content: "";
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,160,32,.08), transparent 70%);
+    pointer-events: none;
+}
+
+.tl-hero__body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 18px;
+    align-content: start;
+}
+
+.tl-hero__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 13px 5px 9px;
+    border-radius: 999px;
+    background: rgba(30,158,110,.08);
+    border: 1px solid rgba(30,158,110,.18);
+    color: #0c6e48;
+    font-family: var(--ff-mono);
+    font-size: .69rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.tl-hero__pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ns-green);
+    box-shadow: 0 0 0 3px rgba(30,158,110,.22);
+    animation: tlPulse 2.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@@keyframes tlPulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(30,158,110,.22); }
+    50%       { box-shadow: 0 0 0 7px rgba(30,158,110,.06); }
+}
+
+.tl-hero__title {
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1.05;
+    margin: 0;
+    color: var(--ns-ink);
+}
+
+.tl-hero__sub {
+    color: var(--ns-ink-3);
+    font-size: .95rem;
+    line-height: 1.72;
+    margin: 0;
+    max-width: 460px;
+}
+
+.tl-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid rgba(37,99,235,.16);
+    border-left: 3px solid var(--ns-blue);
+    border-radius: 0 10px 10px 0;
+    background: rgba(239,246,255,.88);
+    color: #1e40af;
+    font-size: .83rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+.tl-note svg { flex-shrink: 0; color: var(--ns-blue); opacity: .8; }
+
+/* ── Quick side panel ─────────────────────────────────────────── */
+.tl-quick {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.tl-quick__item {
+    display: flex;
+    gap: 13px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    border: 1px solid var(--ns-border);
+    border-radius: 16px;
+    background: rgba(255,255,255,.88);
+    transition: border-color .18s, box-shadow .18s;
+    cursor: default;
+}
+
+.tl-quick__item:hover {
+    border-color: rgba(232,160,32,.35);
+    box-shadow: 0 4px 14px rgba(232,160,32,.10);
+}
+
+.tl-quick__icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+.tl-quick__icon--gold  { background: rgba(232,160,32,.12); color: var(--ns-gold); }
+.tl-quick__icon--green { background: rgba(30,158,110,.10); color: var(--ns-green); }
+.tl-quick__icon--blue  { background: rgba(37,99,235,.09);  color: var(--ns-blue); }
+
+.tl-quick__text strong {
+    display: block;
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--ns-ink);
+    margin-bottom: 3px;
+}
+
+.tl-quick__text span {
+    display: block;
+    font-size: .81rem;
+    color: var(--ns-ink-3);
+    line-height: 1.52;
+}
+
+/* ── Catalog section ──────────────────────────────────────────── */
+.tl-catalog-head {
+    display: grid;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.tl-catalog-eyebrow {
+    font-family: var(--ff-mono);
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+    color: var(--ns-ink-3);
+}
+
+.tl-catalog-head h2 {
+    font-size: clamp(1.4rem, 2.5vw, 1.95rem);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1.1;
+    color: var(--ns-ink);
+    margin: 0;
+}
+
+/* ── Cards grid ───────────────────────────────────────────────── */
+.tl-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 20px;
+}
+
+/* ── Single card ──────────────────────────────────────────────── */
+.tl-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--ns-border);
+    border-radius: 22px;
+    background: var(--ns-white);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--ns-shadow-sm);
+    transition: transform .22s var(--ease-out, cubic-bezier(.16,1,.3,1)),
+                box-shadow .22s,
+                border-color .22s;
+}
+
+.tl-card:hover, .tl-card:focus-visible {
+    transform: translateY(-7px);
+    box-shadow: var(--ns-shadow-lg);
+    outline: none;
+}
+
+/* Gradient top strip */
+.tl-card::before {
+    content: "";
+    display: block;
+    height: 3px;
+    flex-shrink: 0;
+}
+.tl-card--gold::before  { background: linear-gradient(90deg, var(--ns-gold), #f5c55a); }
+.tl-card--green::before { background: linear-gradient(90deg, var(--ns-green), #34d399); }
+.tl-card--blue::before  { background: linear-gradient(90deg, var(--ns-blue), #818cf8); }
+
+/* Hover border tint */
+.tl-card--gold:hover  { border-color: rgba(232,160,32,.30); }
+.tl-card--green:hover { border-color: rgba(30,158,110,.25); }
+.tl-card--blue:hover  { border-color: rgba(37,99,235,.25); }
+
+/* Watermark number */
+.tl-card__num {
+    position: absolute;
+    top: 10px; right: 18px;
+    font-family: var(--ff-mono);
+    font-size: 5rem;
+    font-weight: 700;
+    line-height: 1;
+    opacity: .038;
+    pointer-events: none;
+    user-select: none;
+    color: var(--ns-ink);
+    transition: opacity .22s;
+}
+.tl-card:hover .tl-card__num { opacity: .065; }
+
+/* Card header row */
+.tl-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px 14px;
+}
+
+.tl-card__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    flex-shrink: 0;
+    transition: transform .22s var(--ease-out, cubic-bezier(.16,1,.3,1));
+}
+.tl-card:hover .tl-card__icon { transform: scale(1.08); }
+
+.tl-card--gold  .tl-card__icon { background: rgba(232,160,32,.12); color: var(--ns-gold); }
+.tl-card--green .tl-card__icon { background: rgba(30,158,110,.10); color: var(--ns-green); }
+.tl-card--blue  .tl-card__icon { background: rgba(37,99,235,.09);  color: var(--ns-blue); }
+
+.tl-card__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: var(--ff-mono);
+    font-size: .67rem;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.tl-card--gold  .tl-card__badge { background: rgba(232,160,32,.10); color: #7a440e; border-color: rgba(232,160,32,.24); }
+.tl-card--green .tl-card__badge { background: rgba(30,158,110,.09); color: #0a6e45; border-color: rgba(30,158,110,.22); }
+.tl-card--blue  .tl-card__badge { background: rgba(37,99,235,.09);  color: #1d4ed8; border-color: rgba(37,99,235,.22); }
+
+/* Card body */
+.tl-card__body {
+    flex: 1;
+    padding: 4px 22px 22px;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.tl-card__body h2 {
+    font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1.1;
+    margin: 0;
+    color: var(--ns-ink);
+}
+
+.tl-card__body p {
+    margin: 0;
+    color: var(--ns-ink-3);
+    font-size: .88rem;
+    line-height: 1.68;
+}
+
+/* Card footer CTA */
+.tl-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--ns-border-2);
+}
+
+.tl-card__cta {
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--ns-ink-3);
+    transition: color .18s;
+}
+.tl-card:hover .tl-card__cta { color: var(--ns-ink); }
+
+.tl-card__arrow {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ns-border);
+    font-size: .9rem;
+    color: var(--ns-ink-3);
+    flex-shrink: 0;
+    transition: background .18s, border-color .18s, transform .2s, color .18s;
+}
+
+.tl-card:hover .tl-card__arrow {
+    border-color: var(--ns-ink-4);
+    background: var(--ns-off-white);
+    transform: translateX(4px);
+    color: var(--ns-ink);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@@media (max-width: 1100px) {
+    .tl-pg { padding: 24px 24px 48px; }
+}
+@@media (max-width: 1020px) {
+    .tl-hero { grid-template-columns: 1fr; }
+    .tl-quick { grid-template-columns: repeat(3, 1fr); }
+}
+@@media (max-width: 780px) {
+    .tl-grid  { grid-template-columns: repeat(2, 1fr); }
+    .tl-quick { grid-template-columns: repeat(2, 1fr); }
+}
+@@media (max-width: 580px) {
+    .tl-pg    { padding: 14px 14px 40px; gap: 20px; }
+    .tl-hero  { padding: 24px; border-radius: 20px; }
+    .tl-grid  { grid-template-columns: 1fr; }
+    .tl-quick { grid-template-columns: 1fr; }
+    .tl-card__num { font-size: 3.5rem; }
+}
+</style>
+}
+
+<div class="tl-pg">
+
+    <!-- ── Hero ── -->
+    <section class="tl-hero">
+        <div class="tl-hero__body">
+            <span class="tl-hero__kicker">
+                <span class="tl-hero__pulse" aria-hidden="true"></span>
+                @T("Energetické nástroje", "Energy tools")
+            </span>
+
+            <h1 class="tl-hero__title">
+                @T("Výpočty a analýzy pre návrh energetiky.", "Calculators and analysis for energy design.")
+            </h1>
+
+            <p class="tl-hero__sub">
+                @T(
+                    "Pracovné nástroje pre návrh FVE, odhad prínosu tepelného čerpadla a analýzu 15-minútových distribučných dát zo ZSDis.",
+                    "Workspace for PV savings, heat-pump sizing, and deep analysis of 15-minute ZSDis distribution interval data."
+                )
+            </p>
+
+            <div class="tl-note">
+                <svg width="15" height="15" fill="none" viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M8 7v4M8 5v.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                @T("Nástroje sú momentálne dostupné iba v slovenčine.", "The tools are currently available in Slovak only.")
+            </div>
+        </div>
+
+        <aside class="tl-quick" aria-label="@T("Čo tu nájdeš", "What is inside")">
+            <div class="tl-quick__item">
+                <span class="tl-quick__icon tl-quick__icon--gold" aria-hidden="true">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                        <rect x="2" y="7" width="20" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <path d="M2 11h20M9 7v12M15 7v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        <path d="M7 3.5L9 7M12 2.5V7M17 3.5L15 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <div class="tl-quick__text">
+                    <strong>@T("Rýchly návrh FVE", "Fast PV design")</strong>
+                    <span>@T("Parametre systému, výroba, návratnosť a orientačný PDF report.", "System inputs, production, payback, and indicative PDF report.")</span>
+                </div>
+            </div>
+            <div class="tl-quick__item">
+                <span class="tl-quick__icon tl-quick__icon--green" aria-hidden="true">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                        <path d="M12 3C8.5 3 5.5 6.5 5.5 10.5c0 2.5 1 4.8 3 6.3L9.5 20h5l1-3.2c2-1.5 3-3.8 3-6.3C18.5 6.5 15.5 3 12 3Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                        <path d="M9.5 20h5M10.5 15.5l1.5-4 1.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <div class="tl-quick__text">
+                    <strong>@T("Porovnanie vykurovania", "Heating comparison")</strong>
+                    <span>@T("Model úspory TČ podľa objektu, zdroja tepla a prípadnej FVE.", "Heat-pump savings based on building, heat source, and optional PV.")</span>
+                </div>
+            </div>
+            <div class="tl-quick__item">
+                <span class="tl-quick__icon tl-quick__icon--blue" aria-hidden="true">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <path d="M3 9h18M9 9v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        <path d="M13 15l2 2 3.5-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <div class="tl-quick__text">
+                    <strong>@T("Intervalové dáta", "Interval data")</strong>
+                    <span>@T("Upload 15-minútových dát ZSDis pre simuláciu FVE a batérie.", "Upload ZSDis 15-minute data to simulate PV and battery behavior.")</span>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <!-- ── Tool cards ── -->
+    <section>
+        <div class="tl-catalog-head">
+            <span class="tl-catalog-eyebrow">@T("Dostupné nástroje", "Available tools")</span>
+            <h2>@T("Vyber, čo chceš vypočítať", "Choose what to calculate")</h2>
+        </div>
+
+        <div class="tl-grid">
+
+            <!-- PV savings -->
+            <a class="tl-card tl-card--gold" href="@pvUrl">
+                <span class="tl-card__num" aria-hidden="true">01</span>
+                <div class="tl-card__top">
+                    <span class="tl-card__icon" aria-hidden="true">
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <rect x="2" y="7" width="20" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <path d="M2 11h20M9 7v12M15 7v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                            <path d="M7 3.5L9 7M12 2.5V7M17 3.5L15 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="tl-card__badge">@T("Fotovoltika", "Photovoltaics")</span>
+                </div>
+                <div class="tl-card__body">
+                    <h2>@T("Úspora FV", "PV savings")</h2>
+                    <p>@T("Kalkulačka FVE s návrhom polí, mesačnou výrobou, ekonomickými grafmi a PDF exportom.", "PV calculator with string design, monthly production, financial charts, and PDF export.")</p>
+                </div>
+                <div class="tl-card__foot">
+                    <span class="tl-card__cta">@T("Otvoriť nástroj", "Open tool")</span>
+                    <span class="tl-card__arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- HP savings -->
+            <a class="tl-card tl-card--green" href="@hpUrl">
+                <span class="tl-card__num" aria-hidden="true">02</span>
+                <div class="tl-card__top">
+                    <span class="tl-card__icon" aria-hidden="true">
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <path d="M12 3C8.5 3 5.5 6.5 5.5 10.5c0 2.5 1 4.8 3 6.3L9.5 20h5l1-3.2c2-1.5 3-3.8 3-6.3C18.5 6.5 15.5 3 12 3Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                            <path d="M9.5 20h5M10.5 15.5l1.5-4 1.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="tl-card__badge">@T("Tepelné čerpadlá", "Heat pumps")</span>
+                </div>
+                <div class="tl-card__body">
+                    <h2>@T("Úspora TČ", "HP savings")</h2>
+                    <p>@T("TČ kalkulačka pre porovnanie vykurovania, odhad spotreby, návratnosti a dopadu FVE.", "Heat-pump calculator for heating comparison, consumption estimate, payback, and PV impact.")</p>
+                </div>
+                <div class="tl-card__foot">
+                    <span class="tl-card__cta">@T("Otvoriť nástroj", "Open tool")</span>
+                    <span class="tl-card__arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- Interval analysis -->
+            <a class="tl-card tl-card--blue" href="@intervalUrl">
+                <span class="tl-card__num" aria-hidden="true">03</span>
+                <div class="tl-card__top">
+                    <span class="tl-card__icon" aria-hidden="true">
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <path d="M3 9h18M9 9v12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                            <path d="M13 15l2 2 3.5-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="tl-card__badge">@T("15-min intervaly", "15-min intervals")</span>
+                </div>
+                <div class="tl-card__body">
+                    <h2>@T("Analýza intervalov", "Interval analysis")</h2>
+                    <p>@T("Import distribučných dát, profil spotreby, simulácia FVE a batérie a export analytickej správy.", "Distribution-data import, consumption profile, PV and battery simulation, and analytical report export.")</p>
+                </div>
+                <div class="tl-card__foot">
+                    <span class="tl-card__cta">@T("Otvoriť nástroj", "Open tool")</span>
+                    <span class="tl-card__arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+</div>

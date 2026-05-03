@@ -1,0 +1,1215 @@
+﻿@{
+    var landingLangOnly = ViewData["LandingLangOnly"] is true;
+    var compactInterface = Context.Request.Cookies.TryGetValue(NestStats2.Pages.Settings.IndexModel.CompactInterfaceCookieName, out var compactCookie)
+        && bool.TryParse(compactCookie, out var compactValue)
+        && compactValue;
+    var reduceMotion = Context.Request.Cookies.TryGetValue(NestStats2.Pages.Settings.IndexModel.ReduceMotionCookieName, out var motionCookie)
+        && bool.TryParse(motionCookie, out var motionValue)
+        && motionValue;
+}
+<!DOCTYPE html>
+<html lang="@Lang.HtmlLang(ViewContext?.HttpContext)">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NestStats</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500;600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
+    <link rel="shortcut icon" href="~/favicon.ico" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/product-surfaces.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/NestStats2.styles.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Head", required: false)
+
+    <style>
+        /* â”€â”€â”€ Design Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        :root {
+            --ns-white:        #ffffff;
+            --ns-off-white:    #f9f8f6;
+            --ns-cream:        #f4f1eb;
+            --ns-ink:          #0d0e12;
+            --ns-ink-2:        #2c2e38;
+            --ns-ink-3:        #6b6f82;
+            --ns-ink-4:        #a8abbe;
+            --ns-gold:         #e8a020;
+            --ns-gold-light:   #f5c55a;
+            --ns-gold-dim:     #faf0d9;
+            --ns-green:        #1e9e6e;
+            --ns-green-dim:    #e6f7f1;
+            --ns-blue:         #2563eb;
+            --ns-blue-dim:     #eff4ff;
+            --ns-red:          #d63a3a;
+            --ns-border:       #e8e5de;
+            --ns-border-2:     #f0ede6;
+            --ns-shadow-sm:    0 1px 3px rgba(13,14,18,.05), 0 1px 2px rgba(13,14,18,.06);
+            --ns-shadow-md:    0 4px 16px rgba(13,14,18,.07), 0 2px 6px rgba(13,14,18,.05);
+            --ns-shadow-lg:    0 16px 40px rgba(13,14,18,.09), 0 4px 12px rgba(13,14,18,.06);
+            --nav-h:           60px;
+            --ff-serif:        'Instrument Serif', Georgia, serif;
+            --ff-sans:         'Figtree', system-ui, sans-serif;
+            --ff-mono:         'Geist Mono', 'Courier New', monospace;
+            --ease-spring:     cubic-bezier(.34,1.56,.64,1);
+            --ease-out:        cubic-bezier(.16,1,.3,1);
+        }
+
+        /* â”€â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--ff-sans);
+            background: var(--ns-white);
+            color: var(--ns-ink);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body.prefers-compact {
+            --nav-h: 54px;
+        }
+
+        body.prefers-compact .page-container,
+        body.prefers-compact .settings-page {
+            padding-top: 18px;
+        }
+
+        body.prefers-reduced-motion *,
+        body.prefers-reduced-motion *::before,
+        body.prefers-reduced-motion *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: .001ms !important;
+        }
+
+        /* â”€â”€â”€ Animated Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .ns-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Subtle radial glow anchored top-right */
+        .ns-bg__glow {
+            position: absolute;
+            top: -200px;
+            right: -100px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle at 60% 40%,
+                rgba(232,160,32,.13) 0%,
+                rgba(245,197,90,.07) 35%,
+                transparent 70%);
+            animation: glowDrift 18s ease-in-out infinite alternate;
+        }
+
+        .ns-bg__glow-2 {
+            position: absolute;
+            bottom: -150px;
+            left: -80px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle at 40% 60%,
+                rgba(37,99,235,.06) 0%,
+                transparent 65%);
+            animation: glowDrift 24s ease-in-out infinite alternate-reverse;
+        }
+
+        @@keyframes glowDrift {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, 20px) scale(1.08); }
+        }
+
+        /* Fine dot grid */
+        .ns-bg__grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle, rgba(13,14,18,.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 0%, transparent 100%);
+            animation: gridFade 3s var(--ease-out) forwards;
+            opacity: 0;
+        }
+
+        @@keyframes gridFade {
+            to { opacity: 1; }
+        }
+
+        /* Diagonal accent line */
+        .ns-bg__line {
+            position: absolute;
+            top: 0; right: 160px;
+            width: 1px;
+            height: 100vh;
+            background: linear-gradient(to bottom,
+                transparent 0%,
+                rgba(232,160,32,.18) 20%,
+                rgba(232,160,32,.10) 60%,
+                transparent 100%);
+            animation: linePulse 6s ease-in-out infinite;
+        }
+
+        .ns-bg__line-2 {
+            position: absolute;
+            top: 0; right: 320px;
+            width: 1px;
+            height: 100vh;
+            background: linear-gradient(to bottom,
+                transparent 0%,
+                rgba(37,99,235,.09) 30%,
+                transparent 80%);
+            animation: linePulse 9s ease-in-out infinite reverse;
+        }
+
+        @@keyframes linePulse {
+            0%, 100% { opacity: .5; }
+            50%       { opacity: 1; }
+        }
+
+        /* Floating energy orbs */
+        .ns-bg__orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            animation: orbFloat linear infinite;
+            opacity: 0;
+        }
+
+        .ns-bg__orb:nth-child(1) {
+            width: 120px; height: 120px;
+            background: rgba(232,160,32,.15);
+            top: 15%; right: 8%;
+            animation-duration: 20s;
+            animation-delay: 0s;
+        }
+        .ns-bg__orb:nth-child(2) {
+            width: 80px; height: 80px;
+            background: rgba(30,158,110,.12);
+            top: 55%; left: 5%;
+            animation-duration: 28s;
+            animation-delay: -8s;
+        }
+        .ns-bg__orb:nth-child(3) {
+            width: 60px; height: 60px;
+            background: rgba(37,99,235,.1);
+            top: 75%; right: 20%;
+            animation-duration: 22s;
+            animation-delay: -14s;
+        }
+
+        @@keyframes orbFloat {
+            0%   { opacity: 0; transform: translateY(0px) scale(1); }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.1); }
+        }
+
+        /* â”€â”€â”€ Global Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .global-nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            height: auto;
+            background: rgba(249,248,246,.82);
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border-bottom: 0;
+            overflow: visible;
+            animation: navSlideIn .45s var(--ease-out) forwards;
+            padding: 10px 10px 0;
+        }
+
+        @@keyframes navSlideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0);     opacity: 1; }
+        }
+
+        .global-nav__inner {
+            max-width: 1840px;
+            width: min(1840px, calc(100vw - 20px));
+            margin: 0 auto;
+            padding: 0 14px;
+            min-height: 46px;
+            height: auto;
+            display: grid;
+            grid-template-columns: minmax(160px, auto) minmax(0, 1fr);
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid var(--ns-border);
+            border-radius: 18px;
+            box-shadow: var(--ns-shadow-sm);
+        }
+
+        .global-nav__toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 42px;
+            padding: 14px;
+            border: 1px solid var(--ns-border);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            color: var(--ns-ink);
+            cursor: pointer;
+            transition: background .18s, border-color .18s, transform .18s;
+        }
+
+        .global-nav__toggle:hover {
+            background: var(--ns-off-white);
+            border-color: var(--ns-ink-4);
+        }
+
+        .global-nav__toggle:active {
+            transform: scale(.98);
+        }
+
+        .global-nav__toggle-label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+        }
+
+        .global-nav__toggle-bars {
+            display: inline-grid;
+            gap: 4px;
+        }
+
+        .global-nav__toggle-bars span {
+            display: block;
+            width: 16px;
+            height: 2px;
+            border-radius: 999px;
+            background: currentColor;
+            transition: transform .18s var(--ease-out), opacity .18s var(--ease-out);
+            transform-origin: center;
+        }
+
+        body.nav-expanded .global-nav__toggle-bars span:nth-child(1) {
+            transform: translateY(6px) rotate(45deg);
+        }
+
+        body.nav-expanded .global-nav__toggle-bars span:nth-child(2) {
+            opacity: 0;
+        }
+
+        body.nav-expanded .global-nav__toggle-bars span:nth-child(3) {
+            transform: translateY(-6px) rotate(-45deg);
+        }
+
+        .global-nav__panel {
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* â”€â”€ Brand â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .global-nav__brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: inherit;
+            flex-shrink: 0;
+            padding-right: 2px;
+            transition: opacity .18s;
+            min-width: 0;
+            max-width: 220px;
+        }
+        .global-nav__brand:hover { opacity: .75; }
+        .global-nav__mode {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: rgba(232,160,32,.10);
+            border: 1px solid rgba(232,160,32,.22);
+            color: #8b5a00;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* Mark ??? real logo image */
+        .global-nav__mark {
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            padding: 4px;
+            background: rgba(255,255,255,.92);
+            border: 1px solid rgba(13,14,18,.08);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 6px 16px rgba(13,14,18,.08);
+            animation: markPop .55s var(--ease-spring) .25s both;
+        }
+        @@keyframes markPop {
+            from { transform: scale(0) rotate(-20deg); }
+            to   { transform: scale(1) rotate(0deg); }
+        }
+        .global-nav__mark img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Wordmark â€” two-tone single line */
+        .global-nav__copy { line-height: 1; }
+        .global-nav__eyebrow { display: none; }
+        .global-nav__subcopy  {
+            display: block;
+            margin-top: 1px;
+            color: var(--ns-ink-4);
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: -.01em;
+            white-space: nowrap;
+        }
+
+        .global-nav__copy strong {
+            font-family: var(--ff-mono);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -.03em;
+            line-height: 1;
+            color: var(--ns-ink);
+        }
+        /* "Nest" dark, "Stats" gold â€” via a span injected below */
+        .global-nav__copy strong .wm-a { color: var(--ns-ink); }
+        .global-nav__copy strong .wm-b { color: var(--ns-gold); }
+
+        /* â”€â”€ Nav links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .global-nav__links {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 4px;
+            min-width: 0;
+            max-width: 100%;
+            flex-wrap: nowrap;
+            overflow: hidden;
+        }
+
+        .global-nav__link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 5px 11px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ns-ink-3);
+            text-decoration: none;
+            border-radius: 9px;
+            border: 1px solid transparent;
+            transition: color .15s, background .15s, border-color .15s, box-shadow .15s;
+            letter-spacing: -.01em;
+            white-space: nowrap;
+            min-width: 0;
+            flex: 0 0 auto;
+        }
+        .global-nav__link:hover {
+            color: var(--ns-ink);
+            border-color: rgba(13,14,18,.055);
+            background: rgba(255,255,255,.76);
+            box-shadow: 0 8px 18px rgba(13,14,18,.06);
+        }
+        .global-nav__link.is-active {
+            color: var(--ns-ink);
+            background: rgba(232,160,32,.08);
+        }
+
+        /* Active = gold dot below link, not a block */
+        .global-nav__link.is-active::after {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px; height: 4px;
+            border-radius: 50%;
+            background: var(--ns-gold);
+            animation: dotPop .3s var(--ease-spring);
+            box-shadow: 0 0 6px rgba(232,160,32,.6);
+        }
+        @@keyframes dotPop {
+            from { transform: translateX(-50%) scale(0); }
+            to   { transform: translateX(-50%) scale(1); }
+        }
+
+        /* â”€â”€ Account area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .global-nav__account {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+            min-width: 0;
+            max-width: 100%;
+            padding-left: 0;
+        }
+        .global-nav__account-card {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+            max-width: min(100%, 240px);
+            padding: 2px 6px 2px 7px;
+            border-radius: 999px;
+            border: 1px solid var(--ns-border);
+        }
+        .global-nav__lang {
+            margin-left: 2px;
+        }
+        .global-nav__lang .lang-switch__btn {
+            min-width: 34px;
+            min-height: 34px;
+            padding: 6px 8px;
+            gap: 6px;
+        }
+        .global-nav__lang .lang-switch__flag {
+            font-size: 16px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .global-nav__lang .lang-switch__flag img {
+            width: 18px;
+            height: 12px;
+            display: block;
+            border-radius: 3px;
+            border: 1px solid rgba(15, 23, 42, 0.15);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+        }
+        .global-nav__user {
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--ns-ink-2);
+            letter-spacing: -.01em;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .global-nav__role {
+            font-family: var(--ff-mono);
+            font-size: 9px;
+            color: var(--ns-gold);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            background: var(--ns-gold-dim);
+            padding: 1px 4px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        /* â”€â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+                    min-height: 28px;
+                    padding: 5px 10px;
+            border-radius: 7px;
+            font-family: var(--ff-sans);
+                    font-size: 12px;
+            font-weight: 500;
+            letter-spacing: -.01em;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            outline: none;
+            transition: transform .13s var(--ease-spring), box-shadow .13s, background .13s, color .13s, border-color .13s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .button:active { transform: scale(.96); }
+
+        .button--ghost {
+            background: transparent;
+            color: var(--ns-ink-3);
+            border-color: var(--ns-border);
+        }
+        .button--ghost:hover {
+            background: var(--ns-off-white);
+            border-color: var(--ns-ink-4);
+            color: var(--ns-ink);
+        }
+
+        .button--primary {
+            background: var(--ns-gold);
+            color: #fff;
+            border-color: var(--ns-gold);
+            box-shadow: 0 1px 8px rgba(232,160,32,.32);
+            font-weight: 600;
+        }
+        .button--primary:hover {
+            background: #cf8910;
+            border-color: #cf8910;
+            box-shadow: 0 3px 14px rgba(232,160,32,.45);
+            transform: translateY(-1px);
+        }
+
+        /* â”€â”€â”€ App Frame â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        @@media (min-width: 1101px) {
+            .global-nav.site-nav .global-nav__inner {
+                display: grid !important;
+                grid-template-columns: 17rem minmax(0, 1fr) auto !important;
+                align-items: center !important;
+                gap: 8px !important;
+            }
+
+            .global-nav.site-nav .global-nav__brand {
+                grid-column: 1 !important;
+                max-width: 17rem !important;
+                justify-self: start !important;
+            }
+
+            .global-nav.site-nav .global-nav__toggle {
+                display: none !important;
+            }
+
+            .global-nav.site-nav .global-nav__panel {
+                display: contents !important;
+            }
+
+            .global-nav.site-nav .global-nav__links {
+                grid-column: 2 !important;
+                justify-self: start !important;
+                justify-content: flex-start !important;
+                width: 100% !important;
+                margin-left: 0 !important;
+                position: static !important;
+                transform: none !important;
+            }
+
+            .global-nav.site-nav .global-nav__account {
+                grid-column: 3 !important;
+                justify-self: end !important;
+            }
+        }
+
+        .app-frame {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding-top: var(--nav-h);
+            animation: frameFadeIn .6s var(--ease-out) .25s both;
+        }
+
+        @@keyframes frameFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* â”€â”€â”€ Page entrance utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .page-enter {
+            animation: pageEnter .5s var(--ease-out) .1s both;
+        }
+
+        @@keyframes pageEnter {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* â”€â”€â”€ NestStats Content Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .ns-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        .ns-card {
+            background: var(--ns-white);
+            border: 1px solid var(--ns-border);
+            border-radius: 16px;
+            box-shadow: var(--ns-shadow-sm);
+            transition: box-shadow .2s, transform .2s;
+        }
+
+        .ns-card:hover {
+            box-shadow: var(--ns-shadow-md);
+        }
+
+        /* Stat pill */
+        .ns-stat-positive { color: var(--ns-green); }
+        .ns-stat-negative { color: var(--ns-red); }
+        .ns-stat-neutral  { color: var(--ns-ink-3); }
+
+        /* Mono values (watt, kWh, %) */
+        .ns-val {
+            font-family: var(--ff-mono);
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: -.02em;
+        }
+
+        /* â”€â”€â”€ Toast / Flash messages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        .ns-toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 999;
+            background: var(--ns-ink);
+            color: var(--ns-white);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--ns-shadow-lg);
+            animation: toastIn .4s var(--ease-spring);
+        }
+
+        @@keyframes toastIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        /* â”€â”€â”€ Progress bar (page transition) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        #ns-progress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--ns-gold), var(--ns-gold-light));
+            z-index: 9999;
+            width: 0%;
+            transition: width .3s var(--ease-out);
+            box-shadow: 0 0 8px rgba(232,160,32,.5);
+        }
+
+        /* â”€â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--ns-border);
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ns-ink-4); }
+
+        /* â”€â”€â”€ Selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        ::selection {
+            background: var(--ns-gold-dim);
+            color: var(--ns-ink);
+        }
+
+        /* â”€â”€â”€ Focus ring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        :focus-visible {
+            outline: 2px solid var(--ns-gold);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        /* â”€â”€â”€ Mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        @@media (max-width: 1100px) {
+            .global-nav {
+                position: sticky;
+                height: auto;
+                overflow: visible;
+                top: 0;
+                padding: 8px 12px 0;
+            }
+            .global-nav__subcopy {
+                display: none;
+            }
+            .global-nav__inner {
+                padding: 10px 16px;
+                height: auto;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 12px;
+                align-items: start;
+                border-radius: 16px;
+            }
+            .global-nav__mode {
+                display: none;
+            }
+            .global-nav__toggle {
+                display: inline-flex;
+            }
+            .global-nav__panel {
+                display: none;
+                grid-column: 1 / -1;
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 10px 12px 12px;
+                border: 1px solid var(--ns-border);
+                border-radius: 18px;
+                background: rgba(255,255,255,.92);
+                box-shadow: var(--ns-shadow-sm);
+            }
+            body.nav-expanded .global-nav__panel {
+                display: grid;
+            }
+            .global-nav__links {
+                position: static;
+                inset: auto;
+                height: auto;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                gap: 6px;
+                padding: 0;
+                background: transparent;
+                border-top: 0;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                z-index: auto;
+            }
+            .global-nav__link {
+                min-height: 30px;
+                padding: 10px 12px;
+            }
+            .global-nav__link.is-active::after { bottom: -4px; }
+            .global-nav__brand { padding-right: 0; }
+            .global-nav__account {
+                padding-left: 0;
+                display: flex;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            .global-nav__account-card {
+                max-width: 100%;
+            }
+            .app-frame { padding-top: 20px; }
+        }
+
+        @@media (max-width: 768px) {
+            .global-nav__inner {
+                padding: 10px 14px;
+            }
+            .global-nav__copy strong { font-size: 16px; }
+            .global-nav__links {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                width: 100%;
+            }
+            .global-nav__link {
+                justify-content: center;
+                text-align: center;
+                min-width: 0;
+            }
+            .global-nav__link.is-active {
+                background: rgba(232,160,32,.10);
+                color: var(--ns-ink);
+            }
+            .global-nav__link.is-active::after { display: none; }
+            .global-nav__account {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+                width: 100%;
+            }
+            .global-nav__account-card,
+            .global-nav__account form,
+            .global-nav__account .button {
+                width: 100%;
+            }
+            .global-nav__account-card {
+                justify-content: space-between;
+            }
+            .button {
+                min-height: 44px;
+            }
+            .ns-container { padding: 0 16px; }
+            .app-frame {
+                padding-top: 16px;
+                padding-bottom: max(24px, env(safe-area-inset-bottom));
+            }
+            /* Show lang code text so mobile buttons read "SK" / "EN" */
+            .global-nav__lang .lang-switch__code { display: inline; }
+        }
+
+        /* Hide the floating corner â€” language picker lives inside the nav */
+        .site-lang-corner { display: none !important; }
+
+        @if (landingLangOnly)
+        {
+            <text>
+            body.layout--lang-only .site-lang-corner {
+                display: block !important;
+                position: fixed;
+                top: calc(env(safe-area-inset-top, 0rem) + 1rem);
+                right: 1rem;
+                z-index: 220;
+            }
+
+            body.layout--lang-only .global-nav {
+                display: none !important;
+            }
+
+            body.layout--lang-only .app-frame {
+                padding-top: max(1rem, env(safe-area-inset-top, 0rem)) !important;
+            }
+
+            @@media (max-width: 760px) {
+                body.layout--lang-only .site-lang-corner {
+                    top: calc(env(safe-area-inset-top, 0rem) + 0.75rem);
+                    right: 0.75rem;
+                }
+
+                body.layout--lang-only .app-frame {
+                    padding-top: max(0.75rem, env(safe-area-inset-top, 0rem)) !important;
+                }
+            }
+            </text>
+        }
+
+    </style>
+</head>
+<body class="@string.Join(" ", new[] { User?.Identity?.IsAuthenticated == true ? "shell-body" : string.Empty, landingLangOnly ? "layout--lang-only" : string.Empty, compactInterface ? "prefers-compact" : string.Empty, reduceMotion ? "prefers-reduced-motion" : string.Empty }.Where(value => !string.IsNullOrWhiteSpace(value)))">
+    @inject Microsoft.AspNetCore.Identity.SignInManager<NestStats2.Models.ApplicationUser> SignInManager
+    @inject Microsoft.AspNetCore.Identity.UserManager<NestStats2.Models.ApplicationUser> UserManager
+
+    @{
+        var signedIn = SignInManager.IsSignedIn(User);
+        var isAdmin = User.IsInRole("Admin");
+        var currentUser = signedIn ? await UserManager.GetUserAsync(User) : null;
+        var isEnglish = Lang.IsEnglish(Context);
+        string T(string sk, string en) => Lang.Pick(Context, sk, en);
+        var displayName = signedIn
+            ? (currentUser?.DisplayName ?? User.Identity?.Name ?? "Používateľ")
+            : string.Empty;
+        var currentPath = (Context.Request.Path.Value ?? "/").ToLowerInvariant();
+        var isSlovakOnlyToolPage =
+            currentPath.StartsWith("/navrh-fotovoltaiky", StringComparison.OrdinalIgnoreCase) ||
+            currentPath.StartsWith("/pv-design", StringComparison.OrdinalIgnoreCase) ||
+            currentPath.StartsWith("/navrh-tc", StringComparison.OrdinalIgnoreCase) ||
+            currentPath.StartsWith("/heat-pump-design", StringComparison.OrdinalIgnoreCase) ||
+            currentPath.StartsWith("/analyza-15-minutovych-intervalov", StringComparison.OrdinalIgnoreCase) ||
+            currentPath.StartsWith("/15-minute-interval-analysis", StringComparison.OrdinalIgnoreCase);
+        var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+        var targetCulture = isEnglish ? "sk" : "en";
+        var aboutUrl = isEnglish ? "/about-us" : "/spoznaj-nas";
+        var gettingStartedUrl = isEnglish ? "/getting-started" : "/ako-zacat";
+        var toolsUrl = isEnglish ? "/tools" : "/nastroje";
+
+        // Language switcher needs localized return URLs — path-based culture detection
+        // overrides cookies, so returning to /tools always shows EN even with SK cookie set.
+        var _skMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            { "/tools",            "/nastroje"           },
+            { "/about-us",         "/spoznaj-nas"        },
+            { "/getting-started",   "/ako-zacat"          },
+        };
+        var _enMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            { "/nastroje",            "/tools"            },
+            { "/spoznaj-nas",         "/about-us"         },
+            { "/ako-zacat",           "/getting-started"  },
+        };
+        var skReturnUrl = _skMap.ContainsKey(currentPath) ? _skMap[currentPath] : returnUrl;
+        var enReturnUrl = _enMap.ContainsKey(currentPath) ? _enMap[currentPath] : returnUrl;
+
+        string NavState(params string[] prefixes)
+        {
+            foreach (var prefix in prefixes)
+            {
+                if (prefix == "/" && currentPath == "/")
+                    return "is-active";
+                if (prefix != "/" && currentPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    return "is-active";
+            }
+            return string.Empty;
+        }
+    }
+
+    <!-- Progress bar -->
+    <div id="ns-progress"></div>
+
+    <div class="site-lang-corner" aria-label="@T("Výber jazyka", "Language selector")">
+        <div class="lang-switch">
+            <form class="lang-switch__form" action="/language/set" method="get">
+                <input type="hidden" name="culture" value="sk" />
+                <input type="hidden" name="returnUrl" value="@skReturnUrl" />
+                <button type="submit" class="lang-switch__btn @(!isEnglish || isSlovakOnlyToolPage ? "is-active" : string.Empty)" aria-label="@T("Prepnúť na slovenčinu", "Switch to Slovak")">
+                    <span class="lang-switch__flag" aria-hidden="true">
+                        <img src="~/SK.svg" alt="" asp-append-version="true" />
+                    </span>
+                    <span class="lang-switch__code">SK</span>
+                </button>
+            </form>
+            @if (!isSlovakOnlyToolPage)
+            {
+                <form class="lang-switch__form" action="/language/set" method="get">
+                    <input type="hidden" name="culture" value="en" />
+                    <input type="hidden" name="returnUrl" value="@enReturnUrl" />
+                    <button type="submit" class="lang-switch__btn @(isEnglish ? "is-active" : string.Empty)" aria-label="@T("Prepnúť do angličtiny", "Switch to English")">
+                        <span class="lang-switch__flag" aria-hidden="true">
+                            <img src="~/EN.svg" alt="" asp-append-version="true" />
+                        </span>
+                        <span class="lang-switch__code">EN</span>
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- Animated background -->
+    <div class="ns-bg" aria-hidden="true">
+        <div class="ns-bg__glow"></div>
+        <div class="ns-bg__glow-2"></div>
+        <div class="ns-bg__grid"></div>
+        <div class="ns-bg__line"></div>
+        <div class="ns-bg__line-2"></div>
+        <div class="ns-bg__orb"></div>
+        <div class="ns-bg__orb"></div>
+        <div class="ns-bg__orb"></div>
+    </div>
+
+    <!-- Navigation -->
+    @if (!landingLangOnly)
+    {
+    <header class="global-nav site-nav" role="banner" data-nav-root>
+        <div class="global-nav__inner">
+
+            <a class="global-nav__brand" href="@aboutUrl" aria-label="@T("Spoznaj NestStats", "Meet NestStats")">
+                <span class="global-nav__mark" aria-hidden="true"><img src="~/logo.png" alt="" asp-append-version="true" /></span>
+                <span class="global-nav__copy">
+                    <strong><span class="wm-a">Nest</span><span class="wm-b">Stats</span></strong>
+                    <span class="global-nav__subcopy">@T("Energetický workspace", "Energy workspace")</span>
+                </span>
+            </a>
+            <button type="button"
+                    class="global-nav__toggle"
+                    data-nav-toggle
+                    aria-label="@T("Prepnúť navigáciu", "Toggle navigation")"
+                    aria-expanded="false"
+                    aria-controls="global-nav-panel">
+                <span class="global-nav__toggle-label">Menu</span>
+                <span class="global-nav__toggle-bars" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            </button>
+
+            <div class="global-nav__panel" id="global-nav-panel" data-nav-panel>
+
+            <nav class="global-nav__links" aria-label="@T("Hlavná navigácia", "Main navigation")">
+                <a class="global-nav__link @NavState("/spoznaj-nas", "/about-us")" href="@aboutUrl">@T("O nás", "About us")</a>
+                <a class="global-nav__link @NavState("/ako-zacat", "/getting-started")" href="@gettingStartedUrl">@T("Ako začať", "Getting started")</a>
+                <a class="global-nav__link @NavState("/nastroje", "/tools", "/navrh-fotovoltaiky", "/pv-design", "/navrh-tc", "/heat-pump-design", "/analyza-15-minutovych-intervalov", "/15-minute-interval-analysis")" href="@toolsUrl">@T("Nástroje", "Tools")</a>
+                <a class="global-nav__link @NavState("/")" asp-page="/Index" data-dashboard-home>@T("Dashboard", "Dashboard")</a>
+                @if (signedIn)
+                {
+                    @if (!isAdmin && currentUser?.OnboardingCompletedUtc is null)
+                    {
+                        <a class="global-nav__link @NavState("/onboarding")" asp-page="/Onboarding/Index">@T("Spustenie", "Launch")</a>
+                    }
+                    <a class="global-nav__link @NavState("/systems")" asp-page="/Systems/Connect">@T("Systémy", "Systems")</a>
+                    <a class="global-nav__link @NavState("/settings")" asp-page="/Settings/Index">@T("Nastavenia", "Settings")</a>
+                    @if (isAdmin)
+                    {
+                        <a class="global-nav__link @NavState("/admin/assignments")" asp-page="/Admin/Assignments">@T("Priradenia", "Assignments")</a>
+                        <a class="global-nav__link @NavState("/admin")" asp-page="/Admin/Index">@T("Admin", "Admin")</a>
+                    }
+                    <a class="global-nav__link global-nav__link--legal @NavState("/privacy")" asp-page="/Privacy">@T("Ochrana údajov", "Privacy")</a>
+                }
+            </nav>
+
+            <div class="global-nav__account">
+                @if (signedIn)
+                {
+                    <div class="global-nav__account-card">
+                        <span class="global-nav__user">@displayName</span>
+                        <span class="global-nav__role">@(isAdmin ? "Správca" : "Používateľ")</span>
+                    </div>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index")" method="post">
+                        <button type="submit" class="button button--ghost">Odhlásiť sa</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="button button--ghost" asp-area="Identity" asp-page="/Account/Login">Prihlásiť sa</a>
+                    <a class="button button--primary" asp-area="Identity" asp-page="/Account/Register">Vytvoriť účet</a>
+                }
+                <div class="lang-switch global-nav__lang" aria-label="@T("Výber jazyka", "Language selector")">
+                    <form class="lang-switch__form" action="/language/set" method="get">
+                        <input type="hidden" name="culture" value="sk" />
+                        <input type="hidden" name="returnUrl" value="@skReturnUrl" />
+                        <button type="submit" class="lang-switch__btn @(!isEnglish || isSlovakOnlyToolPage ? "is-active" : string.Empty)" aria-label="@T("Prepnúť na slovenčinu", "Switch to Slovak")">
+                            <span class="lang-switch__flag" aria-hidden="true">
+                                <img src="~/SK.svg" alt="" asp-append-version="true" />
+                            </span>
+                            <span class="lang-switch__code">SK</span>
+                        </button>
+                    </form>
+                    @if (!isSlovakOnlyToolPage)
+                    {
+                        <form class="lang-switch__form" action="/language/set" method="get">
+                            <input type="hidden" name="culture" value="en" />
+                            <input type="hidden" name="returnUrl" value="@enReturnUrl" />
+                            <button type="submit" class="lang-switch__btn @(isEnglish ? "is-active" : string.Empty)" aria-label="@T("Prepnúť do angličtiny", "Switch to English")">
+                                <span class="lang-switch__flag" aria-hidden="true">
+                                    <img src="~/EN.svg" alt="" asp-append-version="true" />
+                                </span>
+                                <span class="lang-switch__code">EN</span>
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+            </div>
+
+        </div>
+    </header>
+    }
+
+    <!-- Main content -->
+    <main class="app-frame" role="main">
+        @RenderBody()
+    </main>
+
+    <script>
+        window.nestStatsUi = {
+            lang: '@(isEnglish ? "en" : "sk")',
+            locale: '@Lang.Locale(Context)'
+        };
+    </script>
+    @if (!string.Equals(currentPath, "/", StringComparison.OrdinalIgnoreCase))
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    }
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        /* â”€â”€ Page load progress bar â”€â”€ */
+        const bar = document.getElementById('ns-progress');
+        let prog = 0;
+        const tick = setInterval(() => {
+            prog = Math.min(prog + Math.random() * 18, 85);
+            bar.style.width = prog + '%';
+        }, 120);
+        window.addEventListener('load', () => {
+            clearInterval(tick);
+            bar.style.width = '100%';
+            setTimeout(() => { bar.style.opacity = '0'; bar.style.transition = 'opacity .4s'; }, 300);
+        });
+
+        /* â”€â”€ Nav link entrance stagger â”€â”€ */
+        (() => {
+            if (window.__nsNavBound) {
+                return;
+            }
+
+            const navRoot = document.querySelector('[data-nav-root]');
+            const navToggle = document.querySelector('[data-nav-toggle]');
+            const navPanel = document.querySelector('[data-nav-panel]');
+            const compactNav = window.matchMedia('(max-width: 1100px)');
+
+            if (!navRoot || !navToggle || !navPanel) {
+                return;
+            }
+
+            const setNavState = (expanded) => {
+                const isOpen = compactNav.matches && expanded;
+                document.body.classList.toggle('nav-expanded', isOpen);
+                navRoot.classList.toggle('is-open', isOpen);
+                navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                navPanel.style.removeProperty('display');
+            };
+
+            const scrollDashboardHome = () => {
+                const cleanUrl = window.location.pathname + window.location.search;
+                if (window.location.hash) {
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+            };
+
+            document.querySelectorAll('[data-dashboard-home]').forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    const target = event.currentTarget;
+                    if (!(target instanceof HTMLAnchorElement)) {
+                        return;
+                    }
+
+                    const targetUrl = new URL(target.href, window.location.origin);
+                    const isDashboardPage = window.location.pathname === '/' || window.location.pathname.toLowerCase() === '/index';
+                    const pointsToDashboard = targetUrl.origin === window.location.origin && targetUrl.pathname === '/';
+
+                    if (!isDashboardPage || !pointsToDashboard) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    setNavState(false);
+                    scrollDashboardHome();
+                });
+            });
+
+            navToggle.onclick = () => {
+                setNavState(!document.body.classList.contains('nav-expanded'));
+            };
+
+            navPanel.querySelectorAll('a, button[type="submit"]').forEach((target) => {
+                target.addEventListener('click', () => {
+                    if (compactNav.matches) {
+                        setNavState(false);
+                    }
+                });
+            });
+
+            compactNav.addEventListener('change', () => {
+                setNavState(document.body.classList.contains('nav-expanded'));
+            });
+
+            setNavState(document.body.classList.contains('nav-expanded'));
+        })();
+
+        document.querySelectorAll('.global-nav__link').forEach((el, i) => {
+            el.style.animationDelay = (i * 0.06 + 0.4) + 's';
+            el.style.animation = 'navLinkIn .4s cubic-bezier(.16,1,.3,1) both';
+            el.style.animationDelay = (i * 0.06 + 0.5) + 's';
+        });
+
+        /* â”€â”€ Intersection observer for page-enter cards â”€â”€ */
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationDelay = (i * 0.04) + 's';
+                    entry.target.classList.add('page-enter');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08 });
+
+        document.querySelectorAll('.ns-card, [data-animate]').forEach(el => observer.observe(el));
+    </script>
+
+    <style>
+        @@keyframes navLinkIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

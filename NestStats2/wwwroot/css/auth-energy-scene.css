@@ -1,0 +1,1167 @@
+/* ================================================================
+   NestStats — Auth PV Scene v2
+   Day/night energy cycle: solar → inverter → battery
+   All .pvs-* elements.  Loaded after site.css so overrides work.
+   ================================================================ */
+
+/* ── Container tweaks ─────────────────────────────────────────── */
+.pv-visual { padding: 0 !important; }
+.pv-visual::before { display: none !important; }
+
+/* ── Shared cycle variable ────────────────────────────────────── */
+/* --pv-cycle is already set on .auth-card--visual (32 s / 34 s)  */
+
+/* ── Sky ──────────────────────────────────────────────────────── */
+.pvs-sky {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: 0;
+    animation: pvsSky var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsSky {
+    0%   { background: linear-gradient(175deg, #1a50c8 0%, #4292f0 20%, #7cc8fb 42%, #b2e8ce 66%, #62c88c 100%); } /* dawn */
+    6%   { background: linear-gradient(175deg, #30aaf0 0%, #64caf6 22%, #a0e2ff 44%, #c8f0dc 68%, #7dd4a0 100%); } /* early morning */
+    18%  { background: linear-gradient(175deg, #3cb4f4 0%, #76d0f8 22%, #aae6ff 44%, #caf2de 68%, #80d6a2 100%); } /* morning */
+    30%  { background: linear-gradient(175deg, #38b0f4 0%, #72cef6 22%, #a6e2fe 44%, #c6f0dc 68%, #7cd4a0 100%); } /* midday */
+    37%  { background: linear-gradient(175deg, #5a88da 0%, #7aaad8 20%, #c4a070 44%, #d4b07a 66%, #8a9e84 100%); } /* late afternoon */
+    41%  { background: linear-gradient(175deg, #7a60c4 0%, #9080c0 18%, #c46840 44%, #d47840 66%, #747060 100%); } /* golden hour */
+    44%  { background: linear-gradient(175deg, #a040a0 0%, #9a50b0 18%, #b84040 44%, #d05030 66%, #604040 100%); } /* sunset */
+    47%  { background: linear-gradient(175deg, #280c50 0%, #301858 22%, #2a1040 50%, #14082e 100%); } /* dusk */
+    51%  { background: linear-gradient(175deg, #08102c 0%, #0e1e44 30%, #121e3e 60%, #090f28 100%); } /* night fall */
+    68%  { background: linear-gradient(175deg, #060c20 0%, #0c1836 30%, #101a34 60%, #060c1e 100%); } /* midnight */
+    86%  { background: linear-gradient(175deg, #07102c 0%, #0e1c42 30%, #12203e 60%, #090f26 100%); } /* pre-dawn */
+    92%  { background: linear-gradient(175deg, #0c2060 0%, #1a4298 22%, #4480d0 44%, #88cad6 68%, #5cb08c 100%); } /* dawn break */
+    96%  { background: linear-gradient(175deg, #1448bc 0%, #3886f0 22%, #72c6fb 44%, #b2e8ce 68%, #60c68e 100%); } /* sunrise */
+    100% { background: linear-gradient(175deg, #1a50c8 0%, #4292f0 20%, #7cc8fb 42%, #b2e8ce 66%, #62c88c 100%); }
+}
+
+/* ── Sun ──────────────────────────────────────────────────────── */
+.pvs-sun {
+    position: absolute;
+    top: 3.6rem;
+    right: 4.8rem;
+    width: 7rem;
+    height: 7rem;
+    z-index: 2;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 36%,
+        #fffde7 0%, #ffe082 20%, #ffb300 56%, #f59e0b 100%);
+    box-shadow:
+        0 0 0 1.1rem rgba(245, 158, 11, 0.07),
+        0 0 0 2.8rem rgba(245, 158, 11, 0.04),
+        0 0 0 4.5rem rgba(245, 158, 11, 0.02),
+        0 30px 64px rgba(245, 158, 11, 0.26);
+    animation:
+        pvsSunPulse 8s ease-in-out infinite,
+        pvsSunCycle var(--pv-cycle, 34s) linear infinite;
+    will-change: opacity, transform;
+}
+
+.pvs-sun__rays {
+    position: absolute;
+    inset: -2.6rem;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,   transparent 18deg,
+        rgba(251,191,36,.62) 22.5deg,
+        transparent 27deg,  transparent 63deg,
+        rgba(251,191,36,.62) 67.5deg,
+        transparent 72deg,  transparent 108deg,
+        rgba(251,191,36,.62) 112.5deg,
+        transparent 117deg, transparent 153deg,
+        rgba(251,191,36,.62) 157.5deg,
+        transparent 162deg, transparent 198deg,
+        rgba(251,191,36,.62) 202.5deg,
+        transparent 207deg, transparent 243deg,
+        rgba(251,191,36,.62) 247.5deg,
+        transparent 252deg, transparent 288deg,
+        rgba(251,191,36,.62) 292.5deg,
+        transparent 297deg, transparent 333deg,
+        rgba(251,191,36,.62) 337.5deg,
+        transparent 342deg
+    );
+    mask-image: radial-gradient(circle, transparent 54%, rgba(0,0,0,.5) 62%, black 68%);
+    -webkit-mask-image: radial-gradient(circle, transparent 54%, rgba(0,0,0,.5) 62%, black 68%);
+    animation: pvsSunRays 22s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes pvsSunPulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.08); }
+}
+
+@keyframes pvsSunRays {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@keyframes pvsSunCycle {
+    0%, 35%  { opacity: 1; transform: translateY(0) scale(1); }
+    43%, 93% { opacity: 0; transform: translateY(2.8rem) scale(0.5); }
+    100%     { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Moon ─────────────────────────────────────────────────────── */
+.pvs-moon {
+    position: absolute;
+    top: 4.2rem;
+    right: 7rem;
+    width: 4.6rem;
+    height: 4.6rem;
+    z-index: 2;
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 34%, #f8fafc, #dde5f0);
+    box-shadow:
+        inset -1.1rem -0.5rem 0 rgba(5, 15, 50, 0.26),
+        0 0 2.4rem rgba(220, 229, 245, 0.32);
+    animation: pvsMoonCycle var(--pv-cycle, 34s) linear infinite;
+    will-change: opacity, transform;
+}
+
+@keyframes pvsMoonCycle {
+    0%   { opacity: 0; transform: translateY(-1.8rem) scale(0.65); }
+    38%  { opacity: 0; transform: translateY(-1.4rem) scale(0.7); }
+    47%  { opacity: .8; transform: translateY(-.2rem) scale(.96); }
+    54%  { opacity: 1; transform: translateY(0) scale(1); }
+    88%  { opacity: 1; transform: translateY(0) scale(1); }
+    95%  { opacity: 0; transform: translateY(-.8rem) scale(.8); }
+    100% { opacity: 0; transform: translateY(-1.8rem) scale(0.65); }
+}
+
+/* ── Stars ────────────────────────────────────────────────────── */
+.pvs-stars {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    animation: pvsStarsCycle var(--pv-cycle, 34s) linear infinite;
+}
+
+.pvs-stars span {
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+    animation: pvsStarTwinkle 2.6s ease-in-out infinite;
+}
+
+.pvs-stars span:nth-child(1) { width:3px; height:3px; top: 8%; left:12%; animation-delay:0s; }
+.pvs-stars span:nth-child(2) { width:2px; height:2px; top:15%; left:40%; animation-delay:.65s; }
+.pvs-stars span:nth-child(3) { width:4px; height:4px; top: 6%; left:63%; animation-delay:1.1s; }
+.pvs-stars span:nth-child(4) { width:2px; height:2px; top:18%; left:77%; animation-delay:.28s; }
+.pvs-stars span:nth-child(5) { width:3px; height:3px; top:11%; left:89%; animation-delay:1.5s; }
+.pvs-stars span:nth-child(6) { width:2px; height:2px; top:22%; left:24%; animation-delay:.82s; }
+.pvs-stars span:nth-child(7) { width:3px; height:3px; top: 5%; left:53%; animation-delay:1.9s; }
+.pvs-stars span:nth-child(8) { width:2px; height:2px; top:20%; left:70%; animation-delay:.44s; }
+
+@keyframes pvsStarsCycle {
+    0%   { opacity: 0; }
+    40%  { opacity: 0; }
+    50%  { opacity: 1; }
+    88%  { opacity: 1; }
+    96%  { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@keyframes pvsStarTwinkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .3; transform: scale(.55); }
+}
+
+/* ── Cloud ────────────────────────────────────────────────────── */
+.pvs-cloud {
+    position: absolute;
+    top: 7rem;
+    left: 4rem;
+    width: 6.5rem;
+    height: 2.4rem;
+    z-index: 2;
+    border-radius: 999px;
+    background: rgba(255,255,255,.7);
+    box-shadow: 0 10px 24px rgba(15,34,60,.06);
+    animation:
+        pvsCloudFloat 20s ease-in-out infinite,
+        pvsCloudCycle var(--pv-cycle, 34s) linear infinite;
+    pointer-events: none;
+}
+
+.pvs-cloud::before {
+    content: "";
+    position: absolute;
+    width: 2.9rem; height: 2.9rem;
+    border-radius: 50%; background: inherit;
+    top: -1.1rem; left: .8rem;
+}
+
+.pvs-cloud::after {
+    content: "";
+    position: absolute;
+    width: 3.4rem; height: 3.4rem;
+    border-radius: 50%; background: inherit;
+    top: -1.3rem; right: .9rem;
+}
+
+@keyframes pvsCloudFloat {
+    0%  { transform: translateX(-1.8rem); }
+    50% { transform: translateX(1.4rem) translateY(.35rem); }
+    100%{ transform: translateX(-1.8rem); }
+}
+
+@keyframes pvsCloudCycle {
+    0%   { opacity: 1;  filter: brightness(1); }
+    36%  { opacity: .9; filter: brightness(.95); }
+    44%  { opacity: .5; filter: brightness(.65); }
+    50%  { opacity: .2; filter: brightness(.45); }
+    88%  { opacity: .2; filter: brightness(.45); }
+    96%  { opacity: .7; filter: brightness(.8); }
+    100% { opacity: 1;  filter: brightness(1); }
+}
+
+/* ── Ground ───────────────────────────────────────────────────── */
+.pvs-ground {
+    position: absolute;
+    left: -6%; right: -6%; bottom: -2rem;
+    height: 35%;
+    z-index: 1;
+    border-radius: 52% 52% 0 0 / 22% 22% 0 0;
+    background: linear-gradient(180deg,
+        rgba(134,198,140,.5) 0%,
+        rgba(85,163,99,.88) 36%,
+        rgba(52,128,67,.96) 100%);
+    animation: pvsGroundCycle var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsGroundCycle {
+    0%   { filter: brightness(.92) saturate(1.0); }
+    8%   { filter: brightness(1.02) saturate(1.06); }
+    32%  { filter: brightness(1.06) saturate(1.1); }
+    40%  { filter: brightness(.82) saturate(.98); }
+    48%  { filter: brightness(.55) saturate(.86); }
+    54%  { filter: brightness(.46) saturate(.82); }
+    88%  { filter: brightness(.44) saturate(.80); }
+    94%  { filter: brightness(.68) saturate(.9); }
+    100% { filter: brightness(.92) saturate(1.0); }
+}
+
+/* ── House ────────────────────────────────────────────────────── */
+.pvs-house {
+    position: absolute;
+    right: -4rem;
+    bottom: 5rem;
+    width: min(44rem, 74%);
+    z-index: 3;
+    margin: 0; padding: 0;
+    filter:
+        drop-shadow(0 32px 40px rgba(9,20,34,.22))
+        drop-shadow(0 8px 16px rgba(9,20,34,.14));
+}
+
+.pvs-house__img {
+    display: block;
+    width: 100%; height: auto;
+    position: relative; z-index: 2;
+    animation: pvsHouseCycle var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsHouseCycle {
+    0%   { filter: brightness(.96) saturate(1.0); }
+    8%   { filter: brightness(1.04) saturate(1.04); }
+    30%  { filter: brightness(1.06) saturate(1.06); }
+    40%  { filter: brightness(.88) saturate(.96); }
+    46%  { filter: brightness(.74) saturate(.90); }
+    52%  { filter: brightness(.62) saturate(.82) contrast(1.04); }
+    88%  { filter: brightness(.58) saturate(.80) contrast(1.04); }
+    93%  { filter: brightness(.78) saturate(.90); }
+    100% { filter: brightness(.96) saturate(1.0); }
+}
+
+/* Solar-panel sheen that sweeps across the roof */
+.pvs-house__shine {
+    position: absolute; z-index: 4; pointer-events: none;
+    top: 16%; left: 14%; width: 52%; height: 24%;
+    background: linear-gradient(112deg,
+        transparent 0%, rgba(255,255,255,.58) 44%, transparent 72%);
+    mix-blend-mode: screen;
+    transform: rotate(-14deg) translateX(-80%);
+    opacity: 0;
+    animation: pvsRoofShine var(--pv-cycle, 34s) ease-in-out infinite;
+}
+
+@keyframes pvsRoofShine {
+    0%, 12% { opacity: 0; transform: rotate(-14deg) translateX(-80%); }
+    24%     { opacity: .9; }
+    38%     { opacity: 0; transform: rotate(-14deg) translateX(92%); }
+    100%    { opacity: 0; transform: rotate(-14deg) translateX(92%); }
+}
+
+/* Window warm-glow at night */
+.pvs-house__glow {
+    position: absolute; z-index: 4; pointer-events: none;
+    top: 50%; left: 42%; width: 32%; height: 28%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center,
+        rgba(250,204,21,.48), rgba(245,158,11,.18) 44%, transparent 76%);
+    filter: blur(10px);
+    opacity: 0;
+    animation: pvsWindowGlow var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsWindowGlow {
+    0%, 40%  { opacity: 0; transform: scale(.84); }
+    50%, 90% { opacity: 1; transform: scale(1.06); }
+    100%     { opacity: 0; transform: scale(.9); }
+}
+
+/* ── Inverter ─────────────────────────────────────────────────── */
+.pvs-inverter {
+    position: absolute;
+    left: 2.6rem;
+    bottom: 22rem;
+    width: 6.8rem;
+    height: 9.8rem;
+    z-index: 3;
+    border-radius: 1.4rem;
+    background: linear-gradient(168deg, #f8fafd 0%, #ecf2f8 52%, #e0e9f5 100%);
+    border: 1px solid rgba(15,34,60,.12);
+    box-shadow:
+        0 20px 48px rgba(15,34,60,.16),
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -1px 0 rgba(15,34,60,.07);
+    overflow: hidden;
+}
+
+/* Colored top stripe — green (solar) → purple (battery) */
+.pvs-inverter::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: .76rem;
+    border-radius: 1.4rem 1.4rem 0 0;
+    animation: pvsInvStripe var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsInvStripe {
+    0%   { background: #16a349; }
+    30%  { background: #22c55e; }
+    42%  { background: #7c6ad0; }
+    48%  { background: #a855f7; }
+    88%  { background: #9b44f0; }
+    95%  { background: #38a862; }
+    100% { background: #16a349; }
+}
+
+/* Display screen */
+.pvs-inverter__screen {
+    position: absolute;
+    left: .65rem; top: 1.05rem;
+    right: .65rem; height: 3.6rem;
+    border-radius: .55rem;
+    background: linear-gradient(180deg, #05111e 0%, #091c30 100%);
+    box-shadow: inset 0 1px 4px rgba(0,0,0,.5), 0 0 12px rgba(16,185,129,.1);
+    overflow: hidden;
+}
+
+/* Scan-line on the screen */
+.pvs-inverter__screen::after {
+    content: "";
+    position: absolute;
+    left: 0; top: -2px; right: 0;
+    height: 2px;
+    background: rgba(16,185,129,.72);
+    box-shadow: 0 0 8px rgba(16,185,129,.55);
+    animation: pvsScanLine 2.8s linear infinite;
+}
+
+@keyframes pvsScanLine {
+    0%  { top: -2px; opacity: .85; }
+    85% { top: calc(100% + 2px); opacity: .6; }
+    100%{ top: calc(100% + 2px); opacity: 0; }
+}
+
+/* Status LED */
+.pvs-inverter__led {
+    position: absolute;
+    bottom: 1.1rem;
+    left: 50%; transform: translateX(-50%);
+    width: .72rem; height: .72rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34,197,94,.5);
+    animation:
+        pvsLedBlink 2.2s ease-in-out infinite,
+        pvsLedColor var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsLedBlink {
+    0%, 100% { opacity: 1; box-shadow: 0 0 10px currentColor; }
+    50%      { opacity: .55; box-shadow: 0 0 4px currentColor; }
+}
+
+@keyframes pvsLedColor {
+    0%   { background: #16a349; color: rgba(22,163,73,.6); }
+    30%  { background: #22c55e; color: rgba(34,197,94,.65); }
+    42%  { background: #7c6ad0; color: rgba(124,106,208,.6); }
+    48%  { background: #a855f7; color: rgba(168,85,247,.65); }
+    88%  { background: #9b44f0; color: rgba(155,68,240,.6); }
+    95%  { background: #38a862; color: rgba(56,168,98,.6); }
+    100% { background: #16a349; color: rgba(22,163,73,.6); }
+}
+
+/* Mode label inside screen */
+.pvs-inverter__mode {
+    position: absolute;
+    top: .42rem; left: 0; right: 0;
+    text-align: center;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: .44rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(16,185,129,.72);
+    z-index: 2; pointer-events: none;
+}
+
+/* kW readout — JS updates text and color */
+.pvs-inverter__kw {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: .88rem; font-weight: 600;
+    letter-spacing: .03em;
+    color: #10b981;
+    text-shadow: 0 0 14px currentColor;
+    z-index: 2; pointer-events: none;
+    transition: color .6s ease;
+}
+
+.pvs-inverter__label {
+    position: absolute;
+    bottom: .38rem; left: 0; right: 0;
+    text-align: center;
+    font-size: .5rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: rgba(15,34,60,.38);
+}
+
+/* ── Battery ──────────────────────────────────────────────────── */
+.pvs-battery {
+    position: absolute;
+    left: 12rem;
+    bottom: 21.5rem;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Terminal cap */
+.pvs-battery__cap {
+    width: 1.55rem; height: .62rem;
+    border-radius: .28rem .28rem 0 0;
+    background: linear-gradient(180deg, rgba(124,58,237,.55), rgba(124,58,237,.32));
+    box-shadow: 0 -2px 6px rgba(124,58,237,.2);
+    margin-bottom: -1px;
+    position: relative; z-index: 1;
+}
+
+/* Main casing */
+.pvs-battery__body {
+    width: 5.2rem; height: 13rem;
+    border-radius: 1.2rem;
+    border: 1.5px solid rgba(124,58,237,.26);
+    background: linear-gradient(162deg, rgba(255,255,255,.97) 0%, rgba(245,240,255,.93) 100%);
+    box-shadow:
+        0 22px 50px rgba(124,58,237,.16),
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset -1px 0 0 rgba(124,58,237,.07);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Cell segment lines */
+.pvs-battery__body::before {
+    content: "";
+    position: absolute;
+    inset: 1rem .5rem;
+    background-image: repeating-linear-gradient(180deg,
+        transparent, transparent calc(25% - 1px),
+        rgba(124,58,237,.09) calc(25% - 1px), rgba(124,58,237,.09) 25%);
+    border-radius: .6rem;
+    z-index: 0;
+}
+
+/* Charge fill */
+.pvs-battery__fill {
+    position: absolute;
+    z-index: 1;
+    inset: auto .42rem .42rem .42rem;
+    height: 80%;
+    border-radius: .75rem;
+    transform-origin: bottom;
+    transform: scaleY(.34);
+    background: linear-gradient(180deg,
+        rgba(167,139,250,.55) 0%, rgba(124,58,237,.96) 100%);
+    box-shadow: 0 0 24px rgba(124,58,237,.26);
+    animation: pvsBattery var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsBattery {
+    0%   { transform: scaleY(.26); background: linear-gradient(180deg, rgba(196,181,253,.38), rgba(124,58,237,.84)); box-shadow: none; }
+    6%   { transform: scaleY(.30); background: linear-gradient(180deg, rgba(196,181,253,.42), rgba(124,58,237,.88)); }
+    20%  { transform: scaleY(.60); background: linear-gradient(180deg, rgba(209,196,254,.54), rgba(124,58,237,.95)); }
+    35%  { transform: scaleY(.96); background: linear-gradient(180deg, rgba(221,214,254,.7), rgba(124,58,237,1)); box-shadow: 0 0 32px rgba(124,58,237,.4); }
+    40%  { transform: scaleY(.97); background: linear-gradient(180deg, rgba(221,214,254,.68), rgba(124,58,237,1)); box-shadow: 0 0 28px rgba(124,58,237,.36); }
+    47%  { transform: scaleY(.75); background: linear-gradient(180deg, rgba(167,234,210,.44), rgba(52,211,153,.92)); box-shadow: 0 0 20px rgba(16,185,129,.22); }
+    53%  { transform: scaleY(.40); background: linear-gradient(180deg, rgba(110,231,183,.44), rgba(16,185,129,.94)); box-shadow: 0 0 24px rgba(16,185,129,.30); }
+    75%  { transform: scaleY(.22); background: linear-gradient(180deg, rgba(110,231,183,.38), rgba(16,185,129,.90)); box-shadow: 0 0 20px rgba(16,185,129,.26); }
+    88%  { transform: scaleY(.18); background: linear-gradient(180deg, rgba(110,231,183,.36), rgba(16,185,129,.88)); box-shadow: 0 0 18px rgba(16,185,129,.22); }
+    94%  { transform: scaleY(.22); background: linear-gradient(180deg, rgba(180,200,253,.38), rgba(100,40,220,.82)); box-shadow: none; }
+    100% { transform: scaleY(.26); background: linear-gradient(180deg, rgba(196,181,253,.38), rgba(124,58,237,.84)); box-shadow: none; }
+}
+
+/* Lightning bolt — visible while charging */
+.pvs-battery__bolt {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    filter: drop-shadow(0 0 8px rgba(124,58,237,.55));
+    animation: pvsBolt var(--pv-cycle, 34s) linear infinite;
+    pointer-events: none;
+}
+
+.pvs-battery__bolt::before { content: "⚡"; }
+
+@keyframes pvsBolt {
+    0%   { opacity: 0; }
+    8%   { opacity: 0; }
+    14%  { opacity: .72; }
+    36%  { opacity: .68; }
+    43%  { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+.pvs-battery__label {
+    margin-top: .44rem;
+    font-size: .5rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: rgba(15,34,60,.38);
+    animation: pvsBattLabel var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsBattLabel {
+    0%, 40%, 100% { color: rgba(124,58,237,.55); }
+    48%, 88%      { color: rgba(16,185,129,.6); }
+}
+
+/* ── Energy flow lines ────────────────────────────────────────── */
+
+.pvs-flow {
+    position: absolute;
+    height: 3px;
+    border-radius: 999px;
+    z-index: 2;
+    overflow: visible;
+    pointer-events: none;
+}
+
+/* Travelling particle dots */
+.pvs-flow span {
+    position: absolute;
+    top: 50%; margin-top: -4px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    opacity: 0;
+    animation: pvsDot 1.9s ease-in-out infinite;
+}
+
+.pvs-flow span:nth-child(2) { animation-delay: .95s; }
+
+@keyframes pvsDot {
+    0%   { left: -5px; opacity: 0; }
+    10%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { left: calc(100% + 5px); opacity: 0; }
+}
+
+/* Solar: panels (upper-right) → inverter (center-left) */
+.pvs-flow--solar {
+    left: 6rem; bottom: 16rem;
+    width: 13rem;
+    transform: rotate(-62deg);
+    transform-origin: right center;
+    background: linear-gradient(90deg,
+        transparent, rgba(245,158,11,.38), rgba(245,158,11,.7));
+    animation: pvsFlowSolar var(--pv-cycle, 34s) linear infinite;
+}
+
+.pvs-flow--solar span {
+    background: #f59e0b;
+    box-shadow: 0 0 10px rgba(245,158,11,.8);
+}
+
+@keyframes pvsFlowSolar {
+    0%   { opacity: 0; }
+    5%   { opacity: .8; }
+    32%  { opacity: 1; }
+    40%  { opacity: .6; }
+    46%  { opacity: 0; }
+    95%  { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+/* Charging: inverter → battery */
+.pvs-flow--charge {
+    left: 9.4rem; bottom: 28.2rem;
+    width: 4.2rem;
+    background: linear-gradient(90deg,
+        transparent, rgba(139,92,246,.48), rgba(139,92,246,.8));
+    animation: pvsFlowCharge var(--pv-cycle, 34s) linear infinite;
+}
+
+.pvs-flow--charge span {
+    background: #8b5cf6;
+    box-shadow: 0 0 10px rgba(139,92,246,.8);
+}
+
+@keyframes pvsFlowCharge {
+    0%   { opacity: 0; }
+    5%   { opacity: .8; }
+    32%  { opacity: 1; }
+    40%  { opacity: .6; }
+    46%  { opacity: 0; }
+    95%  { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+/* Night discharge: battery → home */
+.pvs-flow--night {
+    left: 17rem; bottom: 28rem;
+    width: 17rem;
+    transform: rotate(-11deg);
+    transform-origin: left center;
+    background: linear-gradient(90deg,
+        transparent, rgba(16,185,129,.45), rgba(16,185,129,.8));
+    animation: pvsFlowNight var(--pv-cycle, 34s) linear infinite;
+}
+
+.pvs-flow--night span {
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16,185,129,.8);
+}
+
+@keyframes pvsFlowNight {
+    0%   { opacity: 0; }
+    47%  { opacity: 0; }
+    54%  { opacity: 1; }
+    86%  { opacity: 1; }
+    93%  { opacity: 0; }
+    100% { opacity: 0; }
+}
+
+/* ── Timeline / scrubber ──────────────────────────────────────── */
+
+.pvs-timeline {
+    position: absolute;
+    bottom: 1rem;
+    left: 1.15rem;
+    right: 1.15rem;
+    z-index: 10;
+    border-radius: 999px;
+    background: rgba(255,255,255,.5);
+    border: 1px solid rgba(255,255,255,.62);
+    box-shadow:
+        0 10px 32px rgba(15,23,42,.10),
+        inset 0 1px 0 rgba(255,255,255,.9);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    padding: .5rem .75rem .58rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+/* Animated colour glow behind the bar */
+.pvs-timeline__bg {
+    position: absolute;
+    inset: .28rem .45rem;
+    border-radius: 999px;
+    opacity: .5;
+    pointer-events: none;
+    filter: blur(3px);
+    animation: pvsTimelineTint var(--pv-cycle, 34s) linear infinite;
+}
+
+@keyframes pvsTimelineTint {
+    0%, 33%  { background: rgba(59,179,245,.45); }
+    40%, 45% { background: rgba(168,90,200,.45); }
+    52%, 88% { background: rgba(15,23,42,.55); }
+    95%, 100%{ background: rgba(59,130,220,.42); }
+}
+
+/* Inner column container */
+.pvs-timeline__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    width: 100%;
+}
+
+/* Time-of-day icons */
+.pvs-timeline__icons {
+    position: relative;
+    height: 1.1rem;
+    pointer-events: none;
+}
+
+.pvs-timeline__icons span {
+    position: absolute;
+    top: 50%;
+    left: var(--i, 0%);
+    transform: translate(-50%, -50%);
+    font-size: .7rem;
+    line-height: 1;
+    opacity: .55;
+    filter: saturate(.7);
+    transition: opacity .2s, filter .2s;
+    pointer-events: none;
+}
+
+.pvs-timeline:hover .pvs-timeline__icons span {
+    opacity: .92;
+    filter: saturate(1.1);
+}
+
+/* Track */
+.pvs-timeline__track {
+    position: relative;
+    height: .42rem;
+    border-radius: 999px;
+    overflow: visible;
+    cursor: grab;
+    background: linear-gradient(90deg,
+        rgba(251,191,36,.28) 0%,
+        rgba(249,115,22,.22) 34%,
+        rgba(139,92,246,.24) 47%,
+        rgba(15,23,42,.24)   68%,
+        rgba(251,191,36,.22) 100%);
+    transition: height .16s ease;
+}
+
+.pvs-timeline:hover .pvs-timeline__track,
+.pvs-timeline.is-scrubbing .pvs-timeline__track { height: .54rem; }
+.pvs-timeline.is-scrubbing .pvs-timeline__track { cursor: grabbing; }
+
+/* Fill — uses clip-path so gradient spans the full track width */
+.pvs-timeline__fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+        rgba(251,191,36,1)    0%,
+        rgba(249,115,22,.92)  34%,
+        rgba(139,92,246,.9)   47%,
+        rgba(15,23,42,.82)    68%,
+        rgba(251,191,36,.92)  100%);
+    clip-path: inset(0 var(--f, 100%) 0 0 round 999px);
+    transition: clip-path .06s linear;
+}
+
+.pvs-timeline.is-scrubbing .pvs-timeline__fill { transition: none; }
+
+/* Thumb — JS controls left%, CSS handles centering + hover */
+.pvs-timeline__thumb {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 1.05rem; height: 1.05rem;
+    margin-top: -.525rem;
+    margin-left: -.525rem;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff 0%, #e2e8f0 100%);
+    border: 1.5px solid rgba(255,255,255,.88);
+    box-shadow:
+        0 0 0 .22rem rgba(14,139,124,.16),
+        0 4px 12px rgba(15,23,42,.16);
+    transition: box-shadow .15s, transform .12s;
+    pointer-events: none;
+    /* JS removes the old CSS animation — this is the JS-driven thumb */
+    animation: none !important;
+}
+
+.pvs-timeline:hover .pvs-timeline__thumb {
+    box-shadow:
+        0 0 0 .32rem rgba(14,139,124,.24),
+        0 5px 16px rgba(15,23,42,.2);
+    transform: scale(1.28);
+}
+
+.pvs-timeline.is-scrubbing .pvs-timeline__thumb {
+    box-shadow:
+        0 0 0 .45rem rgba(14,139,124,.32),
+        0 6px 20px rgba(15,23,42,.24);
+    transform: scale(1.48);
+    transition: none;
+}
+
+.pvs-timeline.is-scrubbing { cursor: grabbing; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 1180px) {
+    .pvs-house { right: -3rem; width: min(38rem, 68%); }
+}
+
+@media (max-width: 760px) {
+    .pvs-house   { right: -2rem; bottom: 4.5rem; width: min(30rem, 82%); }
+    .pvs-battery { left: 8rem; bottom: 17rem; }
+    .pvs-inverter{ left: 1.5rem; bottom: 17.5rem; }
+    .pvs-flow--night { width: 10rem; }
+}
+
+@media (max-width: 620px) {
+    .pvs-house    { width: min(27rem, 100%); right: -3rem; }
+    .pvs-battery  { left: 4rem; bottom: 13rem; transform: scale(.76); transform-origin: bottom left; }
+    .pvs-inverter { left: .4rem; bottom: 13.5rem; transform: scale(.76); transform-origin: bottom left; }
+    .pvs-flow--solar,
+    .pvs-flow--charge,
+    .pvs-flow--night { display: none; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .pv-visual * { animation: none !important; transition: none !important; }
+    .pvs-sky { background: linear-gradient(175deg, #3db3f5 0%, #74cff7 22%, #a8e4ff 44%, #c6f0dc 68%, #7dd4a0 100%); }
+    .pvs-battery__fill { transform: scaleY(.65); }
+}
+
+/* Final auth scene refinements: smooth sky layers + replay timeline polish */
+.pvs-sky {
+    background:
+        radial-gradient(circle at 78% 18%, rgba(255,255,255,.58), transparent 15rem),
+        linear-gradient(175deg, #36aef4 0%, #70cff8 24%, #a9e7ff 48%, #c8f2dc 72%, #72d39c 100%) !important;
+    animation: pvsSkyBreath var(--pv-cycle, 34s) linear infinite !important;
+    overflow: hidden;
+}
+
+.pvs-sky::before,
+.pvs-sky::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    transition: opacity 120ms linear;
+    will-change: opacity;
+}
+
+.pvs-sky::before {
+    opacity: var(--pvs-sunset-alpha, .28);
+    background:
+        radial-gradient(circle at 74% 18%, rgba(255, 229, 156, .72), transparent 14rem),
+        linear-gradient(175deg, rgba(118, 86, 198, .72) 0%, rgba(208, 100, 86, .68) 36%, rgba(245, 153, 62, .54) 62%, rgba(92, 154, 132, .34) 100%);
+}
+
+.pvs-sky::after {
+    opacity: var(--pvs-night-alpha, 0);
+    background:
+        radial-gradient(circle at 68% 16%, rgba(160, 182, 255, .16), transparent 13rem),
+        linear-gradient(175deg, #071026 0%, #0c1836 32%, #111c3e 64%, #050a18 100%);
+}
+
+@keyframes pvsSkyBreath {
+    0%, 100% { filter: saturate(1) brightness(.98); }
+    28% { filter: saturate(1.04) brightness(1.04); }
+    52% { filter: saturate(.94) brightness(.94); }
+    78% { filter: saturate(.86) brightness(.82); }
+}
+
+.pvs-timeline {
+    min-height: 3.95rem;
+    padding: .58rem .82rem .72rem;
+}
+
+.pvs-timeline__icons {
+    height: 1.55rem;
+}
+
+.pvs-timeline__icons span {
+    color: transparent;
+    font-size: 1.45rem;
+    opacity: .76;
+    filter: saturate(.95) drop-shadow(0 2px 4px rgba(15, 23, 42, .16));
+}
+
+.pvs-timeline__icons span::before {
+    color: initial;
+}
+
+.pvs-timeline__icons span:nth-child(1)::before { content: "\1F305"; }
+.pvs-timeline__icons span:nth-child(2)::before { content: "\2600\FE0F"; }
+.pvs-timeline__icons span:nth-child(3)::before { content: "\1F307"; }
+.pvs-timeline__icons span:nth-child(4)::before { content: "\1F319"; }
+
+.pvs-timeline__icons span:nth-child(1) { left: 5% !important; }
+.pvs-timeline__icons span:nth-child(2) { left: 25% !important; }
+.pvs-timeline__icons span:nth-child(3) { left: 48% !important; }
+.pvs-timeline__icons span:nth-child(4) { left: 72% !important; }
+
+.pvs-timeline__icons::after {
+    content: "\1F305";
+    position: absolute;
+    top: 50%;
+    right: 5%;
+    transform: translate(50%, -50%);
+    font-size: 1.45rem;
+    line-height: 1;
+    opacity: .76;
+    filter: saturate(.95) drop-shadow(0 2px 4px rgba(15, 23, 42, .16));
+    pointer-events: none;
+}
+
+.pvs-timeline__track {
+    height: .5rem;
+    background: linear-gradient(90deg,
+        rgba(73, 184, 248, .36) 0%,
+        rgba(251, 191, 36, .36) 24%,
+        rgba(249, 115, 22, .34) 43%,
+        rgba(139, 92, 246, .32) 54%,
+        rgba(15, 23, 42, .34) 78%,
+        rgba(72, 149, 238, .34) 100%);
+}
+
+.pvs-timeline__fill {
+    background: linear-gradient(90deg,
+        #4bb8f6 0%,
+        #fbbf24 24%,
+        #f97316 43%,
+        #8b5cf6 54%,
+        #111827 78%,
+        #4aa3f0 100%);
+}
+
+.pvs-timeline__thumb {
+    width: 1.14rem;
+    height: 1.14rem;
+    margin-top: -.57rem;
+    margin-left: -.57rem;
+}
+
+.pvs-timeline__bg {
+    opacity: .72;
+    background:
+        radial-gradient(circle at var(--pvs-cycle-pct, 0%) 50%, rgba(255,255,255,.72), transparent 4rem),
+        linear-gradient(90deg, rgba(75,184,246,.18), rgba(251,191,36,.2), rgba(139,92,246,.2), rgba(15,23,42,.18));
+    animation: none !important;
+}
+
+.pvs-inverter__screen {
+    height: 4rem;
+    border: 1px solid rgba(148, 163, 184, .16);
+}
+
+.pvs-inverter__kw {
+    font-size: .98rem;
+    text-shadow:
+        0 0 10px currentColor,
+        0 0 22px rgba(16, 185, 129, .18);
+}
+
+.pvs-inverter__mode {
+    top: .36rem;
+}
+
+.pvs-house {
+    right: clamp(3.8rem, 5vw, 4.8rem);
+    bottom: clamp(1.2rem, 1.3vh, 2.4rem);
+    width: min(48rem, 79.2%);
+}
+
+.pvs-slogans {
+    position: absolute;
+    left: 50%;
+    bottom: 5.6rem;
+    z-index: 5;
+    width: min(25rem, 72%);
+    min-height: 2.35rem;
+    transform: translateX(-50%);
+    pointer-events: none;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .42);
+    background: linear-gradient(90deg, rgba(6, 95, 70, .2), rgba(14, 165, 233, .18), rgba(250, 204, 21, .18));
+    box-shadow: 0 14px 34px rgba(15, 23, 42, .14), inset 0 1px 0 rgba(255,255,255,.38);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.pvs-slogans span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .92);
+    text-shadow: 0 2px 12px rgba(5, 15, 35, .38);
+    opacity: 0;
+    transform: translateY(90%);
+    animation: pvsSloganCycle 16s ease-in-out infinite;
+}
+
+.pvs-slogans span:nth-child(2) { animation-delay: 4s; }
+.pvs-slogans span:nth-child(3) { animation-delay: 8s; }
+.pvs-slogans span:nth-child(4) { animation-delay: 12s; }
+
+@keyframes pvsSloganCycle {
+    0%, 20% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    25% { opacity: 0; transform: translateY(-90%); filter: blur(3px); }
+    25.01%, 100% { opacity: 0; transform: translateY(90%); filter: blur(3px); }
+}
+
+.pvs-battery {
+    bottom: 27.2rem;
+}
+
+.pvs-inverter {
+    bottom: 27.8rem;
+}
+
+.pvs-flow--solar {
+    z-index: 4;
+    height: 4px;
+    left: calc(100% - 8.25rem);
+    top: 7.05rem;
+    bottom: auto;
+    width: 33rem;
+    transform: rotate(116deg);
+    transform-origin: left center;
+    background: linear-gradient(90deg,
+        rgba(245,158,11,.88),
+        rgba(245,158,11,.58),
+        rgba(245,158,11,.1));
+}
+
+.pvs-flow--charge {
+    left: 9.25rem;
+    top: 23.85rem;
+    bottom: auto;
+    width: 5.35rem;
+    height: 4px;
+}
+
+.pvs-flow--night {
+    z-index: 4;
+    height: 4px;
+    left: 14.5rem;
+    top: 24.6rem;
+    bottom: auto;
+    width: 13.4rem;
+    transform: rotate(72deg);
+    transform-origin: left center;
+    background: linear-gradient(90deg,
+        rgba(16,185,129,.18),
+        rgba(16,185,129,.58),
+        rgba(16,185,129,.88));
+}
+
+@media (max-width: 760px) {
+    .pvs-sun { right: 2.8rem; }
+    .pvs-moon { right: 4.6rem; }
+
+    .pvs-house {
+        right: 50%;
+        bottom: -1rem;
+        width: min(38.4rem, 100%);
+        transform: translateX(50%);
+    }
+
+    .pvs-battery { bottom: 18.4rem; }
+    .pvs-inverter { bottom: 19rem; }
+}
+
+@media (max-width: 620px) {
+    .pvs-sun { right: 1.8rem; }
+    .pvs-moon { right: 3.2rem; }
+
+    .pvs-house {
+        right: 50%;
+        bottom: -1.1rem;
+        width: min(30.5rem, 98%);
+    }
+
+    .pvs-slogans {
+        bottom: 5.15rem;
+        width: min(20rem, 84%);
+        min-height: 2rem;
+    }
+
+    .pvs-slogans span {
+        font-size: .58rem;
+        letter-spacing: .06em;
+    }
+
+    .pvs-battery {
+        left: 7.4rem;
+        top: .9rem;
+        bottom: auto;
+        transform: scale(.58);
+        transform-origin: top left;
+    }
+
+    .pvs-inverter {
+        left: .8rem;
+        top: 3.65rem;
+        bottom: auto;
+        transform: scale(.58);
+        transform-origin: top left;
+    }
+
+    .pvs-flow--charge {
+        display: block;
+        left: 4.8rem;
+        top: 6.15rem;
+        width: 3.25rem;
+        height: 3px;
+    }
+
+    .pvs-flow--solar {
+        display: block;
+        left: calc(100% - 5.3rem);
+        top: 6.95rem;
+        width: 13rem;
+        height: 3px;
+        transform: rotate(116deg);
+    }
+
+    .pvs-flow--night {
+        display: block;
+        left: 8.55rem;
+        top: 7.15rem;
+        width: 11.8rem;
+        height: 3px;
+        transform: rotate(77deg);
+    }
+
+    .pvs-timeline {
+        left: 1.35rem;
+        right: 1.35rem;
+        bottom: 1.05rem;
+    }
+}

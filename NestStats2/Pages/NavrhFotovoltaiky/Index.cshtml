@@ -1,0 +1,1721 @@
+﻿@page "/navrh-fotovoltaiky"
+@model NestStats2.Pages.NavrhFotovoltaiky.IndexModel
+@{
+    ViewData["Title"] = "Kalkulačka úspory - Fotovoltika";
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+}
+<div class="alert alert-info mx-auto mt-3 mb-0" style="max-width: 1120px;">
+    Tento nástroj je zatiaľ dostupný iba v slovenčine.
+</div>
+<h3 class="text-center mb-4" style="padding-top: 2rem;">
+        Kalkulačka úspory - Fotovoltika
+        <span class="ver-pill ms-2" title="Aktualizované: 4. . 2025">
+            <span class="dot"></span> Release_v1.4
+        </span>
+        <small class="ver-date ms-2">
+            <i class="bi bi-clock-history"></i> 20.&nbsp;1.&nbsp;2026
+        </small>
+    </h3>
+<form id="calcForm" method="post">
+    @Html.AntiForgeryToken()
+
+    <!-- Modul 1: Vstupné parametre -->
+    <div class="card mb-4">
+        <div class="card-header highlight">1. Vstupné parametre</div>
+        <div class="card-body">
+
+            <h5>1.1 Konfigurácia FV polí</h5>
+            <div id="stringsContainer"></div>
+            <button type="button" id="addStringBtn"
+                    class="btn btn-sm btn-secondary mb-3">
+                Pridať string
+            </button>
+
+            <h5>1.2 Ekonomické parametre</h5>
+            <div class="row g-3">
+                <!--  … tu nechávame pôvodné inputy – JS ich prepíše z prefill … -->
+                <input type="hidden" id="degradation" name="DegradationPercent" value="0.4" />
+                <input type="hidden" id="systemLosses" name="SystemLossesPercent" value="14" />
+                <input type="hidden" id="inverterEfficiency" name="InverterEfficiencyPercent" value="98" />
+                <div class="col-md-4">
+                    <label for="pricePerson" class="form-label">Cena el. Fyzickej osoby (€/kWh)</label>
+                    <input type="number" step="0.01" min="0"
+                           id="pricePerson" class="form-control editable-input" value="0.18" />
+                </div>
+                <div class="col-md-4">
+                    <label for="priceCorp" class="form-label">Cena el. Právnickej osoby (€/kWh)</label>
+                    <input type="number" step="0.01" min="0"
+                           id="priceCorp" class="form-control editable-input" value="0.25" />
+                </div>
+                <div class="col-md-4">
+                    <label for="energyInflation" class="form-label">Inflácia cien el. (%)</label>
+                    <input type="number" step="0.1" min="0" max="10"
+                           id="energyInflation" class="form-control editable-input" value="3" />
+                </div>
+                <div class="col-md-4">
+                    <label for="generalInflation" class="form-label">Všeobecná inflácia (%)</label>
+                    <input type="number" step="0.1" min="0" max="10"
+                           id="generalInflation" class="form-control editable-input" value="2" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Prefill.CustomerType" class="form-label">Typ zákazníka</label>
+                    <select asp-for="Prefill.CustomerType"
+                            id="customerType"
+                            class="form-control">
+                        <option value="person">Fyzická osoba</option>
+                        <option value="corp">Právnická osoba</option>
+                    </select>
+                    <span asp-validation-for="Prefill.CustomerType" class="text-danger"></span>
+                </div>
+
+            </div>
+            
+            <!-- 1.2.1 Účet za elektrinu (nové) -->
+<div class="col-12">
+    <div class="soft-panel mt-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div>
+                <div class="fw-semibold">Účet za elektrinu</div>
+                <div class="text-muted small">
+                    Zadaj koľko klient platí dnes. Kalkulačka prepočíta náklady bez FV vs. s FV v čase.
+                </div>
+            </div>
+
+            <div class="btn-group btn-group-sm" role="group" aria-label="bill mode">
+                <input type="radio" class="btn-check" name="billMode" id="billModeMonthly" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="billModeMonthly">
+                    <i class="bi bi-calendar-month me-1"></i> Mesačne
+                </label>
+
+                <input type="radio" class="btn-check" name="billMode" id="billModeAnnual" autocomplete="off">
+                <label class="btn btn-outline-primary" for="billModeAnnual">
+                    <i class="bi bi-calendar2-week me-1"></i> Ročne
+                </label>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <label class="form-label">Mesačná platba (€ / mesiac)</label>
+                <input type="number" step="1" min="0" id="monthlyBill" class="form-control editable-input" value="0" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Ročná platba (€ / rok)</label>
+                <input type="number" step="1" min="0" id="annualBill" class="form-control editable-input" value="0" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">
+                    Vlastná spotreba FV (%)
+                    <span class="text-muted small" title="Koľko vyrobenej energie reálne zníži účet (zvyšok ide do prebytkov).">
+                        <i class="bi bi-info-circle"></i>
+                    </span>
+                </label>
+
+                <input type="range" class="form-range" id="selfConsumption" min="0" max="100" step="1" value="100" />
+                <div class="d-flex justify-content-between small text-muted">
+                    <span>0%</span>
+                    <span class="fw-semibold text-dark"><span id="selfConsumptionLbl">100</span>%</span>
+                    <span>100%</span>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button type="button" class="btn btn-light btn-sm preset-cons" data-val="55">Bez batérie ~55%</button>
+                    <button type="button" class="btn btn-light btn-sm preset-cons" data-val="80">S batériou ~80%</button>
+                    <button type="button" class="btn btn-light btn-sm preset-cons" data-val="100">Ideál ~100%</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="small text-muted mt-2">
+            Pozn.: Ak platbu nezadáš, kalkulačka stále všetko prepočíta, nezobrazí sa len časť - účet za elektrinu
+        </div>
+    </div>
+</div>
+
+
+            <h5 class="mt-3">1.3 Investičné vstupy</h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Amount" class="form-label">
+                        Počiatočná investícia s DPH (€)
+                    </label>
+                    <input asp-for="Amount"
+                           step="0.1" min="0"
+                           asp-format="{0:0.00}"
+                           id="initialInvestment"
+                           class="form-control editable-input" />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="lifetime" class="form-label">Doba životnosti (roky) FV panelov</label>
+                    <input type="number" min="1" max="50"
+                           id="lifetime" class="form-control editable-input" value="30" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modul 2: Tabuľka orientácie vs účinnosť -->
+    <div class="card mb-4">
+        <div class="card-header highlight">2. Orientácia a sklon - koeficienty účinnosti</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered" id="orientationTable">
+                        <thead>
+                            <tr>
+                                <th>Orientácia \ Sklon</th>
+                                <th>0°<br><small>(horizontálne)</small></th>
+                                <th>15°<br><small>(mierne)</small></th>
+                                <th>30°<br><small>(optimálne)</small></th>
+                                <th>45°<br><small>(strmé)</small></th>
+                                <th>60°<br><small>(veľmi strmé)</small></th>
+                                <th>90°<br><small>(vertikálne)</small></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>🌅 Východ (90°)</strong></td>
+                                <td class="efficiency-cell efficiency-good">0.87</td>
+                                <td class="efficiency-cell efficiency-very-good">0.91</td>
+                                <td class="efficiency-cell efficiency-very-good">0.93</td>
+                                <td class="efficiency-cell efficiency-very-good">0.91</td>
+                                <td class="efficiency-cell efficiency-fair">0.85</td>
+                                <td class="efficiency-cell efficiency-poor">0.67</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🌄 Juhovýchod (135°)</strong></td>
+                                <td class="efficiency-cell efficiency-good">0.87</td>
+                                <td class="efficiency-cell efficiency-very-good">0.93</td>
+                                <td class="efficiency-cell efficiency-very-good">0.97</td>
+                                <td class="efficiency-cell efficiency-excellent">0.98</td>
+                                <td class="efficiency-cell efficiency-very-good">0.94</td>
+                                <td class="efficiency-cell efficiency-fair">0.77</td>
+                            </tr>
+                            <tr>
+                                <td><strong>☀️ Juh (180°) - IDEÁL</strong></td>
+                                <td class="efficiency-cell efficiency-good">0.87</td>
+                                <td class="efficiency-cell efficiency-very-good">0.94</td>
+                                <td class="efficiency-cell efficiency-excellent">1.00</td>
+                                <td class="efficiency-cell efficiency-excellent">1.00</td>
+                                <td class="efficiency-cell efficiency-excellent">0.99</td>
+                                <td class="efficiency-cell efficiency-fair">0.82</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🌇 Juhozápad (225°)</strong></td>
+                                <td class="efficiency-cell efficiency-good">0.87</td>
+                                <td class="efficiency-cell efficiency-very-good">0.93</td>
+                                <td class="efficiency-cell efficiency-very-good">0.97</td>
+                                <td class="efficiency-cell efficiency-excellent">0.98</td>
+                                <td class="efficiency-cell efficiency-very-good">0.94</td>
+                                <td class="efficiency-cell efficiency-fair">0.77</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🌆 Západ (270°)</strong></td>
+                                <td class="efficiency-cell efficiency-good">0.87</td>
+                                <td class="efficiency-cell efficiency-very-good">0.91</td>
+                                <td class="efficiency-cell efficiency-very-good">0.93</td>
+                                <td class="efficiency-cell efficiency-very-good">0.91</td>
+                                <td class="efficiency-cell efficiency-fair">0.85</td>
+                                <td class="efficiency-cell efficiency-poor">0.67</td>
+                            </tr>
+                        </tbody>
+                    </table>
+            </div>
+            <small class="text-muted">Hodnoty reprezentujú koeficient účinnosti relatívne k optimálnej orientácii (juh, 30°)</small>
+        </div>
+    </div>
+
+    <!-- Modul 3: Výsledky a vizualizácie -->
+    <div class="card mb-4">
+        <div class="card-header highlight">3. Výsledky a vizualizácie</div>
+        <div class="card-body">
+            <!-- Enhanced Summary Panel -->
+            <div id="summaryPanel" class="computed-field p-4 mb-4 bg-gradient-primary text-white rounded shadow-lg"></div>
+
+            <!-- Chart Navigation Tabs -->
+            <ul class="nav nav-tabs mb-3" id="chartTabs" style="display: none;">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#monthlyTab">Mesačná výroba</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#cumulativeTab">Súhrnné hodnoty</a>
+                </li>
+                <li class="nav-item" id="billTabNavItem">
+                    <a class="nav-link" data-bs-toggle="tab" href="#billTab">Účet za elektrinu</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#cashflowTab">Finančná analýza</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#productionTab">Ročná výroba vs degradácia</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#roiTab">Analýza návratnosti</a>
+                </li>
+                
+            </ul>
+
+            <!-- Chart Content -->
+            <div class="tab-content" id="chartContent" style="display: none;">
+                <div class="tab-pane fade show active" id="monthlyTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Mesačná výroba elektriny</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyChart" style="height: 400px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="cumulativeTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Súhrnné údaje - výroba a hodnota vyrobenej energie </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="cumulativeChart" style="height: 400px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="cashflowTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Finančná analýza</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="cashflowChart" style="height: 400px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="productionTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Ročná výroba vs degradácia</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="productionChart" style="height: 400px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="roiTab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Návratnosť investície</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="roiChart" style="height: 400px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="billTab">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <h5 class="mb-0">Ročný účet: bez FV vs. s FV</h5>
+
+                                    <!-- voliteľné: mini badge, aby bolo jasné, že tam sú fixné poplatky -->
+                                    <span class="badge bg-light text-dark border" title="Účet po FV má minimálnu hodnotu kvôli fixným poplatkom (distribúcia a pod.).">
+                                        <i class="bi bi-info-circle me-1"></i> Účet po FV má minimálnu hodnotu kvôli fixným poplatkom.
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="billChart" style="height: 420px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Enhanced Annual Table -->
+            <div class="mt-4" id="tableSection" style="display: none;">
+                <h5>Detailná ročná tabuľka</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped table-hover" id="annualTable">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>Rok</th>
+                            <th>Výroba (kWh)</th>
+                            <th>Celková výroba (kWh)</th>
+                            <th>Cena (€/kWh)</th>
+                            <th>Hodnota (€)</th>
+                            <th>Celková hodnota (€)</th>
+                            <th>Finančná analýza (€)</th>
+                            <th>Návratnosť (%)</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Nová sekcia pre súhrnnú tabuľku 1/10/20/30 rokov -->
+            <div id="energySummarySection" class="card mt-4">
+                <div class="card-header highlight">
+                    <h5 class="mb-0">Výroba energie a hodnota</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered" id="summaryTable">
+                            <thead>
+                            <tr>
+                                <th>Popis</th>
+                                <th>Výroba energie (kWh)</th>
+                                <th>Hodnota vyrobenej energie (€)</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Meno klienta pre PDF (nepovinné)</label>
+        <input id="clientNameInp"
+               class="form-control"
+               placeholder="napr. Ing. Ján Novák"
+               value="@ViewData["ClientName"]" />
+    </div>
+
+    <button type="button" id="computeBtn" class="btn btn-primary btn-lg">
+        <i class="fas fa-calculator me-2"></i>Počítať úsporu
+    </button>
+
+    <button type="button" id="exportPdfBtn" class="btn btn-outline-secondary btn-lg ms-2">
+        <i class="fas fa-file-pdf me-2"></i>Exportovať report (PDF)
+    </button>
+
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        const prefillData = @Html.Raw(Json.Serialize(Model.Prefill));
+        (function () {
+            const form = document.getElementById('calcForm');
+            const token = () => document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const addStringBtn = document.getElementById('addStringBtn');
+            const stringsContainer = document.getElementById('stringsContainer');
+            const computeBtn = document.getElementById('computeBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const summaryPanel = document.getElementById('summaryPanel');
+            const tableBody = document.querySelector('#annualTable tbody');
+            
+            // Chart contexts
+            const billCtx = document.getElementById('billChart');
+
+            const monthlyBillInp = document.getElementById('monthlyBill');
+            const annualBillInp = document.getElementById('annualBill');
+            const billModeMonthly = document.getElementById('billModeMonthly');
+            const billModeAnnual = document.getElementById('billModeAnnual');
+            const selfConsumptionInp = document.getElementById('selfConsumption');
+            const selfConsumptionLbl = document.getElementById('selfConsumptionLbl');
+            const presentBtn = document.getElementById('presentBtn');
+
+            const monthlyCtx = document.getElementById('monthlyChart');
+            const cumulativeCtx = document.getElementById('cumulativeChart');
+            const cashflowCtx = document.getElementById('cashflowChart');
+            const productionCtx = document.getElementById('productionChart');
+            const roiCtx = document.getElementById('roiChart');
+            
+            let charts = {};
+            let stringCount = 0;
+
+            function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+            function getBillMode() {
+                return billModeAnnual?.checked ? 'annual' : 'monthly';
+            }
+
+            let billSyncLock = false;
+
+            function getBillMode() {
+                return billModeAnnual?.checked ? 'annual' : 'monthly';
+            }
+
+            function applyBillModeUI() {
+                const mode = getBillMode();
+                if (mode === 'monthly') {
+                    monthlyBillInp.disabled = false;
+                    annualBillInp.disabled = true;
+                } else {
+                    monthlyBillInp.disabled = true;
+                    annualBillInp.disabled = false;
+                }
+}
+
+            function syncBillFrom(source) {
+                if (billSyncLock) return;
+                billSyncLock = true;
+
+                const monthly = parseFloat(monthlyBillInp.value) || 0;
+                const annual  = parseFloat(annualBillInp.value) || 0;
+
+                if (source === 'monthly') {
+                    const newAnnual = monthly * 12;
+                    annualBillInp.value = (newAnnual > 0 ? newAnnual : 0).toFixed(2);
+                } else if (source === 'annual') {
+                    const newMonthly = annual / 12;
+                    monthlyBillInp.value = (newMonthly > 0 ? newMonthly : 0).toFixed(2);
+                } else {
+                    // fallback: sync z toho, čo je práve aktívne
+                    if (getBillMode() === 'monthly') syncBillFrom('monthly');
+                    else syncBillFrom('annual');
+                    billSyncLock = false;
+                    return;
+                }
+
+                billSyncLock = false;
+            }
+
+            function syncAndPersist(source) {
+                applyBillModeUI();
+                syncBillFrom(source);
+                persistBillInputs();
+            }
+
+// MODE CHANGE → len prepne disabled + znovu zosúladí hodnoty
+            billModeMonthly?.addEventListener('change', () => syncAndPersist('monthly'));
+            billModeAnnual?.addEventListener('change', () => syncAndPersist('annual'));
+
+// INPUT → okamžite prepočíta druhé pole (bez prepínania)
+            monthlyBillInp?.addEventListener('input', () => syncAndPersist('monthly'));
+            annualBillInp?.addEventListener('input', () => syncAndPersist('annual'));
+
+// pri selfConsumption stačí ako máš
+            selfConsumptionInp?.addEventListener('input', () => {
+                selfConsumptionLbl.textContent = String(parseInt(selfConsumptionInp.value || '0', 10));
+                persistBillInputs();
+            });
+
+
+            function persistBillInputs() {
+                try {
+                    localStorage.setItem('uspora_bill_mode', getBillMode());
+                    localStorage.setItem('uspora_monthly_bill', String(parseFloat(monthlyBillInp.value) || 0));
+                    localStorage.setItem('uspora_annual_bill', String(parseFloat(annualBillInp.value) || 0));
+                    localStorage.setItem('uspora_self_consumption', String(parseFloat(selfConsumptionInp.value) || 0));
+                } catch {}
+}
+
+            function loadBillInputs() {
+                try {
+                    const mode = localStorage.getItem('uspora_bill_mode');
+                    if (mode === 'annual') billModeAnnual.checked = true;
+                    else billModeMonthly.checked = true;
+
+                    const mb = localStorage.getItem('uspora_monthly_bill');
+                    const ab = localStorage.getItem('uspora_annual_bill');
+                    const sc = localStorage.getItem('uspora_self_consumption');
+
+                    if (mb != null) monthlyBillInp.value = mb;
+                    if (ab != null) annualBillInp.value = ab;
+                    if (sc != null) selfConsumptionInp.value = sc;
+
+                    selfConsumptionLbl.textContent = String(parseInt(selfConsumptionInp.value || '0', 10));
+                } catch {}
+}
+
+            document.querySelectorAll('.preset-cons').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const v = clamp(parseInt(btn.dataset.val || '0', 10), 0, 100);
+                    selfConsumptionInp.value = String(v);
+                    selfConsumptionLbl.textContent = String(v);
+                    persistBillInputs();
+                });
+            });
+
+            presentBtn?.addEventListener('click', () => {
+                document.body.classList.toggle('present-mode');
+                try { localStorage.setItem('uspora_present_mode', document.body.classList.contains('present-mode') ? '1' : '0'); } catch {}
+});
+
+            (function initPresentationMode() {
+                try {
+                    if (localStorage.getItem('uspora_present_mode') === '1') document.body.classList.add('present-mode');
+                } catch {}
+})();
+
+
+            exportPdfBtn.addEventListener('click', async () => {
+            exportPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generujem PDF...';
+            exportPdfBtn.disabled = true;
+
+            const customerType = document.getElementById('customerType').value;
+            const input = {
+                ClientName: (document.getElementById('clientNameInp')?.value || '').trim(),
+                Strings: [],
+                DegradationPercent: parseFloat(document.getElementById('degradation').value),
+                SystemLossesPercent: parseFloat(document.getElementById('systemLosses').value),
+                InverterEfficiencyPercent: parseFloat(document.getElementById('inverterEfficiency').value),
+                PricePerson: parseFloat(document.getElementById('pricePerson').value),
+                PriceCorp: parseFloat(document.getElementById('priceCorp').value),
+                CustomerType: customerType,
+                EnergyInflationPercent: parseFloat(document.getElementById('energyInflation').value),
+                GeneralInflationPercent: parseFloat(document.getElementById('generalInflation').value),
+                InitialInvestment: parseFloat(document.getElementById('initialInvestment').value),
+                LifetimeYears: parseInt(document.getElementById('lifetime').value, 10),
+                BillMode: getBillMode(),
+                MonthlyBill: parseFloat(monthlyBillInp.value) || 0,
+                AnnualBill: parseFloat(annualBillInp.value) || 0,
+                SelfConsumptionPercent: parseFloat(selfConsumptionInp.value) || 0
+
+            };
+
+            document.querySelectorAll('.string-entry').forEach(div => {
+                const sc = {};
+                div.querySelectorAll('input[data-prop]').forEach(inp => {
+                    const value = (inp.dataset.prop === 'PanelsCount' || inp.dataset.prop === 'PanelPowerWp')
+                        ? parseInt(inp.value)
+                        : parseFloat(inp.value);
+                    sc[inp.dataset.prop] = value;
+                });
+                input.Strings.push(sc);
+            });
+
+            try {
+                const res = await fetch(`?handler=ExportPdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token()
+                    },
+                    body: JSON.stringify(input)
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'FV_kalkulacka_uspory.pdf';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Chyba pri generovaní PDF:', error);
+                alert('Chyba pri generovaní PDF: ' + error.message);
+            } finally {
+                exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf me-2"></i>Exportovať report (PDF)';
+                exportPdfBtn.disabled = false;
+            }
+        });
+
+            function makeStringConfigDefaults(cfg = {}) {
+                return {
+                    PanelsCount: cfg.PanelsCount ?? 22,
+                    PanelPowerWp: cfg.PanelPowerWp ?? 455,
+                    PanelEfficiency: cfg.PanelEfficiency ?? 20.5,
+                    Orientation: cfg.Orientation ?? 180,
+                    Tilt: cfg.Tilt ?? 30,
+                    PanelArea: cfg.PanelArea ?? 2.0
+                };
+            }
+        @using System.Globalization;
+        @{
+            // ---------- 1. Read & normalise values from the URL ----------
+            // (dot is always parsed as decimal separator; comma is converted to dot first)
+
+            string qsArea = Request.Query["PanelTotalSurface"].ToString();      // e.g. "1,998108" or "1.998108"
+            string qsEff = Request.Query["PanelTotalEfficiency"].ToString();   // e.g. "22,3"     or "22.3"
+
+            decimal panelAreaM2 = 0m;
+            decimal efficiencyPct = 0m;
+
+            if (!string.IsNullOrWhiteSpace(qsArea))
+                decimal.TryParse(qsArea.Replace(',', '.'),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out panelAreaM2);
+
+            if (!string.IsNullOrWhiteSpace(qsEff))
+                decimal.TryParse(qsEff.Replace(',', '.'),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out efficiencyPct);
+
+            // ---------- 2. Fallback to model defaults ----------
+            if (panelAreaM2 == 0m)       // nothing (valid) in URL
+                panelAreaM2 = ((decimal?)Model.PanelTotalSurface ?? 2_171_570m) / 1_000_000m;
+
+            if (efficiencyPct == 0m)
+                efficiencyPct = ((decimal?)Model.PanelTotalEfficiency ?? 223m) / 10m;
+        }
+            function createStringEntry() {
+                const idx = stringCount++;
+                const div = document.createElement('div');
+                div.className = 'card mb-3 string-entry border-primary';
+                div.innerHTML = `
+                        <div class="card-header bg-primary text-white">
+                            <strong><i class="fas fa-solar-panel me-2"></i><span class="string-title">String ${idx + 1}</span></strong>
+                            <button type="button" class="btn btn-sm btn-danger float-end remove-btn">
+                                <i class="fas fa-trash"></i> Odstrániť
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Počet panelov</label>
+                                            <input type="number"
+                   min="1"
+                   class="form-control editable-input"
+                   data-prop="PanelsCount"
+                   value="@(Model.Panels ?? 5)" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Výkon panelu (Wp)</label>
+                                    <input type="number" min="100" max="800" class="form-control editable-input" data-prop="PanelPowerWp" value="@(Model.panelWp ?? 455)" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Účinnosť panelu (%)</label>
+                                    <input type="number" lang="en" inputmode="decimal" step="0.01" min="15" max="25" class="form-control editable-input" data-prop="PanelEfficiency" value="@efficiencyPct.ToString("0.##",CultureInfo.InvariantCulture)" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Orientácia (°)</label>
+                                    <input type="number" step="1" min="0" max="359" class="form-control editable-input" data-prop="Orientation" value="180" />
+                                    <small class="text-muted">0°=S, 90°=V, 180°=J, 270°=Z</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Sklon (°)</label>
+                                    <input type="number" step="1" min="0" max="90" class="form-control editable-input" data-prop="Tilt" value="30" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Plocha panelu (m²)</label>
+                                    <input type="number" lang="en" inputmode="decimal" step="0.00001" min="0.5" max="10" class="form-control editable-input" data-prop="PanelArea" value="@panelAreaM2.ToString("0.#####", CultureInfo.InvariantCulture)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="bg-info p-3 rounded text-white shadow-sm">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small><strong>Celkový výkon:</strong></small><br>
+                                                <span class="total-power fs-5">8800 Wp</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <small><strong>Celková plocha:</strong></small><br>
+                                                <span class="total-area fs-5">44.0 m²</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                const removeBtn = div.querySelector('.remove-btn');
+                removeBtn.addEventListener('click', () => {
+                    div.remove();
+                    renumberStrings();
+                });
+
+
+                div.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('input', () => updateStringTotals(div));
+                });
+
+                stringsContainer.appendChild(div);
+                updateStringTotals(div);
+                renumberStrings();
+                updateStringTotals(div);
+            }
+
+            function renumberStrings() {
+                document.querySelectorAll('.string-entry').forEach((card, i) => {
+                    const title = card.querySelector('.string-title');
+                    if (title) title.textContent = `String ${i + 1}`;
+                });
+            }
+
+
+
+
+            function updateStringTotals(stringDiv) {
+                const panels = parseInt(stringDiv.querySelector('[data-prop="PanelsCount"]').value) || 0;
+                const power = parseInt(stringDiv.querySelector('[data-prop="PanelPowerWp"]').value) || 0;
+                const area = parseFloat(stringDiv.querySelector('[data-prop="PanelArea"]').value) || 0;
+
+                const totalPower = panels * power;
+                const totalArea = panels * area;
+
+                stringDiv.querySelector('.total-power').textContent = `${totalPower} Wp`;
+                stringDiv.querySelector('.total-area').textContent = `${totalArea.toFixed(1)} m²`;
+            }
+
+            function destroyCharts() {
+                Object.values(charts).forEach(chart => {
+                    if (chart) chart.destroy();
+                });
+                charts = {};
+            }
+
+            addStringBtn.addEventListener('click', createStringEntry);
+            createStringEntry();
+            loadBillInputs();
+            applyBillModeUI();
+            syncBillFrom(getBillMode() === 'monthly' ? 'monthly' : 'annual');
+
+
+
+            computeBtn.addEventListener('click', async () => {
+                computeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Počítam...';
+                computeBtn.disabled = true;
+
+                const customerType = document.getElementById('customerType').value;
+                const input = {
+                    ClientName: (document.getElementById('clientNameInp')?.value || '').trim(),
+                    Strings: [],
+                    DegradationPercent: parseFloat(document.getElementById('degradation').value),
+                    SystemLossesPercent: parseFloat(document.getElementById('systemLosses').value),
+                    InverterEfficiencyPercent: parseFloat(document.getElementById('inverterEfficiency').value),
+                    PricePerson: parseFloat(document.getElementById('pricePerson').value),
+                    PriceCorp: parseFloat(document.getElementById('priceCorp').value),
+                    CustomerType: customerType,
+                    EnergyInflationPercent: parseFloat(document.getElementById('energyInflation').value),
+                    GeneralInflationPercent: parseFloat(document.getElementById('generalInflation').value),
+                    InitialInvestment: parseFloat(document.getElementById('initialInvestment').value),
+                    LifetimeYears: parseInt(document.getElementById('lifetime').value, 10),
+                    BillMode: getBillMode(),
+                    MonthlyBill: parseFloat(monthlyBillInp.value) || 0,
+                    AnnualBill: parseFloat(annualBillInp.value) || 0,
+                    SelfConsumptionPercent: parseFloat(selfConsumptionInp.value) || 0
+                };
+
+                document.querySelectorAll('.string-entry').forEach(div => {
+                    const sc = {};
+                    div.querySelectorAll('input[data-prop]').forEach(inp => {
+                        const value = inp.dataset.prop === 'PanelsCount' || inp.dataset.prop === 'PanelPowerWp' ?
+                            parseInt(inp.value) : parseFloat(inp.value);
+                        sc[inp.dataset.prop] = value;
+                    });
+                    input.Strings.push(sc);
+                });
+
+                try {
+                    const res = await fetch(`?handler=Calculate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token()
+                        },
+                        body: JSON.stringify(input)
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+
+                    const result = await res.json();
+                    renderResults(result, input);
+                } catch (error) {
+                    console.error('Chyba pri výpočte:', error);
+                    summaryPanel.innerHTML = `<div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Chyba pri výpočte: ${error.message}
+                    </div>`;
+                } finally {
+                    computeBtn.innerHTML = '<i class="fas fa-calculator me-2"></i>Počítať úsporu';
+                    computeBtn.disabled = false;
+                }
+            });
+
+            function renderResults(data, input) {
+                // Enhanced Summary
+                ensureBillSeries(data, input);
+                const npvColor = data.npv >= 0 ? 'text-white' : 'text-danger';
+                const paybackInfo = data.paybackYears > 0 ? `${data.paybackYears.toFixed(2)} rokov` : 'Viac ako 25 rokov';
+                const paybackColor = data.paybackYears <= 10 ? 'text-white' : data.paybackYears <= 15 ? 'text-warning' : 'text-danger';
+
+                summaryPanel.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-clock fa-3x mb-2"></i>
+                                <h6>Doba návratnosti</h6>
+                                <h3 class="${paybackColor}">${paybackInfo}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                        <i class="fas fa-solar-panel fa-3x mb-2"></i>
+                                        <h6>Výkon na m²</h6>
+                                        <h3 id="kpiPowerDensity">-</h3>
+                            </div>
+                        </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                                <i class="fas fa-leaf fa-3x mb-2"></i>
+                                                <h6>CO₂ úspora/rok</h6>
+                                                <h3 id="kpiCO2Savings">-</h3>
+                                    </div>
+                                </div>
+                    </div>
+                    <hr class="my-3 border-light">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <strong>Inštalovaný výkon:</strong><br>
+                            <span class="fs-5">${data.installedPowerKw.toFixed(2)} kWp</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Priemerná ročná výroba:</strong><br>
+                            <span class="fs-5">${data.averageAnnualProduction.toFixed(0)} kWh</span>
+                        </div>
+                        <div class="col-md-3">
+                           <strong>Celková výroba za ${data.annualResults.length} rokov</strong><br>
+                                        <span class="fs-5">${data.totalProduction.toFixed(0)} kWh</span>
+                                </div>
+                        <div class="col-md-3">
+                            <strong>Celková investícia:</strong><br>
+                            <span class="fs-5">${input.InitialInvestment.toFixed(2)} €</span>
+                        </div>
+                    </div>
+                <hr class="my-3 border-light">
+
+<div class="row text-center">
+    <div class="col-md-3">
+        <strong>Účet/rok (dnes):</strong><br>
+        <span class="fs-5" id="kpiBillBefore">-</span>
+    </div>
+    <div class="col-md-3">
+        <strong>Účet/rok po FV (1. rok):</strong><br>
+        <span class="fs-5" id="kpiBillAfter">-</span>
+    </div>
+    <div class="col-md-3">
+        <strong>Úspora (1. rok):</strong><br>
+        <span class="fs-5" id="kpiSavingsY1">-</span>
+    </div>
+    <div class="col-md-3">
+        <strong>Priem. úspora / mesiac (1. rok):</strong><br>
+        <span class="fs-5" id="kpiSavingsM1">-</span>
+    </div>
+</div>
+`;
+
+                // KPI Panel
+                const totalArea = input.Strings.reduce((sum, s) => sum + (s.PanelsCount * s.PanelArea), 0);
+                const powerDensity = data.installedPowerKw / totalArea * 1000; // W/m²
+                const co2Savings = data.averageAnnualProduction * 0.4; // kg CO2/year (0.4 kg CO2/kWh)
+
+                document.getElementById('kpiPowerDensity').textContent = `${powerDensity.toFixed(0)} W/m²`;
+                document.getElementById('kpiCO2Savings').textContent = `${(co2Savings/1000).toFixed(1)} t`;
+                const y1 = data.annualResults?.[0];
+                if (y1 && (y1.billBeforeEuros > 0 || y1.savingsEuros > 0)) {
+                    document.getElementById('kpiBillBefore').textContent = `${(y1.billBeforeEuros || 0).toFixed(0)} €`;
+                    document.getElementById('kpiBillAfter').textContent = `${(y1.billAfterEuros || 0).toFixed(0)} €`;
+                    document.getElementById('kpiSavingsY1').textContent = `${(y1.savingsEuros || 0).toFixed(0)} €`;
+                    document.getElementById('kpiSavingsM1').textContent = `${((y1.savingsEuros || 0) / 12).toFixed(0)} €`;
+                } else {
+                    document.getElementById('kpiBillBefore').textContent = `-`;
+                    document.getElementById('kpiBillAfter').textContent = `-`;
+                    document.getElementById('kpiSavingsY1').textContent = `-`;
+                    document.getElementById('kpiSavingsM1').textContent = `-`;
+                }
+
+
+                // Show panels
+                document.getElementById('chartTabs').style.display = 'block';
+                document.getElementById('chartContent').style.display = 'block';
+                document.getElementById('tableSection').style.display = 'block';
+
+                // až potom toggle
+                toggleBillTabVisibility(data, input);
+
+                // Destroy existing charts
+                destroyCharts();
+
+                // Create enhanced charts
+                createMonthlyChart(data);
+                createCumulativeChart(data);
+                createCashFlowChart(data, input);
+                createProductionChart(data);
+                createROIChart(data, input);
+                createBillChart(data);
+
+
+
+                // Update table with enhanced data
+                updateTable(data, input);
+                updateSummaryTable(data);
+            }
+
+            // Vytvorí 4 riadky zo správnych indexov v data.annualResults
+            function updateSummaryTable(data) {
+                const mapping = [
+                    { label: 'Energia vyrobená za 1 rok', idx: 0 },
+                    { label: 'Energia vyrobená za 10 rokov', idx: 9 },
+                    { label: 'Energia vyrobená za 20 rokov', idx: 19 },
+                    { label: 'Energia vyrobená za 30 rokov', idx: 29 }
+                ];
+                const tbody = document.querySelector('#summaryTable tbody');
+                tbody.innerHTML = '';
+                mapping.forEach(item => {
+                    if (data.annualResults.length > item.idx) {
+                        const a = data.annualResults[item.idx];
+                        const tr = `
+                <tr>
+                  <td>${item.label}</td>
+                  <td>${a.cumulativeProductionKwh.toFixed(0)} kWh</td>
+                  <td>${a.cumulativeValueEuros.toFixed(2)} €</td>
+                </tr>`;
+                        tbody.insertAdjacentHTML('beforeend', tr);
+                    }
+                });
+            }
+
+            function toggleBillTabVisibility(data, input) {
+                const navItem = document.getElementById('billTabNavItem');
+                const pane = document.getElementById('billTab');
+                if (!navItem || !pane) return;
+
+                const annualFromAnnual = Number(String(input.AnnualBill ?? '0').replace(',', '.')) || 0;
+                const annualFromMonthly = (Number(String(input.MonthlyBill ?? '0').replace(',', '.')) || 0) * 12;
+                const annualBillBase = annualFromAnnual > 0 ? annualFromAnnual : annualFromMonthly;
+
+                const show = annualBillBase > 0;
+
+                // schovaj / ukaz nav položku aj pane
+                navItem.classList.toggle('d-none', !show);
+                pane.classList.toggle('d-none', !show);
+
+                // ak skrývame a práve je aktívny bill tab → prepni na prvý
+                if (!show) {
+                    const billLink = navItem.querySelector('a[data-bs-toggle="tab"]');
+                    const billIsActive =
+                        (billLink && billLink.classList.contains('active')) ||
+                        pane.classList.contains('active') || pane.classList.contains('show');
+
+                    if (billIsActive) {
+                        const firstVisibleLink = document.querySelector('#chartTabs a.nav-link:not(.d-none)');
+                        if (firstVisibleLink) {
+                            // bootstrap tab switch (musí existovať bootstrap)
+                            if (window.bootstrap?.Tab) new bootstrap.Tab(firstVisibleLink).show();
+                            else firstVisibleLink.click();
+                        }
+                    }
+                }
+}
+
+
+
+            function createBillChart(data) {
+                if (!billCtx) return;
+
+                const years = data.annualResults.map(a => a.year);
+                const billBefore = data.annualResults.map(a => (Number.isFinite(a.billBeforeEuros) ? a.billBeforeEuros : null));
+                const billAfter  = data.annualResults.map(a => (Number.isFinite(a.billAfterEuros)  ? a.billAfterEuros  : null));
+
+
+                const hasBill = billBefore.some(v => v != null) && billAfter.some(v => v != null);
+                if (!hasBill) return;
+
+
+                charts.bill = new Chart(billCtx, {
+                    type: 'line',
+                    data: {
+                        labels: years,
+                        datasets: [
+                            {
+                                label: 'Bez FV (účet/rok)',
+                                data: billBefore,
+                                borderWidth: 2,
+                                tension: 0.35,
+                                fill: false
+                            },
+                            {
+                                label: 'S FV (účet/rok)',
+                                data: billAfter,
+                                borderWidth: 3,
+                                tension: 0.35,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.85)',
+                                callbacks: {
+                                    label: (ctx) => {
+                                        const y = ctx.parsed.y;
+                                        if (y == null || !Number.isFinite(y)) return `${ctx.dataset.label}: -`;
+                                        return `${ctx.dataset.label}: ${Number(y).toFixed(0)} €`;
+                                    }
+
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Rok' } },
+                            y: { title: { display: true, text: '€ / rok' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            function ensureBillSeries(data, input) {
+                // robustne zober ročný účet aj keď user zadá len mesačný
+                const annualFromAnnual = Number(String(input.AnnualBill ?? '0').replace(',', '.')) || 0;
+                const annualFromMonthly = (Number(String(input.MonthlyBill ?? '0').replace(',', '.')) || 0) * 12;
+                const annualBillBase = annualFromAnnual > 0 ? annualFromAnnual : annualFromMonthly;
+
+                if (!(annualBillBase > 0)) return;
+                if (!data?.annualResults?.length) return;
+
+                const energyInfl = (Number(input.EnergyInflationPercent || 0) / 100);
+                const generalInfl = (Number(input.GeneralInflationPercent || 0) / 100);
+
+                const sc = clamp(Number(input.SelfConsumptionPercent || 0) / 100, 0, 1);
+
+                // ✅ Fixné poplatky (nastav si podľa reality)
+                // napr. 10 €/mes. → 120 €/rok
+                const fixedMonthlyFee = 10;
+                const fixedAnnualBase = fixedMonthlyFee * 12;
+
+                let cum = 0;
+
+                for (let i = 0; i < data.annualResults.length; i++) {
+                    const a = data.annualResults[i];
+
+                    // účet pred FV rastie s infláciou energií
+                    const billBefore = annualBillBase * Math.pow(1 + energyInfl, i);
+
+                    // fixné poplatky môžu rásť všeobecnou infláciou (alebo ich nechaj fixné)
+                    const fixedAnnual = fixedAnnualBase * Math.pow(1 + generalInfl, i);
+
+                    // potenciál úspory: hodnota vyrobenej energie, ktorú reálne spotrebujem
+                    const value = Number(a.valueEuros || 0);
+                    const potentialSave = value * sc;
+
+                    // úspora nemôže prekročiť účet "bez FV", ale zároveň nemôže zraziť účet pod fixné poplatky
+                    const maxSaveDueToBill = billBefore;                 // nemôžeš ušetriť viac než billBefore
+                    const maxSaveDueToFixed = Math.max(0, billBefore - fixedAnnual); // nemôžeš ísť pod fix
+                    const maxAllowedSavings = Math.min(maxSaveDueToBill, maxSaveDueToFixed);
+
+                    const savings = Math.max(0, Math.min(potentialSave, maxAllowedSavings));
+                    const billAfter = Math.max(fixedAnnual, billBefore - savings);
+
+                    a.billBeforeEuros = billBefore;
+                    a.savingsEuros = savings;
+                    a.billAfterEuros = billAfter;
+
+                    cum += savings;
+                    a.cumulativeSavingsEuros = cum;
+                }
+}
+
+
+            
+            function createMonthlyChart(data) {
+                const gradient = monthlyCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(255, 193, 7, 0.8)');
+                gradient.addColorStop(1, 'rgba(255, 193, 7, 0.1)');
+
+                charts.monthly = new Chart(monthlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Máj', 'Jún', 'Júl', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
+                        datasets: [{
+                            label: 'Mesačná výroba (kWh)',
+                            data: data.monthlyProduction,
+                            backgroundColor: gradient,
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 2,
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Výroba: ${context.parsed.y.toFixed(0)} kWh`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.1)' },
+                                title: { display: true, text: 'Výroba (kWh)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                title: { display: true, text: 'Mesiac' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createCumulativeChart(data) {
+                charts.cumulative = new Chart(cumulativeCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.annualResults.map(a => a.year),
+                        datasets: [{
+                            label: 'Kumulatívna výroba (MWh)',
+                            data: data.annualResults.map(a => a.cumulativeProductionKwh / 1000),
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        }, {
+                            label: 'Kumulatívna hodnota (€)',
+                            data: data.annualResults.map(a => a.cumulativeValueEuros),
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Rok' }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'Výroba (MWh)' },
+                                grid: { color: 'rgba(54, 162, 235, 0.2)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'Hodnota (€)' },
+                                grid: { drawOnChartArea: false },
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createCashFlowChart(data, input) {
+                // Prepare annual cash flow data
+                const cashFlowData = data.annualResults.map((a, i) => {
+                    if (i === 0) {
+                        return a.valueEuros - input.InitialInvestment;
+                    }
+                    return a.valueEuros;
+                });
+
+                // Create the chart with only yearly cash flow
+                charts.cashflow = new Chart(cashflowCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.annualResults.map(a => a.year),
+                        datasets: [{
+                            label: 'Ročný príjem (€)',
+                            data: cashFlowData,
+                            backgroundColor: cashFlowData.map(cf =>
+                                cf >= 0 ? 'rgba(40, 167, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)'
+                            ),
+                            borderColor: cashFlowData.map(cf =>
+                                cf >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'
+                            ),
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                callbacks: {
+                                    label: function (context) {
+                                        return `Ročný príjem: ${context.parsed.y.toFixed(0)} €`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Rok' }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'Ročný príjem (€)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+
+            function createProductionChart(data) {
+                const firstYearProduction = data.annualResults[0].productionKwh;
+                const degradationPercent = parseFloat(document.getElementById('degradation').value);
+
+                charts.production = new Chart(productionCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.annualResults.map(a => a.year),
+                        datasets: [{
+                            label: 'Skutočná výroba (kWh)',
+                            data: data.annualResults.map(a => a.productionKwh),
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2
+                        }, {
+                            label: 'Bez degradácie (kWh)',
+                            data: data.annualResults.map(() => firstYearProduction),
+                            borderColor: 'rgba(201, 203, 207, 1)',
+                            backgroundColor: 'rgba(201, 203, 207, 0.1)',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        if (context.datasetIndex === 0) {
+                                            const year = context.dataIndex;
+                                            const degradation = (year * degradationPercent).toFixed(1);
+                                            return `Degradácia: ${degradation}%`;
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Rok' }
+                            },
+                            y: {
+                                title: { display: true, text: 'Výroba (kWh)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createROIChart(data, input) {
+                const roiData = data.annualResults.map((a, i) => {
+                    if (i === 0) return 0;
+                    return ((a.cumulativeValueEuros - input.InitialInvestment) / input.InitialInvestment * 100);
+                });
+
+                charts.roi = new Chart(roiCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.annualResults.map(a => a.year),
+                        datasets: [{
+                            label: 'Návratnosť (%)',
+                            data: roiData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3
+                        }, {
+                            label: 'bod zvratu (0%)',
+                            data: data.annualResults.map(() => 0),
+                            borderColor: 'rgba(0, 0, 0, 0.5)',
+                            borderDash: [10, 5],
+                            fill: false,
+                            pointRadius: 0,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.8)',
+                                filter: function(tooltipItem) {
+                                    return tooltipItem.datasetIndex === 0;
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        return `ROI: ${context.parsed.y.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Rok' }
+                            },
+                            y: {
+                                title: { display: true, text: 'Návratnosť (%)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateTable(data, input) {
+                tableBody.innerHTML = '';
+                data.annualResults.forEach((a, i) => {
+                    const cashFlow = i === 0 ? a.valueEuros - input.InitialInvestment : a.valueEuros;
+                    const roi = i === 0 ? 0 : ((a.cumulativeValueEuros - input.InitialInvestment) / input.InitialInvestment * 100);
+                    const roiClass = roi >= 0 ? 'text-success' : 'text-danger';
+                    const cashFlowClass = cashFlow >= 0 ? 'text-success' : 'text-danger';
+
+                    const row = `<tr>
+                            <td><strong>${a.year}</strong></td>
+                            <td>${a.productionKwh.toFixed(0)}</td>
+                            <td>${a.cumulativeProductionKwh.toFixed(0)}</td>
+                            <td>${a.pricePerKwh.toFixed(3)}</td>
+                            <td>${a.valueEuros.toFixed(2)}</td>
+                            <td>${a.cumulativeValueEuros.toFixed(2)}</td>
+                            <td class="${cashFlowClass}">${cashFlow.toFixed(2)}</td>
+                            <td class="${roiClass}">${roi.toFixed(1)}%</td>
+                        </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        })();
+    </script>
+
+    <style>
+    :root{
+        --nep-bg:#f6f7fb;
+        --nep-card:#ffffff;
+        --nep-border:#e6e8ef;
+        --nep-text:#0f172a;
+        --nep-muted:#64748b;
+        --nep-primary:#0d6efd;
+        --nep-shadow: 0 8px 22px rgba(15,23,42,.08);
+        --nep-radius: 16px;
+    }
+
+    body{
+        background: var(--nep-bg);
+        color: var(--nep-text);
+    }
+
+    .card{
+        border: 1px solid var(--nep-border);
+        border-radius: var(--nep-radius);
+        box-shadow: var(--nep-shadow);
+        overflow: hidden;
+        animation: fadeIn .35s ease-in-out;
+    }
+
+    .card-header{
+        background: var(--nep-card);
+        border-bottom: 1px solid var(--nep-border);
+        font-weight: 700;
+        color: var(--nep-text);
+    }
+
+    .highlight{
+        background: linear-gradient(90deg, rgba(13,110,253,.14), rgba(13,110,253,.04));
+        color: var(--nep-text);
+    }
+
+    .soft-panel{
+        background: #fff;
+        border: 1px solid var(--nep-border);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 6px 16px rgba(15,23,42,.05);
+    }
+
+    .nav-tabs .nav-link{
+        border: none;
+        color: var(--nep-muted);
+        font-weight: 600;
+        padding: .65rem .85rem;
+    }
+    .nav-tabs .nav-link.active{
+        color: var(--nep-primary);
+        border-bottom: 2px solid var(--nep-primary);
+        background: transparent;
+    }
+
+    .btn-primary{
+        background: var(--nep-primary);
+        border: none;
+        font-weight: 700;
+        padding: 12px 28px;
+        border-radius: 12px;
+        box-shadow: 0 10px 18px rgba(13,110,253,.18);
+    }
+    .btn-primary:hover{
+        transform: translateY(-1px);
+    }
+
+    .editable-input:focus{
+        border-color: var(--nep-primary);
+        box-shadow: 0 0 0 .2rem rgba(13,110,253,.18);
+    }
+
+    .bg-gradient-primary{
+        /* summary panel ostáva, ale v light mode decentnejšie */
+        background: linear-gradient(135deg, #0d6efd 0%, #3b82f6 100%);
+        border-radius: var(--nep-radius);
+        box-shadow: 0 10px 24px rgba(13,110,253,.22);
+    }
+
+    /* Efficiency table (ponechávame tvoje farby) */
+    .efficiency-excellent {
+        background: linear-gradient(135deg, #4CAF50, #81C784) !important;
+        color: white;
+    }
+    .efficiency-very-good {
+        background: linear-gradient(135deg, #8BC34A, #AED581) !important;
+        color: white;
+    }
+    .efficiency-good {
+        background: linear-gradient(135deg, #FFC107, #FFD54F) !important;
+        color: #333;
+    }
+    .efficiency-fair {
+        background: linear-gradient(135deg, #FF9800, #FFB74D) !important;
+        color: white;
+    }
+    .efficiency-poor {
+        background: linear-gradient(135deg, #F44336, #E57373) !important;
+        color: white;
+    }
+    .efficiency-cell {
+        font-weight: 800;
+        font-size: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+
+    /* ver pill */
+    .ver-pill{
+        display:inline-flex;
+        align-items:center;
+        gap:.35rem;
+        padding:.2rem .6rem;
+        border-radius:999px;
+        font-weight:700;
+        font-size:.88rem;
+        line-height:1;
+        background:#fff;
+        border:1px solid var(--nep-border);
+        box-shadow: 0 6px 14px rgba(15,23,42,.06);
+        vertical-align:middle;
+    }
+    .ver-pill .dot{
+        width:8px;height:8px;border-radius:50%;
+        background: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22,163,74,.18);
+    }
+    .ver-date{ font-size:.9rem; color: var(--nep-muted); vertical-align:middle; }
+
+    @@keyframes fadeIn{
+        from{ opacity:0; transform: translateY(10px); }
+        to{ opacity:1; transform: translateY(0); }
+    }
+
+    /* Presentation mode: skryje vstupy a nechá výsledky */
+    body.present-mode #calcForm > .card:not(:nth-of-type(3)) { display:none; } /* 3. karta = výsledky */
+    body.present-mode #computeBtn,
+    body.present-mode #addStringBtn { display:none; }
+    body.present-mode #exportPdfBtn { display:inline-flex; }
+    body.present-mode #chartTabs { position: sticky; top: 0; background: var(--nep-bg); padding-top: .5rem; z-index: 20; }
+    /* =========================
+   USPORA – MOBILE FIX PACK
+   Paste at the END of your <style>
+   ========================= */
+
+    /* 1) General mobile spacing + reduce heavy shadows */
+    @@media (max-width: 576px){
+    body{ font-size: 15px; }
+    .card{ border-radius: 14px; box-shadow: 0 6px 14px rgba(15,23,42,.06); }
+    .card-body{ padding: 14px; }
+    .card-header{ padding: 12px 14px; }
+    h3{ font-size: 1.25rem; line-height: 1.2; }
+    h5{ font-size: 1.05rem; }
+    .ver-pill{ font-size:.78rem; padding:.18rem .5rem; }
+    .ver-date{ display:block; margin-top:.35rem; }
+}
+
+    /* 2) Make nav-tabs usable on mobile (horizontal scroll, no wrap) */
+    .uspora-tabs{
+        display: flex;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        gap: .25rem;
+        padding-bottom: .25rem;
+        border-bottom: 1px solid var(--nep-border);
+    }
+    .uspora-tabs::-webkit-scrollbar{ height: 6px; }
+    .uspora-tabs .nav-item{ flex: 0 0 auto; }
+    .uspora-tabs .nav-link{
+        white-space: nowrap;
+        border-radius: 999px;
+        border: 1px solid var(--nep-border);
+        padding: .5rem .8rem;
+        background: #fff;
+    }
+    .uspora-tabs .nav-link.active{
+        border-color: rgba(13,110,253,.35);
+        box-shadow: 0 6px 14px rgba(13,110,253,.12);
+        border-bottom: 1px solid rgba(13,110,253,.35) !important; /* override your underline style */
+    }
+
+    /* 3) Summary panel: better stacking + less “huge” typography on phones */
+    @@media (max-width: 576px){
+    #summaryPanel{ padding: 14px !important; }
+    #summaryPanel .row{ --bs-gutter-x: .75rem; --bs-gutter-y: .75rem; }
+    #summaryPanel h3{ font-size: 1.35rem; margin-bottom: .25rem; }
+    #summaryPanel h6{ font-size: .9rem; margin-bottom: .25rem; opacity: .95; }
+    #summaryPanel .fs-5{ font-size: 1rem !important; }
+    #summaryPanel hr{ margin: .75rem 0 !important; }
+}
+
+    /* 4) Charts: shorter height on mobile so user doesn't scroll forever */
+    @@media (max-width: 576px){
+    #monthlyChart, #cumulativeChart, #cashflowChart, #productionChart, #roiChart, #billChart{
+        height: 280px !important;
+    }
+    .tab-pane .card-body{ padding: 12px; }
+}
+
+    /* 5) Tables: make them feel less “cramped” */
+    @@media (max-width: 576px){
+    .table-responsive{ border-radius: 12px; }
+    table.table{ font-size: .9rem; }
+    #annualTable th, #annualTable td{ padding: .45rem .5rem; }
+}
+
+    /* 6) Form controls: better tap targets */
+    @@media (max-width: 576px){
+    .form-control, .form-select{ min-height: 44px; border-radius: 12px; }
+    .btn{ border-radius: 12px; }
+    .btn-lg{ padding: 12px 14px; }
+    .form-label{ font-weight: 700; font-size: .92rem; }
+    .text-muted.small{ font-size: .85rem; }
+}
+
+    /* 7) String cards: force 2-column layout on phones WITHOUT touching markup
+       (your markup uses col-md-3; on phones it's col-12 -> we override to 50%)
+    */
+    @@media (max-width: 576px){
+    .string-entry .row.g-3 > .col-md-3{
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+    .string-entry .row.g-3 > .col-md-6{
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    .string-entry .card-header{
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+    .string-entry .remove-btn{
+        padding: .35rem .6rem;
+    }
+    .string-entry small.text-muted{ display:none; } /* hide orientation hint that eats space */
+    }
+
+    /* 8) Bill panel presets: wrap nicely */
+    @@media (max-width: 576px){
+    .preset-cons{ flex: 1 1 auto; }
+    .soft-panel .btn-group{ width: 100%; }
+    .soft-panel .btn-group .btn{ flex: 1 1 0; }
+}
+
+    /* 9) Action buttons: full width + sticky bottom on mobile (works even if you didn't wrap them)
+       If you added the wrapper <div class="action-bar">, it becomes sticky.
+    */
+    @@media (max-width: 576px){
+    .action-bar{
+        position: sticky;
+        bottom: 0;
+        z-index: 30;
+        background: rgba(246,247,251,.92);
+        backdrop-filter: blur(8px);
+        padding: .6rem .2rem;
+        border-top: 1px solid var(--nep-border);
+        margin-top: 12px;
+    }
+    #computeBtn, #exportPdfBtn{
+        width: 100% !important;
+    }
+    #exportPdfBtn{ margin-left: 0 !important; }
+}
+
+    /* 10) Prevent “present-mode” sticky tabs from looking weird on mobile */
+    @@media (max-width: 576px){
+    body.present-mode #chartTabs{
+        padding: .5rem .25rem;
+        border-radius: 12px;
+    }
+
+        /* Move Export PDF button a bit down (mobile only) */
+        @@media (max-width: 576px){
+        #exportPdfBtn{
+            margin-top: 10px !important;
+        }
+
+            
+}
+}
+
+
+    </style>
+
+
+}

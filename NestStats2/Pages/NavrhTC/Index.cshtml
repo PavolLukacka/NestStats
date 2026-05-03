@@ -1,0 +1,1762 @@
+﻿@page "/navrh-tc"
+@model NestStats2.Pages.NavrhTC.IndexModel
+@{
+    ViewData["Title"] = "Kalkulačka úspory – tepelné čerpadlá";
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<div class="container-xl py-4 tc-page">
+  <div class="alert alert-info mb-4">
+    Tento nástroj je zatiaľ dostupný iba v slovenčine.
+  </div>
+  <h3 class="text-center mb-4" style="padding-top: 1rem;">
+    Kalkulačka úspory – tepelné čerpadlá
+    <span class="ver-pill ms-2" title="Aktualizované: 1. 4. 2026">
+            <span class="dot"></span> Release_BETA 1.0
+        </span>
+    <small class="ver-date ms-2">
+      <i class="bi bi-clock-history"></i> 1.&nbsp;4.&nbsp;2026
+    </small>
+  </h3>
+
+  <form id="tcForm" onsubmit="return false;">
+    <!-- 1 -->
+    <div class="card mb-4">
+      <div class="card-header highlight">1. Parametre objektu</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Vykurovaná plocha (m²)</label>
+            <input type="number" min="20" max="5000" step="5" id="area" class="form-control editable-input" value="150" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Typ budovy / izolácia</label>
+            <select id="buildingType" class="form-select editable-input" onchange="liveUpdate()">
+              <option value="old">Starší objekt bez zateplenia</option>
+              <option value="standard">Čiastočne zateplený objekt</option>
+              <option value="renovated" selected>Zrekonštruovaný objekt</option>
+              <option value="modern">Moderný nízkoenergetický objekt</option>
+              <option value="passive">Pasívny dom</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Klimatická oblasť</label>
+            <select id="climate" class="form-select editable-input" onchange="liveUpdate()">
+              <option value="lowland">Nížiny</option>
+              <option value="mid" selected>Stredná poloha</option>
+              <option value="mountain">Horská oblasť</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Počet osôb v domácnosti</label>
+            <input type="number" min="1" max="20" step="1" id="persons" class="form-control editable-input" value="4" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Vnútorná teplota (°C)</label>
+            <input type="number" min="18" max="25" step="1" id="indoorTemp" class="form-control editable-input" value="21" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Systém vykurovania</label>
+            <select id="emitterType" class="form-select editable-input" onchange="liveUpdate()">
+              <option value="floor">Podlahové vykurovanie</option>
+              <option value="lowtemp">Nízkoteplotné radiátory</option>
+              <option value="radiators" selected>Bežné radiátory</option>
+              <option value="hightemp">Vysokoteplotný režim</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <div class="soft-panel h-100">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                  <div class="fw-semibold">Zdroj ročnej potreby tepla</div>
+                  <div class="text-muted small">
+                    Automatický odhad podľa objektu alebo manuálne zadaná potreba tepla.
+                  </div>
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group">
+                  <input type="radio" class="btn-check" name="heatDemandMode" id="heatDemandAuto" checked onchange="toggleManualHeatDemand()">
+                  <label class="btn btn-outline-primary" for="heatDemandAuto">Automatický odhad</label>
+
+                  <input type="radio" class="btn-check" name="heatDemandMode" id="heatDemandManual" onchange="toggleManualHeatDemand()">
+                  <label class="btn btn-outline-primary" for="heatDemandManual">Manuálne zadať</label>
+                </div>
+              </div>
+
+              <div class="row g-2 mt-2 d-none" id="manualHeatDemandWrap">
+                <div class="col-md-6">
+                  <label class="form-label small">Ročná potreba tepla – vykurovanie (kWh/rok)</label>
+                  <input type="number" min="0" step="100" id="manualHeatDemand" class="form-control editable-input" value="14000" oninput="liveUpdate()" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Ročná potreba TUV (kWh/rok)</label>
+                  <input type="number" min="0" step="100" id="manualDhwDemand" class="form-control editable-input" value="2800" oninput="liveUpdate()" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="soft-panel">
+              <div class="fw-semibold mb-2">
+                <i class="bi bi-lightning-charge me-1 text-primary"></i> Rýchly technický náhľad
+              </div>
+              <div class="row g-3">
+                <div class="col-6 col-md-3">
+                  <div class="mini-kpi">
+                    <div class="mini-kpi-label">Tepelná strata</div>
+                    <div class="mini-kpi-value" id="statHeatLoss">–</div>
+                    <div class="mini-kpi-sub">kW</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="mini-kpi">
+                    <div class="mini-kpi-label">Ročná potreba tepla</div>
+                    <div class="mini-kpi-value" id="statHeatDemand">–</div>
+                    <div class="mini-kpi-sub">kWh/rok</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="mini-kpi">
+                    <div class="mini-kpi-label">Potreba TUV</div>
+                    <div class="mini-kpi-value" id="statDhw">–</div>
+                    <div class="mini-kpi-sub">kWh/rok</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="mini-kpi">
+                    <div class="mini-kpi-label">Potreba na m²</div>
+                    <div class="mini-kpi-value" id="statSpecific">–</div>
+                    <div class="mini-kpi-sub">kWh/m²/rok</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="card mb-4">
+      <div class="card-header highlight">2. Parametre tepelného čerpadla</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Typ TČ</label>
+            <select id="hpType" class="form-select editable-input" onchange="liveUpdate()">
+              <option value="monoblock" selected>Vzduch – voda monoblok</option>
+              <option value="split">Vzduch – voda split</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Rezerva výkonu (%)</label>
+            <input type="number" min="0" max="30" step="1" id="sizingReserve" class="form-control editable-input" value="15" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Typ zákazníka</label>
+            <select id="customerType" class="form-select editable-input" onchange="liveUpdate()">
+              <option value="person">Fyzická osoba</option>
+              <option value="corp">Právnická osoba</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <div class="soft-panel h-100">
+              <div class="d-flex justify-content-between">
+                <span class="text-muted small">SCOP systému</span>
+                <span class="fw-semibold" id="scopDisplay">3.20</span>
+              </div>
+              <div class="d-flex justify-content-between mt-2">
+                <span class="text-muted small">Odporúčaný výkon</span>
+                <span class="fw-semibold text-primary" id="recHPSize">–</span>
+              </div>
+              <div class="d-flex justify-content-between mt-2">
+                <span class="text-muted small">Teplotný režim</span>
+                <span class="fw-semibold" id="supplyTempDisplay">55 °C</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Cena elektriny FO (€/kWh)</label>
+            <input type="number" step="0.01" min="0" id="elPricePerson" class="form-control editable-input" value="0.18" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Cena elektriny PO (€/kWh)</label>
+            <input type="number" step="0.01" min="0" id="elPriceCorp" class="form-control editable-input" value="0.25" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Inflácia elektriny (%/rok)</label>
+            <input type="number" step="0.5" min="0" max="20" id="elInflation" class="form-control editable-input" value="4" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Inflácia paliva (%/rok)</label>
+            <input type="number" step="0.5" min="0" max="20" id="fuelInflation" class="form-control editable-input" value="5" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Všeobecná inflácia (%/rok)</label>
+            <input type="number" step="0.5" min="0" max="10" id="generalInflation" class="form-control editable-input" value="2" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Cena TČ + montáž s DPH (€)</label>
+            <input type="number" step="100" min="0" id="hpInvestment" class="form-control editable-input" value="12000" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-4">
+            <div class="soft-panel h-100">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="manualPowerSwitch" onchange="toggleManualPower()">
+                <label class="form-check-label" for="manualPowerSwitch">Manuálny výkon TČ</label>
+              </div>
+              <div class="mt-2 d-none" id="manualPowerWrap">
+                <label class="form-label small">Použitý výkon TČ (kW)</label>
+                <input type="number" min="3" max="50" step="0.1" id="manualPower" class="form-control editable-input" value="10" oninput="liveUpdate()" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="card mb-4">
+      <div class="card-header highlight">3. Existujúce kúrenie</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Typ existujúceho systému</label>
+            <select id="currentHeating" class="form-select editable-input" onchange="onHeatingChange()">
+              <option value="gas_condensing">Plynový kondenzačný kotol</option>
+              <option value="gas_standard" selected>Plynový štandardný kotol</option>
+              <option value="pellets">Peletový kotol</option>
+              <option value="wood">Kotol / pec na drevo</option>
+              <option value="electric">Elektrický kotol / priamotopy</option>
+              <option value="oil">Olejový kotol</option>
+              <option value="czt">Diaľkové vykurovanie (CZT)</option>
+            </select>
+            <div class="mt-2 info-chip" id="heatingEffBadge">Účinnosť: 88%</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" id="fuelPriceLbl">Cena paliva</label>
+            <input type="number" step="0.01" min="0" id="fuelPrice" class="form-control editable-input" value="0.85" oninput="liveUpdate()" />
+            <small class="text-muted" id="fuelPriceHint">Vrátane distribúcie a poplatkov.</small>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Skutočný ročný účet za kúrenie + TUV (€)</label>
+            <input type="number" step="10" min="0" id="realAnnualCost" class="form-control editable-input" value="0" placeholder="Nepovinné – ak klient pozná reálny účet" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-12">
+            <div class="soft-panel">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Ročná spotreba paliva</span>
+                    <span class="fw-semibold" id="fuelConsDisplay">–</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Teoretické ročné náklady</span>
+                    <span class="fw-semibold" id="currentCostDisplay">–</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Použitá hodnota pre porovnanie</span>
+                    <span class="fw-semibold" id="usedOldCostDisplay">–</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="card mb-4">
+      <div class="card-header highlight">4. Fotovoltika a synergia s TČ</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Výkon FV (kWp)</label>
+            <input type="number" step="0.5" min="0" max="200" id="fvKwp" class="form-control editable-input" value="0" oninput="liveUpdate()" />
+            <small class="text-muted">0 = bez fotovoltiky</small>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Špecifická výroba FV (kWh/kWp/rok)</label>
+            <input type="number" step="10" min="600" max="1500" id="fvYield" class="form-control editable-input" value="1050" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Investícia do FV systému (€)</label>
+            <input type="number" step="100" min="0" id="fvInvestment" class="form-control editable-input" value="0" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Degradácia FV (%/rok)</label>
+            <input type="number" step="0.1" min="0" max="2" id="fvDegradation" class="form-control editable-input" value="0.4" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">
+              Podiel FV využitý pre TČ (%)
+              <i class="bi bi-info-circle text-muted" title="Časť z výroby FV, ktorá sa reálne spotrebuje na chod TČ."></i>
+            </label>
+            <input type="range" class="form-range" id="fvSelfConsHP" min="0" max="100" step="5" value="70" oninput="onFVSlider()">
+            <div class="d-flex justify-content-between small text-muted">
+              <span>0%</span>
+              <span class="fw-semibold text-dark"><span id="fvSelfConsHPLbl">70</span>%</span>
+              <span>100%</span>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <button type="button" class="btn btn-light btn-sm" onclick="setFVSlider(60)">Bez batérie ~60%</button>
+              <button type="button" class="btn btn-light btn-sm" onclick="setFVSlider(75)">S batériou ~75%</button>
+              <button type="button" class="btn btn-light btn-sm" onclick="setFVSlider(90)">Smart riadenie ~90%</button>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="soft-panel h-100" id="fvPreviewPanel" style="display:none">
+              <div class="d-flex justify-content-between">
+                <span class="text-muted small">Ročná výroba FV</span>
+                <span class="fw-semibold" id="fvAnnualProd">–</span>
+              </div>
+              <div class="d-flex justify-content-between mt-2">
+                <span class="text-muted small">FV využitá pre TČ</span>
+                <span class="fw-semibold text-success" id="fvForHP">–</span>
+              </div>
+              <div class="d-flex justify-content-between mt-2">
+                <span class="text-muted small">Ročná úspora z FV pre TČ</span>
+                <span class="fw-semibold text-success" id="fvMoneySaving">–</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="card mb-4">
+      <div class="card-header highlight">5. Investícia a horizont</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Dotácia / grant (€)</label>
+            <input type="number" step="100" min="0" id="grant" class="form-control editable-input" value="0" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Hodnotený horizont (roky)</label>
+            <input type="number" min="5" max="30" id="lifetime" class="form-control editable-input" value="20" oninput="liveUpdate()" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Meno klienta</label>
+            <input type="text" id="clientName" class="form-control" placeholder="napr. Ing. Ján Novák" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      <button id="computeBtn" type="button" class="btn btn-primary btn-lg" onclick="runCalculation()">
+        <i class="bi bi-calculator me-2"></i>Vypočítať úsporu
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-lg" onclick="resetForm()">
+        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+      </button>
+    </div>
+  </form>
+
+  <!-- Results -->
+  <div id="resultsSection" style="display:none">
+    <div id="summaryPanel" class="computed-field p-4 mb-4 bg-gradient-primary text-white rounded shadow-lg"></div>
+
+    <div class="card mb-4">
+      <div class="card-header highlight-green">Technický a ekonomický prehľad</div>
+      <div class="card-body" id="sizingDetail"></div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header highlight">Odporúčania a upozornenia</div>
+      <div class="card-body" id="notesWrap"></div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header highlight">Výsledky a vizualizácie</div>
+      <div class="card-body">
+        <ul class="nav nav-tabs mb-3" id="chartTabs">
+          <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabHeat">Profil tepla</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabElec">Elektrina a FV</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabComparison">Porovnanie systémov</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabAnnual">Ročné náklady v čase</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPayback">Kumulatívna návratnosť</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabSensitivity">Citlivosť výsledku</a></li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="tabHeat">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Mesačný profil potreby tepla</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="chartHeat" style="height:380px"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tabElec">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Mesačná spotreba elektriny TČ a vplyv FV</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="chartElec" style="height:380px"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tabComparison">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Porovnanie ročných nákladov jednotlivých systémov</h6>
+              </div>
+              <div class="card-body">
+                <div id="comparisonChartWrap" style="position:relative; min-height:360px;">
+                  <canvas id="chartComparison"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tabAnnual">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Vývoj ročných nákladov v čase</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="chartAnnual" style="height:380px"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tabPayback">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Kumulatívna úspora po investícii</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="chartPayback" style="height:380px"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tabSensitivity">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Citlivosť výsledku na zmenu vstupov</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="chartSensitivity" style="height:380px"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header highlight">Súhrnné míľniky</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered" id="milestoneTable">
+            <thead class="table-light">
+            <tr>
+              <th>Obdobie</th>
+              <th>Starý systém (€)</th>
+              <th>TČ bez FV (€)</th>
+              <th>TČ + FV (€)</th>
+              <th>Kumulatívna úspora (€)</th>
+              <th>Kumulatívne po investícii (€)</th>
+            </tr>
+            </thead>
+            <tbody id="milestoneTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header highlight">Detailná ročná tabuľka</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-hover" id="annualTable">
+            <thead class="table-dark">
+            <tr>
+              <th>Rok</th>
+              <th>Starý systém (€)</th>
+              <th>TČ bez FV (€)</th>
+              <th>TČ + FV (€)</th>
+              <th>FV využitá pre TČ (kWh)</th>
+              <th>Ročná úspora (€)</th>
+              <th>Kumulatívna úspora (€)</th>
+              <th>Kumulatívne po investícii (€)</th>
+              <th>ROI (%)</th>
+            </tr>
+            </thead>
+            <tbody id="annualTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Máj','Jún','Júl','Aug','Sep','Okt','Nov','Dec'];
+  const MONTHLY_HDD = [620,520,400,200,60,5,2,3,40,240,400,560];
+  const TOTAL_HDD = MONTHLY_HDD.reduce((a,b)=>a+b,0);
+  const FV_MONTHLY = [0.030,0.048,0.090,0.115,0.133,0.135,0.137,0.117,0.090,0.060,0.028,0.017];
+  const HP_SIZES = [4,5,6,7,8,9,10,12,14,16,18,20,24,28,32,40];
+
+  const BUILDING_TYPES = {
+    old:       { specificLoss:130, specificDemand:200, label:'Starší objekt bez zateplenia' },
+    standard:  { specificLoss:80,  specificDemand:130, label:'Čiastočne zateplený objekt' },
+    renovated: { specificLoss:55,  specificDemand:90,  label:'Zrekonštruovaný objekt' },
+    modern:    { specificLoss:35,  specificDemand:55,  label:'Moderný nízkoenergetický objekt' },
+    passive:   { specificLoss:15,  specificDemand:20,  label:'Pasívny dom' }
+  };
+
+  const CLIMATE_FACTORS = {
+    lowland:  { factor:0.88, label:'Nížiny' },
+    mid:      { factor:1.00, label:'Stredná poloha' },
+    mountain: { factor:1.28, label:'Horská oblasť' }
+  };
+
+  const EMITTERS = {
+    floor:      { scopAdj: 0.35, supplyTemp:35, label:'Podlahové vykurovanie' },
+    lowtemp:    { scopAdj: 0.15, supplyTemp:45, label:'Nízkoteplotné radiátory' },
+    radiators:  { scopAdj:-0.20, supplyTemp:55, label:'Bežné radiátory' },
+    hightemp:   { scopAdj:-0.55, supplyTemp:60, label:'Vysokoteplotný režim' }
+  };
+
+  const HP_TYPES = {
+    monoblock: {
+      label:'Vzduch – voda monoblok',
+      scopH:{ lowland:3.45, mid:3.15, mountain:2.85 },
+      scopDHW:2.45
+    },
+    split:{
+      label:'Vzduch – voda split',
+      scopH:{ lowland:3.70, mid:3.35, mountain:3.00 },
+      scopDHW:2.60
+    }
+  };
+
+  const HEATING = {
+    gas_condensing:{ label:'Plynový kondenzačný kotol', eff:0.97, unit:'m³', unitPrice:0.85, ec:10.55, color:'#4e79a7', inflDef:5 },
+    gas_standard:  { label:'Plynový štandardný kotol', eff:0.88, unit:'m³', unitPrice:0.85, ec:10.55, color:'#78b0d0', inflDef:5 },
+    pellets:       { label:'Peletový kotol', eff:0.90, unit:'kg', unitPrice:0.30, ec:4.9, color:'#59a14f', inflDef:3 },
+    wood:          { label:'Kotol / pec na drevo', eff:0.80, unit:'prm', unitPrice:90, ec:1700, color:'#8c6d3f', inflDef:3 },
+    electric:      { label:'Elektrický kotol / priamotopy', eff:1.00, unit:'kWh', unitPrice:0.18, ec:1, color:'#e15759', inflDef:4 },
+    oil:           { label:'Olejový kotol', eff:0.88, unit:'l', unitPrice:1.20, ec:10.0, color:'#af7aa1', inflDef:6 },
+    czt:           { label:'Diaľkové vykurovanie (CZT)', eff:1.00, unit:'kWh', unitPrice:0.11, ec:1, color:'#f28e2b', inflDef:4 }
+  };
+
+  const CO2_FACTORS = {
+    gas_condensing:0.201,
+    gas_standard:0.201,
+    pellets:0.039,
+    wood:0.025,
+    electric:0.317,
+    oil:0.266,
+    czt:0.220
+  };
+
+  let charts = {};
+
+  function g(id){ return document.getElementById(id); }
+  function val(id){ return parseFloat(String(g(id).value).replace(',', '.')) || 0; }
+  function ival(id){ return parseInt(g(id).value) || 0; }
+  function sval(id){ return g(id).value; }
+
+  function formatNum(v, digits = 0){
+    return new Intl.NumberFormat('sk-SK', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    }).format(v);
+  }
+
+  function clamp(v, min, max){
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function isManualHeatDemand(){
+    return g('heatDemandManual').checked;
+  }
+
+  function currentElPrice(){
+    return sval('customerType') === 'corp' ? val('elPriceCorp') : val('elPricePerson');
+  }
+
+  function toggleManualHeatDemand(){
+    g('manualHeatDemandWrap').classList.toggle('d-none', !isManualHeatDemand());
+    liveUpdate();
+  }
+
+  function toggleManualPower(){
+    g('manualPowerWrap').classList.toggle('d-none', !g('manualPowerSwitch').checked);
+    liveUpdate();
+  }
+
+  function onFVSlider(){
+    g('fvSelfConsHPLbl').textContent = g('fvSelfConsHP').value;
+    liveUpdate();
+  }
+
+  function setFVSlider(v){
+    g('fvSelfConsHP').value = v;
+    g('fvSelfConsHPLbl').textContent = v;
+    liveUpdate();
+  }
+
+  function nearestSize(power){
+    for(const s of HP_SIZES){
+      if(s >= power) return s;
+    }
+    return Math.ceil(power);
+  }
+
+  function onHeatingChange(){
+    const hs = HEATING[sval('currentHeating')];
+    g('fuelPriceLbl').textContent = `Cena paliva (€/${hs.unit})`;
+    g('fuelPrice').value = hs.unitPrice;
+    g('fuelInflation').value = hs.inflDef;
+    g('heatingEffBadge').textContent = `Účinnosť: ${Math.round(hs.eff * 100)}%`;
+
+    const hints = {
+      gas_condensing:'Vrátane distribúcie a poplatkov za plyn',
+      gas_standard:'Vrátane distribúcie a poplatkov za plyn',
+      pellets:'Cena za kilogram peliet',
+      wood:'Cena za priestorový meter dreva',
+      electric:'Cena za kWh vrátane distribúcie',
+      oil:'Cena za liter vykurovacieho oleja',
+      czt:'Cena za kWh tepla z CZT'
+    };
+
+    g('fuelPriceHint').textContent = hints[sval('currentHeating')] || '';
+    liveUpdate();
+  }
+
+  function computeBase(){
+    const area = val('area');
+    const persons = ival('persons');
+    const indoorTemp = val('indoorTemp');
+    const bt = BUILDING_TYPES[sval('buildingType')];
+    const climate = CLIMATE_FACTORS[sval('climate')];
+    const emitter = EMITTERS[sval('emitterType')];
+    const hpType = HP_TYPES[sval('hpType')];
+
+    const tempFactor = 1 + Math.max(0, indoorTemp - 21) * 0.03;
+
+    const annHeat = isManualHeatDemand()
+      ? val('manualHeatDemand')
+      : area * bt.specificDemand * climate.factor * tempFactor;
+
+    const annDhw = isManualHeatDemand()
+      ? val('manualDhwDemand')
+      : persons * 700;
+
+    const totalHeat = annHeat + annDhw;
+    const heatLossKW = area * bt.specificLoss * climate.factor * tempFactor / 1000;
+
+    let scopHeat = hpType.scopH[sval('climate')] + emitter.scopAdj;
+    scopHeat = clamp(scopHeat, 2.2, 5.2);
+
+    const hpElecHeat = annHeat / scopHeat;
+    const hpElecDhw = annDhw / hpType.scopDHW;
+    const totalHpElec = hpElecHeat + hpElecDhw;
+    const systemScop = totalHpElec > 0 ? totalHeat / totalHpElec : scopHeat;
+
+    const reserve = val('sizingReserve') / 100;
+    const recommendedRaw = (heatLossKW + Math.min(0.8, persons * 0.10)) * (1 + reserve);
+    const recommendedAuto = nearestSize(recommendedRaw);
+    const selectedPower = g('manualPowerSwitch').checked ? val('manualPower') : recommendedAuto;
+
+    return {
+      area, persons, indoorTemp,
+      bt, climate, emitter, hpType,
+      annHeat, annDhw, totalHeat, heatLossKW,
+      scopHeat, hpElecHeat, hpElecDhw, totalHpElec, systemScop,
+      recommendedRaw, recommendedAuto, selectedPower
+    };
+  }
+
+  function updateOldSystemPreview(base){
+    const hs = HEATING[sval('currentHeating')];
+    const fuelPrice = val('fuelPrice') > 0 ? val('fuelPrice') : hs.unitPrice;
+    const fuelEnergy = base.totalHeat / hs.eff;
+    const fuelVol = fuelEnergy / hs.ec;
+    const theoreticalCost = fuelVol * fuelPrice;
+    const realAnnualCost = val('realAnnualCost');
+    const usedCost = realAnnualCost > 0 ? realAnnualCost : theoreticalCost;
+
+    g('fuelConsDisplay').textContent = `${formatNum(fuelVol, hs.unit === 'm³' || hs.unit === 'l' ? 1 : 0)} ${hs.unit}/rok`;
+    g('currentCostDisplay').textContent = `${formatNum(theoreticalCost, 0)} €/rok`;
+    g('usedOldCostDisplay').textContent = `${formatNum(usedCost, 0)} €/rok`;
+  }
+
+  function updateFvPreview(base){
+    const fvKwp = val('fvKwp');
+    const fvYield = val('fvYield');
+    const sc = val('fvSelfConsHP') / 100;
+    const elPrice = currentElPrice();
+
+    if(fvKwp <= 0){
+      g('fvPreviewPanel').style.display = 'none';
+      return;
+    }
+
+    const fvAnnual = fvKwp * fvYield;
+    const monthlyElec = MONTHLY_HDD.map(hdd => (base.hpElecHeat * (hdd / TOTAL_HDD)))
+      .map((v, i) => v + (base.hpElecDhw / 12));
+
+    const monthlyFv = FV_MONTHLY.map(f => fvAnnual * f);
+    const monthlyFvUsed = monthlyFv.map((fv, i) => Math.min(fv, monthlyElec[i]) * sc);
+    const used = monthlyFvUsed.reduce((a,b)=>a+b,0);
+
+    g('fvPreviewPanel').style.display = 'block';
+    g('fvAnnualProd').textContent = `${formatNum(fvAnnual, 0)} kWh`;
+    g('fvForHP').textContent = `${formatNum(used, 0)} kWh`;
+    g('fvMoneySaving').textContent = `${formatNum(used * elPrice, 0)} €/rok`;
+  }
+
+  function liveUpdate(){
+    try{
+      const base = computeBase();
+      g('statHeatLoss').textContent = formatNum(base.heatLossKW, 1);
+      g('statHeatDemand').textContent = formatNum(base.annHeat, 0);
+      g('statDhw').textContent = formatNum(base.annDhw, 0);
+      g('statSpecific').textContent = formatNum(base.annHeat / Math.max(1, base.area), 0);
+
+      g('scopDisplay').textContent = formatNum(base.systemScop, 2);
+      g('recHPSize').textContent = `${formatNum(base.recommendedAuto, 0)} kW`;
+      g('supplyTempDisplay').textContent = `${base.emitter.supplyTemp} °C`;
+
+      updateOldSystemPreview(base);
+      updateFvPreview(base);
+    }catch(e){}
+  }
+
+  function buildMonthlyProfiles(base, fvAnnual, fvSelfCons){
+    const monthlyHeat = MONTHLY_HDD.map(hdd => base.annHeat * (hdd / TOTAL_HDD));
+    const monthlyDhw = Array(12).fill(base.annDhw / 12);
+    const monthlyTotalHeat = monthlyHeat.map((v, i) => v + monthlyDhw[i]);
+
+    const monthlyElecHeat = MONTHLY_HDD.map(hdd => base.hpElecHeat * (hdd / TOTAL_HDD));
+    const monthlyElecTotal = monthlyElecHeat.map((v, i) => v + (base.hpElecDhw / 12));
+
+    const monthlyFv = FV_MONTHLY.map(f => fvAnnual * f);
+    const monthlyFvUsed = monthlyFv.map((fv, i) => Math.min(fv, monthlyElecTotal[i]) * fvSelfCons);
+
+    return {
+      monthlyHeat,
+      monthlyDhw,
+      monthlyTotalHeat,
+      monthlyElecHeat,
+      monthlyElecTotal,
+      monthlyFv,
+      monthlyFvUsed
+    };
+  }
+
+  function calcFractionalPayback(results){
+    const idx = results.findIndex(r => r.netAfterInvestment >= 0);
+    if(idx < 0) return null;
+    if(idx === 0) return 1;
+
+    const prev = results[idx - 1].netAfterInvestment;
+    const curr = results[idx].netAfterInvestment;
+    const fraction = Math.abs(prev) / (Math.abs(prev) + curr);
+
+    return idx + fraction;
+  }
+
+  function buildSensitivity(base, oldCost, hpCostNoFv, hpCostWithFv, fvUsedKwh){
+    const elPrice = currentElPrice();
+    const fuelPrice = val('fuelPrice');
+    const hs = HEATING[sval('currentHeating')];
+
+    const fuelEnergy = base.totalHeat / hs.eff;
+    const fuelVol = fuelEnergy / hs.ec;
+
+    const oldLowFuel = fuelVol * (fuelPrice * 0.85);
+    const oldHighFuel = fuelVol * (fuelPrice * 1.15);
+
+    const hpLowElecNoFv = base.totalHpElec * (elPrice * 0.85);
+    const hpHighElecNoFv = base.totalHpElec * (elPrice * 1.15);
+
+    const hpLowElecWithFv = Math.max(0, base.totalHpElec - fvUsedKwh) * (elPrice * 0.85);
+    const hpHighElecWithFv = Math.max(0, base.totalHpElec - fvUsedKwh) * (elPrice * 1.15);
+
+    const lowScop = Math.max(2.2, base.systemScop * 0.90);
+    const altHpElec = base.totalHeat / lowScop;
+    const altHpCostWithFv = Math.max(0, altHpElec - fvUsedKwh) * elPrice;
+
+    return [
+      { label:'Základný scenár', value: oldCost - hpCostWithFv },
+      { label:'Elektrina -15%', value: oldCost - hpLowElecWithFv },
+      { label:'Elektrina +15%', value: oldCost - hpHighElecWithFv },
+      { label:'Palivo -15%', value: oldLowFuel - hpCostWithFv },
+      { label:'Palivo +15%', value: oldHighFuel - hpCostWithFv },
+      { label:'SCOP -10%', value: oldCost - altHpCostWithFv }
+    ];
+  }
+
+  function runCalculation(){
+    const btn = g('computeBtn');
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Počítam...';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      try{
+        doCalc();
+      }catch(e){
+        console.error(e);
+        alert('Chyba výpočtu: ' + e.message);
+      }finally{
+        btn.innerHTML = '<i class="bi bi-calculator me-2"></i>Vypočítať úsporu';
+        btn.disabled = false;
+      }
+    }, 60);
+  }
+
+  function doCalc(){
+    const base = computeBase();
+    const hs = HEATING[sval('currentHeating')];
+    const elPrice = currentElPrice();
+    const fuelPrice = val('fuelPrice') > 0 ? val('fuelPrice') : hs.unitPrice;
+
+    const fuelInfl = val('fuelInflation') / 100;
+    const elInfl = val('elInflation') / 100;
+    const generalInfl = val('generalInflation') / 100;
+    const lifetime = Math.max(5, ival('lifetime'));
+
+    const hpInvestment = val('hpInvestment');
+    const fvInvestment = val('fvInvestment');
+    const grant = val('grant');
+    const netInvestment = Math.max(0, hpInvestment + fvInvestment - grant);
+
+    const fuelEnergy = base.totalHeat / hs.eff;
+    const fuelVol = fuelEnergy / hs.ec;
+    const theoreticalOldCost = fuelVol * fuelPrice;
+    const realAnnualCost = val('realAnnualCost');
+    const oldCostBase = realAnnualCost > 0 ? realAnnualCost : theoreticalOldCost;
+
+    const fvKwp = val('fvKwp');
+    const fvYield = val('fvYield');
+    const fvDegradation = val('fvDegradation') / 100;
+    const fvSelfCons = val('fvSelfConsHP') / 100;
+    const fvAnnual = fvKwp * fvYield;
+
+    const monthly = buildMonthlyProfiles(base, fvAnnual, fvSelfCons);
+    const fvUsedKwhBase = monthly.monthlyFvUsed.reduce((a,b)=>a+b,0);
+
+    const hpCostNoFvBase = base.totalHpElec * elPrice;
+    const hpCostWithFvBase = Math.max(0, base.totalHpElec - fvUsedKwhBase) * elPrice;
+
+    const annualSavingsNoFv = oldCostBase - hpCostNoFvBase;
+    const annualSavingsWithFv = oldCostBase - hpCostWithFvBase;
+
+    const annualResults = [];
+    let cumSavings = 0;
+    let cumOld = 0;
+    let cumHpNoFv = 0;
+    let cumHpWithFv = 0;
+
+    for(let year = 1; year <= lifetime; year++){
+      const fuelPriceY = fuelPrice * Math.pow(1 + fuelInfl, year - 1);
+      const elPriceY = elPrice * Math.pow(1 + elInfl, year - 1);
+
+      const oldCostY = realAnnualCost > 0
+        ? realAnnualCost * Math.pow(1 + fuelInfl, year - 1)
+        : fuelVol * fuelPriceY;
+
+      const hpCostNoFvY = base.totalHpElec * elPriceY;
+
+      const fvUsedYear = fvKwp > 0
+        ? fvUsedKwhBase * Math.pow(1 - fvDegradation, year - 1)
+        : 0;
+
+      const hpCostWithFvY = Math.max(0, base.totalHpElec - fvUsedYear) * elPriceY;
+      const savingsY = oldCostY - hpCostWithFvY;
+
+      cumSavings += savingsY;
+      cumOld += oldCostY;
+      cumHpNoFv += hpCostNoFvY;
+      cumHpWithFv += hpCostWithFvY;
+
+      annualResults.push({
+        year,
+        oldCost: oldCostY,
+        hpCostNoFv: hpCostNoFvY,
+        hpCostWithFv: hpCostWithFvY,
+        fvUsedYear,
+        savings: savingsY,
+        cumulativeSavings: cumSavings,
+        netAfterInvestment: cumSavings - netInvestment,
+        cumulativeOld: cumOld,
+        cumulativeHpNoFv: cumHpNoFv,
+        cumulativeHpWithFv: cumHpWithFv
+      });
+    }
+
+    const paybackYears = calcFractionalPayback(annualResults);
+
+    const sysComp = Object.entries(HEATING).map(([key, sys]) => {
+      const fuelE = base.totalHeat / sys.eff;
+      const fuelV = fuelE / sys.ec;
+      const price = key === sval('currentHeating') ? fuelPrice : sys.unitPrice;
+      return {
+        key,
+        label: sys.label,
+        cost: fuelV * price,
+        color: sys.color
+      };
+    });
+
+    sysComp.push({
+      key:'hp_no_fv',
+      label:`${base.hpType.label} – bez FV`,
+      cost: hpCostNoFvBase,
+      color:'#0d6efd'
+    });
+
+    if(fvKwp > 0){
+      sysComp.push({
+        key:'hp_with_fv',
+        label:`${base.hpType.label} + FV ${formatNum(fvKwp, 1)} kWp`,
+        cost: hpCostWithFvBase,
+        color:'#16a34a'
+      });
+    }
+
+    sysComp.sort((a,b)=>a.cost-b.cost);
+
+    const sensitivity = buildSensitivity(base, oldCostBase, hpCostNoFvBase, hpCostWithFvBase, fvUsedKwhBase);
+
+    const co2Old = (base.totalHeat / hs.eff) * CO2_FACTORS[sval('currentHeating')];
+    const co2HpWithFv = Math.max(0, base.totalHpElec - fvUsedKwhBase) * CO2_FACTORS.electric;
+    const co2Saving = co2Old - co2HpWithFv;
+
+    const notes = [];
+    if(sval('emitterType') === 'hightemp'){
+      notes.push('Vysokoteplotný režim znižuje účinnosť TČ. Pri obchodnom jednaní odporúčané preveriť reálny teplotný spád systému.');
+    }
+    if(base.systemScop < 3.0){
+      notes.push('Výsledný systémový SCOP je pod 3,0. Ekonomika je citlivejšia na cenu elektriny a technický návrh.');
+    }
+    if(g('manualPowerSwitch').checked && val('manualPower') < base.recommendedRaw){
+      notes.push('Manuálne zadaný výkon TČ je nižší ako orientačný odporúčaný výkon. Over pokrytie špičkovej potreby tepla.');
+    }
+    if(sval('buildingType') === 'old'){
+      notes.push('Pri staršom objekte môže byť významná časť potenciálnej úspory aj v znížení tepelnej straty budovy.');
+    }
+    if(fvKwp > 0 && fvUsedKwhBase < base.totalHpElec * 0.25){
+      notes.push('FV pokrýva len menšiu časť spotreby TČ. Vyšší efekt prinesie lepšie časové riadenie spotreby alebo vyšší výkon FV.');
+    }
+    if(annualSavingsWithFv <= 0){
+      notes.push('Pri aktuálnych vstupoch nevychádza pozitívna ročná úspora. Skontroluj cenu elektriny, cenu paliva alebo investíciu.');
+    }
+    if(!notes.length){
+      notes.push('Výpočet neukazuje zásadný problém. Pred finálnou ponukou odporúčané overenie hydrauliky, elektroprípravy a výkonového návrhu.');
+    }
+
+    renderSummary({
+      base,
+      oldCostBase,
+      hpCostNoFvBase,
+      hpCostWithFvBase,
+      annualSavingsNoFv,
+      annualSavingsWithFv,
+      netInvestment,
+      paybackYears,
+      fvKwp,
+      fvAnnual,
+      fvUsedKwhBase,
+      elPrice,
+      co2Saving
+    });
+
+    renderSizingDetail({
+      base,
+      oldCostBase,
+      hpCostNoFvBase,
+      hpCostWithFvBase,
+      fvKwp,
+      fvAnnual,
+      fvUsedKwhBase
+    });
+
+    renderNotes(notes);
+    renderCharts({
+      base,
+      monthly,
+      sysComp,
+      annualResults,
+      sensitivity
+    });
+
+    renderMilestones(annualResults);
+    renderAnnualTable(annualResults, netInvestment);
+
+    g('resultsSection').style.display = 'block';
+    g('resultsSection').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function renderSummary(d){
+    const paybackText = d.paybackYears ? `${formatNum(d.paybackYears, 1)} rokov` : `Viac ako ${ival('lifetime')} rokov`;
+    const paybackColor = d.paybackYears && d.paybackYears <= 8 ? '#ffffff'
+      : d.paybackYears && d.paybackYears <= 12 ? '#fde68a'
+        : '#fecaca';
+
+    const savingsColor = d.annualSavingsWithFv >= 0 ? '#bbf7d0' : '#fecaca';
+
+    g('summaryPanel').innerHTML = `
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <small>Návratnosť investície</small>
+          <h3 style="color:${paybackColor}">${paybackText}</h3>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <small>Ročná úspora (1. rok)</small>
+          <h3 style="color:${savingsColor}">${formatNum(d.annualSavingsWithFv, 0)} €</h3>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <small>CO₂ úspora / rok</small>
+          <h3>${formatNum(Math.abs(d.co2Saving), 0)} kg</h3>
+          ${d.co2Saving < 0 ? `<div style="font-size:.75rem;color:#fde68a">Pri biomase môže byť CO₂ faktor nižší</div>` : ``}
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card">
+          <small>Odporúčaný výkon TČ</small>
+          <h3>${formatNum(d.base.recommendedAuto, 0)} kW</h3>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-3 border-light">
+
+    <div class="row text-center g-2">
+      <div class="col-6 col-md-2">
+        <div class="small opacity-75">Tepelná strata</div>
+        <div>${formatNum(d.base.heatLossKW, 1)} kW</div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="small opacity-75">SCOP systému</div>
+        <div>${formatNum(d.base.systemScop, 2)}</div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="small opacity-75">Ročná spotr. el. TČ</div>
+        <div>${formatNum(d.base.totalHpElec, 0)} kWh</div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="small opacity-75">Starý systém</div>
+        <div>${formatNum(d.oldCostBase, 0)} €/rok</div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="small opacity-75">TČ bez FV</div>
+        <div>${formatNum(d.hpCostNoFvBase, 0)} €/rok</div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="small opacity-75">TČ + FV</div>
+        <div style="color:#bbf7d0">${formatNum(d.hpCostWithFvBase, 0)} €/rok</div>
+      </div>
+    </div>
+
+    <hr class="my-3 border-light">
+
+    <div class="row text-center g-2">
+      <div class="col-6 col-md-3">
+        <div class="small opacity-75">Investícia po dotácii</div>
+        <div>${formatNum(d.netInvestment, 0)} €</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small opacity-75">Úspora bez FV</div>
+        <div>${formatNum(d.annualSavingsNoFv, 0)} €/rok</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small opacity-75">Typ TČ</div>
+        <div>${d.base.hpType.label}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small opacity-75">Vykurovací systém</div>
+        <div>${d.base.emitter.label}</div>
+      </div>
+    </div>
+
+    ${d.fvKwp > 0 ? `
+      <hr class="my-3 border-light">
+      <div class="row text-center g-2">
+        <div class="col-6 col-md-3">
+          <div class="small opacity-75">FV výkon</div>
+          <div>${formatNum(d.fvKwp, 1)} kWp</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="small opacity-75">Ročná výroba FV</div>
+          <div>${formatNum(d.fvAnnual, 0)} kWh</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="small opacity-75">FV využitá pre TČ</div>
+          <div style="color:#bbf7d0">${formatNum(d.fvUsedKwhBase, 0)} kWh</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="small opacity-75">Úspora z FV pre TČ</div>
+          <div style="color:#bbf7d0">${formatNum(d.fvUsedKwhBase * d.elPrice, 0)} €/rok</div>
+        </div>
+      </div>
+    ` : ''}
+  `;
+  }
+
+  function renderSizingDetail(d){
+    const rows = [
+      ['Plocha objektu', `${formatNum(d.base.area, 0)} m²`],
+      ['Typ budovy', d.base.bt.label],
+      ['Klimatická oblasť', d.base.climate.label],
+      ['Systém vykurovania', d.base.emitter.label],
+      ['Tepelná strata budovy', `${formatNum(d.base.heatLossKW, 2)} kW`],
+      ['Odporúčaný výkon TČ', `<span class="text-success-strong">${formatNum(d.base.recommendedAuto, 0)} kW</span>`],
+      ['Použitý výkon TČ', `${formatNum(d.base.selectedPower, 1)} kW`],
+      ['Typ TČ', d.base.hpType.label],
+      ['SCOP vykurovanie', formatNum(d.base.scopHeat, 2)],
+      ['SCOP systémový', formatNum(d.base.systemScop, 2)],
+      ['Ročná potreba tepla – vykurovanie', `${formatNum(d.base.annHeat, 0)} kWh`],
+      ['Ročná potreba tepla – TUV', `${formatNum(d.base.annDhw, 0)} kWh`],
+      ['Ročná potreba tepla – spolu', `${formatNum(d.base.totalHeat, 0)} kWh`],
+      ['Ročná spotreba elektriny TČ – vykurovanie', `${formatNum(d.base.hpElecHeat, 0)} kWh`],
+      ['Ročná spotreba elektriny TČ – TUV', `${formatNum(d.base.hpElecDhw, 0)} kWh`],
+      ['Ročná spotreba elektriny TČ – spolu', `${formatNum(d.base.totalHpElec, 0)} kWh`],
+      ['Ročné náklady starého systému', `${formatNum(d.oldCostBase, 0)} €`],
+      ['Ročné náklady TČ bez FV', `${formatNum(d.hpCostNoFvBase, 0)} €`],
+      ['Ročné náklady TČ + FV', `<span class="text-success-strong">${formatNum(d.hpCostWithFvBase, 0)} €</span>`]
+    ];
+
+    if(d.fvKwp > 0){
+      rows.push(['FV výkon', `${formatNum(d.fvKwp, 1)} kWp`]);
+      rows.push(['Ročná výroba FV', `${formatNum(d.fvAnnual, 0)} kWh`]);
+      rows.push(['FV využitá pre TČ', `${formatNum(d.fvUsedKwhBase, 0)} kWh`]);
+    }
+
+    g('sizingDetail').innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <tbody>
+          ${rows.map(([k,v]) => `<tr><td class="text-muted w-50">${k}</td><td>${v}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  }
+
+  function renderNotes(notes){
+    g('notesWrap').innerHTML = notes.map((n, i) => {
+      const good = notes.length === 1;
+      return `<span class="note-chip ${good ? 'good' : ''}"><i class="bi ${good ? 'bi-check-circle' : 'bi-exclamation-triangle'}"></i>${n}</span>`;
+    }).join('');
+  }
+
+  function destroyCharts(){
+    Object.values(charts).forEach(c => {
+      if(c){
+        try{ c.destroy(); }catch(e){}
+      }
+    });
+    charts = {};
+  }
+
+  function renderCharts(d){
+    destroyCharts();
+    renderHeatChart(d);
+    renderElecChart(d);
+    renderComparisonChart(d);
+    renderAnnualChart(d);
+    renderPaybackChart(d);
+    renderSensitivityChart(d);
+  }
+
+  function renderHeatChart(d){
+    charts.heat = new Chart(g('chartHeat'), {
+      type:'bar',
+      data:{
+        labels: MONTH_NAMES,
+        datasets:[
+          {
+            label:'Vykurovanie (kWh)',
+            data: d.monthly.monthlyHeat.map(v => +v.toFixed(0)),
+            backgroundColor:'rgba(13,110,253,0.70)',
+            borderColor:'rgba(13,110,253,1)',
+            borderWidth:1.5
+          },
+          {
+            label:'TUV (kWh)',
+            data: d.monthly.monthlyDhw.map(v => +v.toFixed(0)),
+            backgroundColor:'rgba(75,192,192,0.70)',
+            borderColor:'rgba(75,192,192,1)',
+            borderWidth:1.5
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          tooltip:{
+            callbacks:{
+              footer: (items) => {
+                const total = items.reduce((s, it) => s + it.parsed.y, 0);
+                return `Spolu: ${formatNum(total, 0)} kWh`;
+              }
+            }
+          }
+        },
+        scales:{
+          y:{ beginAtZero:true, title:{ display:true, text:'kWh' } }
+        }
+      }
+    });
+  }
+
+  function renderElecChart(d){
+    charts.elec = new Chart(g('chartElec'), {
+      data:{
+        labels: MONTH_NAMES,
+        datasets:[
+          {
+            type:'bar',
+            label:'Spotreba el. TČ (kWh)',
+            data: d.monthly.monthlyElecTotal.map(v => +v.toFixed(0)),
+            backgroundColor:'rgba(54,162,235,0.65)',
+            borderColor:'rgba(54,162,235,1)',
+            borderWidth:1.5,
+            order:1
+          },
+          {
+            type:'bar',
+            label:'Výroba FV (kWh)',
+            data: d.monthly.monthlyFv.map(v => +v.toFixed(0)),
+            backgroundColor:'rgba(255,193,7,0.55)',
+            borderColor:'rgba(255,193,7,1)',
+            borderWidth:1.5,
+            order:2
+          },
+          {
+            type:'line',
+            label:'FV využitá pre TČ (kWh)',
+            data: d.monthly.monthlyFvUsed.map(v => +v.toFixed(0)),
+            borderColor:'rgba(25,135,84,1)',
+            backgroundColor:'rgba(25,135,84,0.12)',
+            borderWidth:2.5,
+            pointRadius:3,
+            fill:true,
+            tension:0.35,
+            order:0
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        scales:{
+          y:{ beginAtZero:true, title:{ display:true, text:'kWh' } }
+        }
+      }
+    });
+  }
+
+  function renderComparisonChart(d){
+    const wrap = g('comparisonChartWrap');
+    const h = Math.max(360, d.sysComp.length * 46 + 60);
+    wrap.style.height = h + 'px';
+
+    charts.comparison = new Chart(g('chartComparison'), {
+      type:'bar',
+      data:{
+        labels: d.sysComp.map(s => s.label),
+        datasets:[{
+          label:'Ročné náklady (€)',
+          data: d.sysComp.map(s => +s.cost.toFixed(0)),
+          backgroundColor: d.sysComp.map(s => s.color + 'cc'),
+          borderColor: d.sysComp.map(s => s.color),
+          borderWidth:1.4,
+          borderRadius:4
+        }]
+      },
+      options:{
+        indexAxis:'y',
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false }
+        },
+        scales:{
+          x:{ beginAtZero:true, title:{ display:true, text:'€ / rok' } }
+        }
+      }
+    });
+  }
+
+  function renderAnnualChart(d){
+    charts.annual = new Chart(g('chartAnnual'), {
+      type:'line',
+      data:{
+        labels: d.annualResults.map(r => r.year),
+        datasets:[
+          {
+            label:'Starý systém (€/rok)',
+            data: d.annualResults.map(r => +r.oldCost.toFixed(0)),
+            borderColor:'rgba(220,53,69,1)',
+            backgroundColor:'rgba(220,53,69,0.10)',
+            fill:true,
+            tension:0.35,
+            borderWidth:2.2,
+            pointRadius:2
+          },
+          {
+            label:'TČ bez FV (€/rok)',
+            data: d.annualResults.map(r => +r.hpCostNoFv.toFixed(0)),
+            borderColor:'rgba(13,110,253,1)',
+            backgroundColor:'rgba(13,110,253,0.08)',
+            fill:true,
+            tension:0.35,
+            borderWidth:2.2,
+            pointRadius:2
+          },
+          {
+            label:'TČ + FV (€/rok)',
+            data: d.annualResults.map(r => +r.hpCostWithFv.toFixed(0)),
+            borderColor:'rgba(25,135,84,1)',
+            backgroundColor:'rgba(25,135,84,0.08)',
+            fill:true,
+            tension:0.35,
+            borderWidth:2.4,
+            pointRadius:2
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        scales:{
+          y:{ beginAtZero:true, title:{ display:true, text:'€ / rok' } },
+          x:{ title:{ display:true, text:'Rok' } }
+        }
+      }
+    });
+  }
+
+  function renderPaybackChart(d){
+    charts.payback = new Chart(g('chartPayback'), {
+      type:'line',
+      data:{
+        labels: d.annualResults.map(r => r.year),
+        datasets:[
+          {
+            label:'Kumulatívna úspora po investícii (€)',
+            data: d.annualResults.map(r => +r.netAfterInvestment.toFixed(0)),
+            borderColor:'rgba(25,135,84,1)',
+            backgroundColor:'rgba(25,135,84,0.10)',
+            fill:true,
+            tension:0.35,
+            borderWidth:2.5,
+            pointRadius:3
+          },
+          {
+            label:'Bod zvratu (0 €)',
+            data: d.annualResults.map(() => 0),
+            borderColor:'rgba(108,117,125,0.7)',
+            borderDash:[8,6],
+            fill:false,
+            pointRadius:0,
+            borderWidth:1.2
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        scales:{
+          y:{ title:{ display:true, text:'€' } },
+          x:{ title:{ display:true, text:'Rok' } }
+        }
+      }
+    });
+  }
+
+  function renderSensitivityChart(d){
+    charts.sensitivity = new Chart(g('chartSensitivity'), {
+      type:'bar',
+      data:{
+        labels: d.sensitivity.map(s => s.label),
+        datasets:[{
+          label:'Ročná úspora (€)',
+          data: d.sensitivity.map(s => +s.value.toFixed(0)),
+          backgroundColor: d.sensitivity.map(s => s.value >= 0 ? 'rgba(25,135,84,0.70)' : 'rgba(220,53,69,0.70)'),
+          borderColor: d.sensitivity.map(s => s.value >= 0 ? 'rgba(25,135,84,1)' : 'rgba(220,53,69,1)'),
+          borderWidth:1.4,
+          borderRadius:4
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false }
+        },
+        scales:{
+          y:{ title:{ display:true, text:'€ / rok' } }
+        }
+      }
+    });
+  }
+
+  function renderMilestones(results){
+    const milestones = [1,5,10,15,20].filter(y => y <= results.length);
+    const tb = g('milestoneTableBody');
+    tb.innerHTML = '';
+
+    milestones.forEach(y => {
+      const r = results[y - 1];
+      tb.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>${y} rok${y > 1 && y < 5 ? 'y' : (y >= 5 ? 'ov' : '')}</td>
+        <td>${formatNum(r.cumulativeOld, 0)} €</td>
+        <td>${formatNum(r.cumulativeHpNoFv, 0)} €</td>
+        <td>${formatNum(r.cumulativeHpWithFv, 0)} €</td>
+        <td class="${r.cumulativeSavings >= 0 ? 'text-success' : 'text-danger'}">${formatNum(r.cumulativeSavings, 0)} €</td>
+        <td class="${r.netAfterInvestment >= 0 ? 'text-success fw-semibold' : 'text-danger fw-semibold'}">${formatNum(r.netAfterInvestment, 0)} €</td>
+      </tr>
+    `);
+    });
+  }
+
+  function renderAnnualTable(results, netInvestment){
+    const tb = g('annualTableBody');
+    tb.innerHTML = '';
+
+    results.forEach(r => {
+      const roi = netInvestment > 0 ? (r.netAfterInvestment / netInvestment) * 100 : 0;
+
+      tb.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>${r.year}</td>
+        <td>${formatNum(r.oldCost, 0)} €</td>
+        <td>${formatNum(r.hpCostNoFv, 0)} €</td>
+        <td>${formatNum(r.hpCostWithFv, 0)} €</td>
+        <td>${formatNum(r.fvUsedYear, 0)} kWh</td>
+        <td class="${r.savings >= 0 ? 'text-success' : 'text-danger'}">${formatNum(r.savings, 0)} €</td>
+        <td class="${r.cumulativeSavings >= 0 ? 'text-success' : 'text-danger'}">${formatNum(r.cumulativeSavings, 0)} €</td>
+        <td class="${r.netAfterInvestment >= 0 ? 'text-success fw-semibold' : 'text-danger fw-semibold'}">${formatNum(r.netAfterInvestment, 0)} €</td>
+        <td class="${roi >= 0 ? 'text-success' : 'text-danger'}">${formatNum(roi, 1)} %</td>
+      </tr>
+    `);
+    });
+  }
+
+  function resetForm(){
+    if(!confirm('Resetovať formulár?')) return;
+
+    g('tcForm').reset();
+
+    g('buildingType').value = 'renovated';
+    g('climate').value = 'mid';
+    g('emitterType').value = 'radiators';
+    g('hpType').value = 'monoblock';
+    g('currentHeating').value = 'gas_standard';
+    g('customerType').value = 'person';
+
+    g('heatDemandAuto').checked = true;
+    g('heatDemandManual').checked = false;
+    g('manualPowerSwitch').checked = false;
+
+    g('elPricePerson').value = '0.18';
+    g('elPriceCorp').value = '0.25';
+    g('fuelPrice').value = '0.85';
+    g('fuelInflation').value = '5';
+    g('elInflation').value = '4';
+    g('generalInflation').value = '2';
+    g('hpInvestment').value = '12000';
+    g('grant').value = '0';
+    g('fvInvestment').value = '0';
+    g('fvYield').value = '1050';
+    g('fvDegradation').value = '0.4';
+    g('fvSelfConsHP').value = '70';
+    g('fvSelfConsHPLbl').textContent = '70';
+
+    toggleManualHeatDemand();
+    toggleManualPower();
+    onHeatingChange();
+
+    g('resultsSection').style.display = 'none';
+    liveUpdate();
+  }
+
+  document.getElementById('tcForm').addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){
+      e.preventDefault();
+      runCalculation();
+    }
+  });
+
+  toggleManualHeatDemand();
+  toggleManualPower();
+  onHeatingChange();
+  liveUpdate();
+</script>
+
+<style>
+  :root{
+    --nep-bg:#f6f7fb;
+    --nep-card:#ffffff;
+    --nep-border:#e6e8ef;
+    --nep-text:#0f172a;
+    --nep-muted:#64748b;
+    --nep-primary:#0d6efd;
+    --nep-shadow: 0 8px 22px rgba(15,23,42,.08);
+    --nep-radius: 16px;
+  }
+
+  .tc-page{
+    color: var(--nep-text);
+  }
+
+  .tc-page .card{
+    border: 1px solid var(--nep-border);
+    border-radius: var(--nep-radius);
+    box-shadow: var(--nep-shadow);
+    overflow: hidden;
+    animation: fadeIn .35s ease-in-out;
+  }
+
+  .tc-page .card-header{
+    background: var(--nep-card);
+    border-bottom: 1px solid var(--nep-border);
+    color: var(--nep-text);
+    font-weight: 700;
+  }
+
+  .tc-page .highlight{
+    background: linear-gradient(90deg, rgba(13,110,253,.14), rgba(13,110,253,.04));
+  }
+
+  .tc-page .highlight-green{
+    background: linear-gradient(90deg, rgba(25,135,84,.12), rgba(25,135,84,.03));
+  }
+
+  .tc-page .soft-panel{
+    background:#fff;
+    border:1px solid var(--nep-border);
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 6px 16px rgba(15,23,42,.05);
+  }
+
+  .tc-page .nav-tabs .nav-link{
+    border:none;
+    color:var(--nep-muted);
+    font-weight:600;
+    padding:.65rem .85rem;
+  }
+
+  .tc-page .nav-tabs .nav-link.active{
+    color:var(--nep-primary);
+    border-bottom:2px solid var(--nep-primary);
+    background:transparent;
+  }
+
+  .tc-page .btn-primary{
+    background: var(--nep-primary);
+    border: none;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 12px;
+    box-shadow: 0 10px 18px rgba(13,110,253,.18);
+  }
+
+  .tc-page .btn-primary:hover{
+    transform: translateY(-1px);
+  }
+
+  .tc-page .editable-input:focus,
+  .tc-page .form-control:focus,
+  .tc-page .form-select:focus{
+    border-color: var(--nep-primary);
+    box-shadow: 0 0 0 .2rem rgba(13,110,253,.18);
+  }
+
+  .tc-page .bg-gradient-primary{
+    background: linear-gradient(135deg, #0d6efd 0%, #3b82f6 100%);
+    border-radius: var(--nep-radius);
+    box-shadow: 0 10px 24px rgba(13,110,253,.22);
+  }
+
+  .tc-page .ver-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.2rem .6rem;
+    border-radius:999px;
+    font-size:.88rem;
+    background:#fff;
+    border:1px solid var(--nep-border);
+    box-shadow:0 6px 14px rgba(15,23,42,.06);
+    vertical-align:middle;
+  }
+
+  .tc-page .ver-pill .dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#16a34a;
+    box-shadow:0 0 0 3px rgba(22,163,74,.18);
+  }
+
+  .tc-page .ver-date{
+    color:var(--nep-muted);
+    font-size:.9rem;
+    vertical-align:middle;
+  }
+
+  .tc-page .mini-kpi{
+    background:#fff;
+    border:1px solid var(--nep-border);
+    border-radius:14px;
+    padding:14px;
+    height:100%;
+    box-shadow:0 4px 12px rgba(15,23,42,.04);
+  }
+
+  .tc-page .mini-kpi-label{
+    color:var(--nep-muted);
+    font-size:.82rem;
+    margin-bottom:.35rem;
+  }
+
+  .tc-page .mini-kpi-value{
+    font-size:1.4rem;
+    font-weight:700;
+    line-height:1.1;
+  }
+
+  .tc-page .mini-kpi-sub{
+    color:var(--nep-muted);
+    font-size:.82rem;
+    margin-top:.25rem;
+  }
+
+  .tc-page .info-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    padding:.25rem .65rem;
+    border-radius:999px;
+    font-size:.82rem;
+    background:#eef5ff;
+    color:#0d6efd;
+    border:1px solid #dce9ff;
+  }
+
+  .tc-page .kpi-card{
+    background:rgba(255,255,255,.18);
+    border-radius:12px;
+    padding:14px 18px;
+    text-align:center;
+    height:100%;
+  }
+
+  .tc-page .kpi-card h3{
+    font-size:1.45rem;
+    font-weight:700;
+    margin:.35rem 0 0;
+  }
+
+  .tc-page .kpi-card small{
+    opacity:.92;
+    font-size:.82rem;
+  }
+
+  .tc-page .note-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.45rem;
+    padding:.55rem .85rem;
+    border-radius:999px;
+    background:#fff8e6;
+    color:#8a5a00;
+    border:1px solid #ffe6a7;
+    margin:.25rem .35rem .25rem 0;
+    font-size:.92rem;
+  }
+
+  .tc-page .note-chip.good{
+    background:#ebfff2;
+    color:#146c43;
+    border-color:#bde7cf;
+  }
+
+  @@keyframes fadeIn{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  @@media (max-width:576px){
+    .tc-page .kpi-card h3{
+      font-size:1.15rem;
+    }
+
+    .tc-page .mini-kpi-value{
+      font-size:1.15rem;
+    }
+  }
+</style>

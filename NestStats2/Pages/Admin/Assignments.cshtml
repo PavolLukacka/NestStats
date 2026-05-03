@@ -1,0 +1,767 @@
+@page
+@model NestStats2.Pages.Admin.AssignmentsModel
+@{
+    ViewData["Title"] = Lang.Pick(HttpContext, "Priradenia systémov", "System assignments");
+    string T(string sk, string en) => Lang.Pick(HttpContext, sk, en);
+
+    var ov = Model.Overview;
+    var staleCutoff = DateTimeOffset.UtcNow.AddDays(-30);
+    var assignedPct  = ov.CatalogSystems   == 0 ? 0 : (int)Math.Round(ov.UniqueAssignedSystems   * 100.0 / ov.CatalogSystems);
+    var primaryPct   = ov.TotalAssignments  == 0 ? 0 : (int)Math.Round(ov.PrimaryAssignments      * 100.0 / ov.TotalAssignments);
+    var coveragePct  = ov.TotalUsers        == 0 ? 0 : (int)Math.Round(ov.UsersWithAssignments    * 100.0 / ov.TotalUsers);
+
+    string SegActive(string val) => string.Equals(Model.Segment ?? "all", val, StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    string FmtTime(DateTimeOffset d)     => d.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
+    string FmtTimeOpt(DateTimeOffset? d) => d.HasValue ? d.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : T("Nikdy", "Never");
+    bool   IsStale(DateTimeOffset? d)    => !d.HasValue || d.Value < staleCutoff;
+}
+
+<style>
+/* ── Assignment Desk ──────────────────────────────────────── */
+.asgn { display: grid; gap: 20px; }
+
+/* ── Breadcrumb ───────────────────────────────────────────── */
+.asgn-crumb { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); }
+.asgn-crumb a { color: var(--muted); text-decoration: none; transition: color .15s; }
+.asgn-crumb a:hover { color: var(--text); }
+.asgn-crumb svg { flex-shrink: 0; }
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.asgn-hero {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 240px;
+    gap: 20px;
+    align-items: stretch;
+    padding: clamp(20px,3vw,32px);
+    border-radius: 22px;
+    background:
+        radial-gradient(ellipse 60% 100% at 0% 30%, rgba(15,118,110,.11) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 80% at 100% 70%, rgba(37,99,235,.09) 0%, transparent 50%),
+        linear-gradient(155deg, #fff 0%, #f5f7ff 100%);
+    border: 1px solid rgba(13,14,18,.07);
+    box-shadow: 0 16px 48px rgba(13,14,18,.07);
+}
+
+.asgn-hero__body { display: grid; gap: 8px; align-content: start; }
+
+.asgn-hero__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(37,99,235,.16);
+    background: rgba(37,99,235,.07);
+    color: #1d4ed8;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.asgn-hero__title { font-size: clamp(1.35rem,3vw,1.9rem); font-weight: 700; letter-spacing: -.04em; color: var(--text); }
+.asgn-hero__sub { color: var(--muted); font-size: .9rem; line-height: 1.55; max-width: 580px; }
+.asgn-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* Health bars */
+.asgn-health {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid rgba(13,14,18,.07);
+    border-radius: 16px;
+    background: rgba(255,255,255,.82);
+    backdrop-filter: blur(8px);
+    align-content: start;
+}
+
+.asgn-health__title { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.asgn-health__row { display: grid; gap: 5px; }
+.asgn-health__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.asgn-health__name { font-size: .8rem; font-weight: 600; color: var(--text); }
+.asgn-health__pct  { font-size: .8rem; font-weight: 700; color: var(--text); }
+.asgn-health__track {
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(13,14,18,.07);
+    overflow: hidden;
+}
+.asgn-health__fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0f766e, #2563eb);
+    transition: width .6s cubic-bezier(.16,1,.3,1);
+}
+
+/* ── KPI stats ────────────────────────────────────────────── */
+.asgn-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.asgn-stat {
+    padding: 18px;
+    border-radius: 18px;
+    background: #fff;
+    border: 1px solid rgba(13,14,18,.07);
+    box-shadow: 0 4px 14px rgba(13,14,18,.04);
+    display: grid;
+    gap: 4px;
+    transition: box-shadow .18s, transform .18s;
+}
+.asgn-stat:hover { box-shadow: 0 8px 24px rgba(13,14,18,.08); transform: translateY(-1px); }
+.asgn-stat--warn { background: linear-gradient(135deg, rgba(180,83,9,.08), #fff); }
+
+.asgn-stat__label { font-size: .68rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.asgn-stat__num   { font-size: 2rem; font-weight: 700; letter-spacing: -.06em; line-height: 1; color: var(--text); }
+.asgn-stat__sub   { font-size: .76rem; color: var(--muted); line-height: 1.4; }
+
+/* ── Success message ──────────────────────────────────────── */
+.asgn-success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(21,128,61,.08), rgba(255,255,255,.5));
+    border: 1px solid rgba(21,128,61,.18);
+    color: #15803d;
+}
+.asgn-success svg { flex-shrink: 0; }
+
+/* ── Body layout ──────────────────────────────────────────── */
+.asgn-body { display: grid; grid-template-columns: 310px 1fr; gap: 16px; align-items: start; }
+
+/* ── Card panels ──────────────────────────────────────────── */
+.asgn-panel {
+    background: #fff;
+    border: 1px solid rgba(13,14,18,.07);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(13,14,18,.04);
+}
+
+.asgn-panel__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid rgba(13,14,18,.07);
+}
+
+.asgn-panel__eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.asgn-panel__title   { font-size: 1rem; font-weight: 700; letter-spacing: -.025em; color: var(--text); }
+.asgn-panel__sub     { font-size: .8rem; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+
+.asgn-panel__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(13,14,18,.08);
+    background: rgba(13,14,18,.03);
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.asgn-panel__body { padding: 18px; }
+
+/* Left column */
+.asgn-left { display: grid; gap: 16px; }
+
+/* ── Form ─────────────────────────────────────────────────── */
+.asgn-form { display: grid; gap: 13px; }
+.asgn-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.asgn-form .field { margin: 0; }
+
+.asgn-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(13,14,18,.08);
+    background: rgba(13,14,18,.02);
+    cursor: pointer;
+    transition: background .15s;
+}
+.asgn-checkbox:hover { background: rgba(13,14,18,.04); }
+.asgn-checkbox input[type=checkbox] { margin: 0; width: 16px; height: 16px; flex-shrink: 0; accent-color: #0f766e; }
+.asgn-checkbox span { font-size: .84rem; color: var(--text); }
+
+/* ── Recent mini-list ─────────────────────────────────────── */
+.asgn-mini-list { display: grid; gap: 0; }
+.asgn-mini {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: start;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(13,14,18,.06);
+    transition: background .12s;
+}
+.asgn-mini:last-child { border-bottom: 0; }
+.asgn-mini:hover { background: rgba(13,14,18,.02); }
+.asgn-mini__name { font-size: .86rem; font-weight: 600; color: var(--text); }
+.asgn-mini__user { font-size: .76rem; color: var(--muted); }
+.asgn-mini__sn {
+    font-family: var(--ff-mono, monospace);
+    font-size: .72rem;
+    color: var(--muted);
+    background: rgba(13,14,18,.05);
+    padding: 2px 6px;
+    border-radius: 5px;
+    width: fit-content;
+}
+.asgn-mini__time { font-size: .74rem; color: var(--muted); white-space: nowrap; text-align: right; }
+
+/* ── Ledger ───────────────────────────────────────────────── */
+.asgn-right { display: grid; gap: 0; }
+
+/* Search bar */
+.asgn-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(13,14,18,.07);
+    background: rgba(13,14,18,.01);
+}
+
+.asgn-search-wrap { position: relative; flex: 1; min-width: 180px; }
+.asgn-search-wrap input {
+    width: 100%;
+    height: 36px;
+    padding-left: 32px;
+    border: 1px solid rgba(13,14,18,.12);
+    border-radius: 9px;
+    background: #fff;
+    font-size: .85rem;
+    color: var(--text);
+    transition: border-color .15s, box-shadow .15s;
+}
+.asgn-search-wrap input:focus {
+    outline: none;
+    border-color: rgba(15,118,110,.4);
+    box-shadow: 0 0 0 3px rgba(15,118,110,.09);
+}
+.asgn-search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+/* Segment tabs */
+.asgn-seg-tabs {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(13,14,18,.07);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.asgn-seg-tabs::-webkit-scrollbar { display: none; }
+
+.asgn-seg-tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(13,14,18,.08);
+    background: rgba(255,255,255,.7);
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .76rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.asgn-seg-tabs a:hover { background: rgba(13,14,18,.04); color: var(--text); }
+.asgn-seg-tabs a.is-active { background: rgba(15,118,110,.10); color: #0a6159; border-color: rgba(15,118,110,.22); }
+
+/* ── Ledger rows ──────────────────────────────────────────── */
+.asgn-ledger { display: grid; gap: 0; }
+
+.asgn-row {
+    display: grid;
+    grid-template-columns: minmax(200px,1fr) minmax(160px,.8fr) minmax(145px,.6fr) 80px;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(13,14,18,.05);
+    transition: background .12s;
+}
+.asgn-row:last-child { border-bottom: 0; }
+.asgn-row:hover { background: rgba(13,14,18,.018); }
+
+.asgn-row__name  { font-size: .9rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+
+.asgn-row__sn {
+    font-family: var(--ff-mono, monospace);
+    font-size: .76rem;
+    color: var(--text);
+    background: rgba(13,14,18,.05);
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.asgn-row__addr  { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+.asgn-row__user  { font-size: .86rem; font-weight: 600; color: var(--text); }
+.asgn-row__email { font-size: .76rem; color: var(--muted); margin-top: 1px; }
+.asgn-row__pref  { font-size: .72rem; color: var(--muted); margin-top: 2px; font-family: var(--ff-mono, monospace); }
+
+.asgn-row__dates { display: grid; gap: 2px; }
+.asgn-row__date  { font-size: .74rem; color: var(--muted); }
+.asgn-row__date--warn { color: #b45309; }
+
+.asgn-row__badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+
+.asgn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.asgn-badge--primary   { background: rgba(21,128,61,.10);  color: #15803d; border-color: rgba(21,128,61,.18); }
+.asgn-badge--secondary { background: rgba(71,85,105,.08);  color: #475569; border-color: rgba(71,85,105,.14); }
+.asgn-badge--stale     { background: rgba(180,83,9,.09);   color: #92400e; border-color: rgba(180,83,9,.16); }
+.asgn-badge--missing   { background: rgba(185,28,28,.08);  color: #991b1b; border-color: rgba(185,28,28,.15); }
+
+.asgn-row__actions { display: flex; justify-content: flex-end; }
+
+.btn-remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(185,28,28,.18);
+    background: rgba(185,28,28,.05);
+    color: #b91c1c;
+    font-size: .76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    white-space: nowrap;
+}
+.btn-remove:hover { background: rgba(185,28,28,.12); border-color: rgba(185,28,28,.3); }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.asgn-empty {
+    padding: 36px 24px;
+    text-align: center;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.asgn-empty svg { opacity: .3; }
+.asgn-empty strong { font-size: .92rem; color: var(--text); }
+.asgn-empty span   { font-size: .84rem; }
+
+/* ── Validation ───────────────────────────────────────────── */
+.validation-summary { margin-bottom: 0; }
+.validation-summary ul { padding-left: 18px; }
+.validation-summary li { font-size: .84rem; color: #b91c1c; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@@media (max-width: 1200px) {
+    .asgn-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@@media (max-width: 1050px) {
+    .asgn-hero { grid-template-columns: 1fr; }
+    .asgn-health { display: none; }
+    .asgn-body { grid-template-columns: 1fr; }
+}
+
+/* Mid breakpoint: hide dates, keep system + user + actions */
+@@media (max-width: 1050px) and (min-width: 601px) {
+    .asgn-row { grid-template-columns: 1fr 1fr auto; }
+    .asgn-row > div:nth-child(3) { display: none; }
+}
+
+/* Mobile: ledger rows become cards */
+@@media (max-width: 600px) {
+    .asgn-hero { padding: 20px; border-radius: 18px; }
+    .asgn-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .asgn-form-grid { grid-template-columns: 1fr; }
+    .asgn-filter-bar { flex-direction: column; align-items: stretch; }
+    .asgn-search-wrap { min-width: 0; }
+
+    /* ── Card-style ledger rows ── */
+    .asgn-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 16px;
+        border-bottom: 1px solid rgba(13,14,18,.07);
+        border-radius: 0;
+    }
+    /* Show all divs */
+    .asgn-row > div:nth-child(2),
+    .asgn-row > div:nth-child(3) { display: block; }
+
+    .asgn-row__actions { justify-content: flex-start; }
+
+    /* Row separator labels via data-label attribute */
+    .asgn-row > [data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 3px;
+    }
+}
+
+@@media (max-width: 440px) {
+    .asgn-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .asgn-stat  { padding: 14px; border-radius: 14px; }
+    .asgn-stat__num { font-size: 1.7rem; }
+}
+</style>
+
+<div class="product-page asgn">
+
+    <!-- Breadcrumb -->
+    <nav class="asgn-crumb" aria-label="Breadcrumb">
+        <a asp-page="/Admin/Index">@T("Administrácia", "Administration")</a>
+        <svg width="12" height="12" fill="none" viewBox="0 0 12 12">
+            <path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>@T("Priradenia systémov", "System assignments")</span>
+    </nav>
+
+    <!-- Hero -->
+    <header class="asgn-hero">
+        <div class="asgn-hero__body">
+            <span class="asgn-hero__kicker">
+                <svg width="12" height="12" fill="none" viewBox="0 0 16 16">
+                    <rect x="2" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                    <path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+                @T("Správa priradení", "Assignment desk")
+            </span>
+            <h1 class="asgn-hero__title">@T("Priradenia systémov", "System assignments")</h1>
+            <p class="asgn-hero__sub">
+                @T("Priraďte inštalácie zákazníkom, skontrolujte primárne systémy a vyriešte problémy pred supportom.",
+                   "Attach installations to customer accounts, verify primary routes and resolve issues before they become support tickets.")
+            </p>
+            <div class="asgn-hero__actions">
+                <a class="button button--ghost" asp-page="/Admin/Index">
+                    ← @T("Späť na prehľad", "Back to overview")
+                </a>
+            </div>
+        </div>
+
+        <aside class="asgn-health" aria-label="@T("Zdravie priradení", "Assignment health")">
+            <span class="asgn-health__title">@T("Zdravie systémov", "System health")</span>
+            <div class="asgn-health__row">
+                <div class="asgn-health__head">
+                    <span class="asgn-health__name">@T("Pokrytie katalógu", "Catalog coverage")</span>
+                    <span class="asgn-health__pct">@assignedPct %</span>
+                </div>
+                <div class="asgn-health__track">
+                    <div class="asgn-health__fill" style="width:@assignedPct%"></div>
+                </div>
+            </div>
+            <div class="asgn-health__row">
+                <div class="asgn-health__head">
+                    <span class="asgn-health__name">@T("Primárne trasy", "Primary routes")</span>
+                    <span class="asgn-health__pct">@primaryPct %</span>
+                </div>
+                <div class="asgn-health__track">
+                    <div class="asgn-health__fill" style="width:@primaryPct%"></div>
+                </div>
+            </div>
+            <div class="asgn-health__row">
+                <div class="asgn-health__head">
+                    <span class="asgn-health__name">@T("Pokrytie zákazníkov", "User coverage")</span>
+                    <span class="asgn-health__pct">@coveragePct %</span>
+                </div>
+                <div class="asgn-health__track">
+                    <div class="asgn-health__fill" style="width:@coveragePct%"></div>
+                </div>
+            </div>
+        </aside>
+    </header>
+
+    <!-- Status message -->
+    @if (TempData["StatusMessage"] is string msg)
+    {
+        <div class="asgn-success" role="status">
+            <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                <path d="M5.5 8l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <strong>@msg</strong>
+        </div>
+    }
+
+    <!-- Stats -->
+    <section class="asgn-stats" aria-label="@T("Štatistiky priradení", "Assignment statistics")">
+        <article class="asgn-stat">
+            <span class="asgn-stat__label">@T("Priradenia celkom", "Total assignments")</span>
+            <span class="asgn-stat__num">@ov.TotalAssignments</span>
+            <span class="asgn-stat__sub">@ov.PrimaryAssignments @T("primárnych", "primary") · @ov.UniqueAssignedSystems @T("unikátnych sys.", "unique systems")</span>
+        </article>
+        <article class="asgn-stat">
+            <span class="asgn-stat__label">@T("Voľná kapacita", "Catalog headroom")</span>
+            <span class="asgn-stat__num">@ov.AvailableCatalogSystems</span>
+            <span class="asgn-stat__sub">@ov.CatalogSystems @T("v katalógu", "in catalog") · @ov.UniqueAssignedSystems @T("priradených", "assigned")</span>
+        </article>
+        <article class="asgn-stat">
+            <span class="asgn-stat__label">@T("Zákazníci s priradením", "Users with systems")</span>
+            <span class="asgn-stat__num">@ov.UsersWithAssignments</span>
+            <span class="asgn-stat__sub">@ov.UsersWithoutAssignments @T("bez systému", "without system") · @ov.MultiSystemUsers @T("multi-sys.", "multi-sys.")</span>
+        </article>
+        <article class="asgn-stat @(ov.UsersMissingPrimary + ov.StaleCredentials > 0 ? "asgn-stat--warn" : "")">
+            <span class="asgn-stat__label">@T("Vyžaduje pozornosť", "Needs review")</span>
+            <span class="asgn-stat__num">@(ov.UsersMissingPrimary + ov.StaleCredentials)</span>
+            <span class="asgn-stat__sub">@ov.UsersMissingPrimary @T("bez primárneho", "missing primary") · @ov.StaleCredentials @T("stale cred.", "stale cred.")</span>
+        </article>
+    </section>
+
+    <!-- Body -->
+    <div class="asgn-body">
+
+        <!-- Left: form + recent -->
+        <div class="asgn-left">
+
+            <!-- Assign form -->
+            <article class="asgn-panel">
+                <div class="asgn-panel__head">
+                    <div>
+                        <p class="asgn-panel__eyebrow">@T("Nové priradenie", "New assignment")</p>
+                        <h2 class="asgn-panel__title">@T("Priradiť inštaláciu", "Attach installation")</h2>
+                        <p class="asgn-panel__sub">@T("Pre asistovaný onboarding, eskalácie a odovzdania.", "Assisted onboarding, support escalation or reseller handoff.")</p>
+                    </div>
+                    <span class="asgn-panel__chip">@ov.AssignableUsers @T("zákazníkov", "users")</span>
+                </div>
+
+                <div class="asgn-panel__body">
+                    <form method="post" asp-page-handler="Assign" class="asgn-form">
+                        <div asp-validation-summary="All" class="validation-summary"></div>
+
+                        <div class="field">
+                            <label asp-for="Input.UserId">@T("Zákazník", "Customer")</label>
+                            <select asp-for="Input.UserId">
+                                <option value="">@T("Vybrať zákazníka…", "Select customer…")</option>
+                                @foreach (var u in Model.Users)
+                                {
+                                    <option value="@u.Id">@u.DisplayName (@u.Email)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="asgn-form-grid">
+                            <div class="field">
+                                <label asp-for="Input.SnNumber">@T("Sériové číslo", "Serial number")</label>
+                                <input asp-for="Input.SnNumber" placeholder="SP2ES108NB3249" autocomplete="off" />
+                            </div>
+                            <div class="field">
+                                <label asp-for="Input.SystemPassword">@T("Heslo systému", "System password")</label>
+                                <input asp-for="Input.SystemPassword" type="password"
+                                       placeholder="@T("Inštalačné heslo", "Installation password")"
+                                       autocomplete="new-password" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="Input.Alias">@T("Zobrazovaný názov", "Display name")</label>
+                            <input asp-for="Input.Alias"
+                                   placeholder="@T("Domáci menič, garáž, prevádzka…", "Home inverter, garage, business site…")" />
+                        </div>
+
+                        <label class="asgn-checkbox">
+                            <input asp-for="Input.SetPrimary" type="checkbox" />
+                            <span>@T("Nastaviť ako primárny systém zákazníka", "Make this the customer's primary dashboard system")</span>
+                        </label>
+
+                        <button type="submit" class="button button--primary" style="width:100%;">
+                            @T("Uložiť priradenie", "Save assignment")
+                        </button>
+                    </form>
+                </div>
+            </article>
+
+            <!-- Recent activity -->
+            <article class="asgn-panel">
+                <div class="asgn-panel__head">
+                    <div>
+                        <p class="asgn-panel__eyebrow">@T("Posledná aktivita", "Recent activity")</p>
+                        <h2 class="asgn-panel__title">@T("Nedávne priradenia", "Latest attachments")</h2>
+                        <p class="asgn-panel__sub">@ov.RecentlyConnected @T("priradení za posledných 7 dní.", "connection(s) in the last 7 days.")</p>
+                    </div>
+                </div>
+
+                @if (ov.RecentAssignments.Count == 0)
+                {
+                    <div class="asgn-empty" style="padding:24px;">
+                        <svg width="32" height="32" fill="none" viewBox="0 0 32 32">
+                            <rect x="3" y="5" width="26" height="19" rx="3" stroke="currentColor" stroke-width="1.4" fill="none"/>
+                            <path d="M10 13h12M10 18h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        </svg>
+                        <span>@T("Zatiaľ žiadne priradenia.", "No assignments created yet.")</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="asgn-mini-list">
+                        @foreach (var a in ov.RecentAssignments)
+                        {
+                            <div class="asgn-mini">
+                                <div>
+                                    <span class="asgn-mini__name">@a.SystemName</span>
+                                    <div style="display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap;">
+                                        <span class="asgn-mini__user">@a.UserLabel</span>
+                                        <span class="asgn-mini__sn">@a.SnNumber</span>
+                                    </div>
+                                </div>
+                                <span class="asgn-mini__time">@FmtTime(a.ConnectedUtc)</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </article>
+        </div>
+
+        <!-- Right: ledger -->
+        <article class="asgn-panel asgn-right">
+            <div class="asgn-panel__head">
+                <div>
+                    <p class="asgn-panel__eyebrow">@T("Zoznam priradení", "Assignment ledger")</p>
+                    <h2 class="asgn-panel__title">@T("Systémy priradené zákazníkom", "Systems attached to customers")</h2>
+                    <p class="asgn-panel__sub">
+                        @ov.FilteredAssignments @T("výsledkov. Filtrovať podľa zákazníka, SN, adresy alebo stavu.", "result(s). Filter by customer, SN, address or state.")
+                    </p>
+                </div>
+                <span class="asgn-panel__chip">@ov.FilteredSegment</span>
+            </div>
+
+            <!-- Search -->
+            <form method="get" class="asgn-filter-bar">
+                <div class="asgn-search-wrap">
+                    <svg class="asgn-search-icon" width="14" height="14" fill="none" viewBox="0 0 16 16">
+                        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" name="Search" value="@Model.Search"
+                           placeholder="@T("Zákazník, e-mail, SN, systém, adresa…", "Customer, email, SN, system name, address…")"
+                           autocomplete="off" />
+                </div>
+                <input type="hidden" name="Segment" value="@Model.Segment" />
+                <button type="submit" class="button button--primary">@T("Hľadať", "Search")</button>
+            </form>
+
+            <!-- Segment tabs -->
+            <nav class="asgn-seg-tabs" aria-label="@T("Segmenty", "Segments")">
+                @{
+                    var tabs = new (string val, string sk, string en)[] {
+                        ("all",             "Všetky",          "All"),
+                        ("primary",         "Primárne",        "Primary"),
+                        ("secondary",       "Sekundárne",      "Secondary"),
+                        ("missing-catalog", "Catalog mismatch","Catalog mismatch"),
+                        ("stale",           "Stale credentials","Stale credentials"),
+                    };
+                }
+                @foreach (var tab in tabs)
+                {
+                    <a class="@SegActive(tab.val)"
+                       asp-page="/Admin/Assignments"
+                       asp-route-search="@Model.Search"
+                       asp-route-segment="@tab.val">
+                        @T(tab.sk, tab.en)
+                    </a>
+                }
+            </nav>
+
+            <!-- Rows -->
+            <div class="asgn-ledger">
+                @if (Model.Assignments.Count == 0)
+                {
+                    <div class="asgn-empty">
+                        <svg width="40" height="40" fill="none" viewBox="0 0 40 40">
+                            <rect x="5" y="7" width="30" height="22" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <path d="M12 16h16M12 22h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <strong>@T("Žiadne priradenia", "No assignments match")</strong>
+                        <span>@T("Vyčistite vyhľadávanie alebo zmeňte segment.", "Clear the search or switch back to All.")</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var a in Model.Assignments)
+                    {
+                        var stale = IsStale(a.LastVerifiedUtc);
+                        var labelCustomer = T("Zákazník", "Customer");
+                        var labelDates    = T("Overenie", "Verification");
+                        <article class="asgn-row">
+                            <div>
+                                <span class="asgn-row__name">@a.SystemName</span>
+                                <span class="asgn-row__sn">@a.SnNumber</span>
+                                @if (!string.IsNullOrWhiteSpace(a.SystemAddress))
+                                {
+                                    <span class="asgn-row__addr">@a.SystemAddress</span>
+                                }
+                                <div class="asgn-row__badges">
+                                    @if (a.IsPrimary) { <span class="asgn-badge asgn-badge--primary">@T("Primárny", "Primary")</span> }
+                                    else              { <span class="asgn-badge asgn-badge--secondary">@T("Sekundárny", "Secondary")</span> }
+                                    @if (!a.IsInCatalog) { <span class="asgn-badge asgn-badge--missing">Catalog mismatch</span> }
+                                    @if (stale)          { <span class="asgn-badge asgn-badge--stale">Stale check</span> }
+                                </div>
+                            </div>
+
+                            <div data-label="@labelCustomer">
+                                <span class="asgn-row__user">@a.UserLabel</span>
+                                <span class="asgn-row__email">@a.UserEmail</span>
+                                @if (!string.IsNullOrWhiteSpace(a.PreferredSystemSn))
+                                {
+                                    <span class="asgn-row__pref">@T("Preferovaný:", "Preferred:") @a.PreferredSystemSn</span>
+                                }
+                            </div>
+
+                            <div data-label="@labelDates" class="asgn-row__dates">
+                                <span class="asgn-row__date">@T("Priradené:", "Connected:") @FmtTime(a.ConnectedUtc)</span>
+                                <span class="asgn-row__date @(stale ? "asgn-row__date--warn" : "")">@T("Overené:", "Verified:") @FmtTimeOpt(a.LastVerifiedUtc)</span>
+                            </div>
+
+                            <div class="asgn-row__actions">
+                                <form method="post" asp-page-handler="Remove"
+                                      onsubmit="return confirm('@T("Odstrániť toto priradenie?", "Remove this assignment?")')">
+                                    <input type="hidden" name="id" value="@a.Id" />
+                                    <button type="submit" class="btn-remove">
+                                        <svg width="12" height="12" fill="none" viewBox="0 0 16 16">
+                                            <path d="M3 6h10M6 3h4M7 6v6M9 6v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                        </svg>
+                                        @T("Odstrániť", "Remove")
+                                    </button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        </article>
+    </div>
+
+</div>
