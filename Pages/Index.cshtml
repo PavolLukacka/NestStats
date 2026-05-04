@@ -5471,6 +5471,8 @@ else
 
                             const progressUrl = new URL(rawDashboard.loadProgressEndpoint, window.location.origin);
                             progressUrl.searchParams.set('jobId', startPayload.jobId);
+                            const loadStartedAt = Date.now();
+                            const maxLoadMs = quiet ? 90000 : 110000;
 
                             function swapDashboardDocument(navigateUrl) {
                                 const finalUrl = new URL(navigateUrl, window.location.origin);
@@ -5499,6 +5501,10 @@ else
                             }
 
                             while (true) {
+                                if (Date.now() - loadStartedAt > maxLoadMs) {
+                                    throw new Error('Nacitanie dashboardu trva prilis dlho. Skontroluj pripojenie k Supabase alebo skus mensi casovy rozsah.');
+                                }
+
                                 const progressResponse = await fetch(progressUrl, {
                                     credentials: 'same-origin',
                                     headers: { 'X-Requested-With': 'XMLHttpRequest' },

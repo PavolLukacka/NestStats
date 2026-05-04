@@ -1,6 +1,5 @@
-const CACHE_NAME = "neststats-static-v1";
+const CACHE_NAME = "neststats-static-v3";
 const STATIC_ASSETS = [
-  "/",
   "/manifest.webmanifest",
   "/favicon.ico",
   "/logo.png",
@@ -28,11 +27,29 @@ self.addEventListener("activate", event => {
   );
 });
 
+self.addEventListener("message", event => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
 
   if (request.method !== "GET" || url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (request.mode === "navigate" ||
+      url.searchParams.has("handler") ||
+      url.searchParams.has("LoadToken") ||
+      url.searchParams.has("QuietRefresh") ||
+      url.pathname.startsWith("/Identity/") ||
+      url.pathname.startsWith("/Account/") ||
+      url.pathname.startsWith("/signin-google") ||
+      url.pathname.startsWith("/signin-facebook")) {
+    event.respondWith(fetch(request));
     return;
   }
 

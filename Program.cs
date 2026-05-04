@@ -80,9 +80,18 @@ builder.Services
 builder.Services
     .AddOptions<EmailOptions>()
     .Bind(builder.Configuration.GetSection(EmailOptions.SectionName));
-builder.Services.AddHttpClient<IEnergyDashboardService, SupabaseEnergyDashboardService>();
-builder.Services.AddHttpClient<IWeatherForecastService, OpenMeteoWeatherForecastService>();
-builder.Services.AddHttpClient<ISpotMarketPriceService, OkteSpotMarketPriceService>();
+builder.Services.AddHttpClient<IEnergyDashboardService, SupabaseEnergyDashboardService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(25);
+});
+builder.Services.AddHttpClient<IWeatherForecastService, OpenMeteoWeatherForecastService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient<ISpotMarketPriceService, OkteSpotMarketPriceService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -285,6 +294,27 @@ app.Use(async (context, next) =>
     }
 
     var path = context.Request.Path;
+    var isDynamicHtmlRequest = WantsHtml(context) && !IsStaticOrFrameworkRequest(path);
+    var isAuthRequest =
+        path.StartsWithSegments("/Identity", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWithSegments("/Account", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWithSegments("/signin-google", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWithSegments("/signin-facebook", StringComparison.OrdinalIgnoreCase);
+    var isRazorHandlerRequest = context.Request.Query.ContainsKey("handler") ||
+                                context.Request.Query.ContainsKey("LoadToken") ||
+                                context.Request.Query.ContainsKey("QuietRefresh");
+
+    if (isDynamicHtmlRequest || isAuthRequest || isRazorHandlerRequest)
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+            context.Response.Headers.Pragma = "no-cache";
+            context.Response.Headers.Expires = "0";
+            return Task.CompletedTask;
+        });
+    }
+
     if (path.StartsWithSegments("/startup-status", StringComparison.OrdinalIgnoreCase) ||
         path.StartsWithSegments("/language/set", StringComparison.OrdinalIgnoreCase) ||
         IsStaticOrFrameworkRequest(path))

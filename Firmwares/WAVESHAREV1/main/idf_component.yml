@@ -1,6 +1,8 @@
 ## IDF Component Manager Manifest File
 dependencies:
   waveshare/esp_lcd_st7703: "*"
+  lvgl/lvgl: "^9.2.2"
+  # Used only by private live-data builds where main/local_secrets.h enables
+  # USE_REMOTE_WIFI. CMake does not link them for the public display-only build.
   espressif/esp_wifi_remote: "*"
   espressif/esp_hosted: "*"
-  

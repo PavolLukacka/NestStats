@@ -33,6 +33,7 @@ public sealed record DashboardLoadSnapshot(
 public sealed class DashboardLoadCoordinator : IDashboardLoadCoordinator
 {
     private static readonly TimeSpan JobLifetime = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan JobTimeout = TimeSpan.FromSeconds(75);
 
     private readonly ConcurrentDictionary<string, DashboardLoadJobState> _jobs = new(StringComparer.OrdinalIgnoreCase);
     private readonly IServiceScopeFactory _scopeFactory;
@@ -61,6 +62,14 @@ public sealed class DashboardLoadCoordinator : IDashboardLoadCoordinator
         };
 
         _jobs[jobId] = state;
+
+        _logger.LogInformation(
+            "Dashboard load job {JobId} started for user {UserId}, system {SnNumber}, day {Day}, hours {HoursBack}",
+            jobId,
+            request.UserId,
+            request.SnNumber,
+            request.Day,
+            request.HoursBack);
 
         _ = Task.Run(() => RunJobAsync(state, request));
         return jobId;
@@ -115,6 +124,8 @@ public sealed class DashboardLoadCoordinator : IDashboardLoadCoordinator
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
+            using var timeout = new CancellationTokenSource(JobTimeout);
+            var cancellationToken = timeout.Token;
             var dashboardService = scope.ServiceProvider.GetRequiredService<IEnergyDashboardService>();
             var weatherForecastService = scope.ServiceProvider.GetRequiredService<IWeatherForecastService>();
 
@@ -130,13 +141,13 @@ public sealed class DashboardLoadCoordinator : IDashboardLoadCoordinator
                 request.HoursBack,
                 request.IsAdmin ? null : request.AllowedSnNumbers,
                 progress,
-                CancellationToken.None);
+                cancellationToken);
 
             UpdateState(state, 90, "Pocasie", "Doplnam pocasie a odhad vyroby.");
             dashboard.Weather = await weatherForecastService.GetForecastAsync(
                 dashboard.SystemAddress,
                 dashboard.InstalledPvKw,
-                CancellationToken.None);
+                cancellationToken);
 
             UpdateState(state, 97, "Render", "Dokoncujem data pre zobrazenie.");
 
@@ -146,6 +157,22 @@ public sealed class DashboardLoadCoordinator : IDashboardLoadCoordinator
                 state.Percent = 100;
                 state.Stage = "Hotovo";
                 state.Detail = "Dashboard je pripraveny.";
+                state.Completed = true;
+                state.UpdatedUtc = DateTimeOffset.UtcNow;
+            }
+
+            _logger.LogInformation("Dashboard load job {JobId} completed", state.JobId);
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Dashboard load job {JobId} timed out after {TimeoutSeconds} seconds", state.JobId, JobTimeout.TotalSeconds);
+            lock (state.SyncRoot)
+            {
+                state.Percent = 100;
+                state.Stage = "Timeout";
+                state.Detail = "Nacitanie dashboardu trvalo prilis dlho. Skontroluj Supabase konfiguraciu, dostupnost tabuliek alebo skus mensi casovy rozsah.";
+                state.Error = "Dashboard load timed out.";
+                state.Failed = true;
                 state.Completed = true;
                 state.UpdatedUtc = DateTimeOffset.UtcNow;
             }

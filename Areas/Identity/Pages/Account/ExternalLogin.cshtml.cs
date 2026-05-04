@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using NestStats2.Models;
@@ -50,7 +51,7 @@ public class ExternalLoginModel : PageModel
     public IActionResult OnPost(string provider, string? returnUrl = null)
     {
         var redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback",
-            values: new { returnUrl = returnUrl ?? "/" });
+            values: new { returnUrl = CleanReturnUrl(returnUrl) });
 
         var properties = _signInManager
             .ConfigureExternalAuthenticationProperties(provider, redirectUrl);
@@ -61,7 +62,7 @@ public class ExternalLoginModel : PageModel
     // OAuth provider redirects back here after user approves
     public async Task<IActionResult> OnGetCallbackAsync(string? returnUrl = null, string? remoteError = null)
     {
-        returnUrl ??= "/";
+        returnUrl = CleanReturnUrl(returnUrl);
 
         if (remoteError != null)
         {
@@ -108,7 +109,7 @@ public class ExternalLoginModel : PageModel
     // User submitted the email confirmation form
     public async Task<IActionResult> OnPostConfirmationAsync(string? returnUrl = null)
     {
-        returnUrl ??= "/";
+        returnUrl = CleanReturnUrl(returnUrl);
 
         if (!ModelState.IsValid)
         {
@@ -181,5 +182,32 @@ public class ExternalLoginModel : PageModel
         ReturnUrl = returnUrl;
         ProviderDisplayName = info.ProviderDisplayName ?? info.LoginProvider;
         return Page();
+    }
+
+    private string CleanReturnUrl(string? returnUrl)
+    {
+        const string fallback = "/";
+        if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
+        {
+            return fallback;
+        }
+
+        if (!Uri.TryCreate(new Uri("http://neststats.local"), returnUrl, out var uri))
+        {
+            return fallback;
+        }
+
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        var keptQuery = query
+            .Where(pair =>
+                !string.Equals(pair.Key, "LoadToken", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(pair.Key, "QuietRefresh", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(pair.Key, "handler", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(pair.Key, "jobId", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(pair => pair.Value.Select(value => new KeyValuePair<string, string?>(pair.Key, value)));
+
+        var cleanPath = string.IsNullOrWhiteSpace(uri.AbsolutePath) ? fallback : uri.AbsolutePath;
+        var cleanQuery = QueryString.Create(keptQuery).ToUriComponent();
+        return cleanPath + cleanQuery + uri.Fragment;
     }
 }

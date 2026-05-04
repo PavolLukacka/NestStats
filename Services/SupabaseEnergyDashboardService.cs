@@ -17,6 +17,7 @@ public sealed class SupabaseEnergyDashboardService : IEnergyDashboardService
     private const int StatsHistoryDays = 45;
     private const int StatsMaxRows = 50000;
     private const int EstimatedHistoryRowsPerDay = 1800;
+    private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(14);
     private static readonly Regex RelayCountAndPowerRegex = new(
         @"(?<count>\d+)\s*x\s*(?<power>\d+(?:[.,]\d+)?)\s*k\s*w\s*SSR",
         RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -161,21 +162,19 @@ public sealed class SupabaseEnergyDashboardService : IEnergyDashboardService
         var statsFromStr = Uri.EscapeDataString(ToDatabaseTimestamp(statsFromUtc).ToString("O"));
         var statsToFilter = $"&timestamp=lt.{Uri.EscapeDataString(ToDatabaseTimestamp(statsToUtc).ToString("O"))}";
 
-        var wattTask = GetListAsync<WattRouterInfo>(
-            $"WATTROUTER_INFO?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000",
-            cancellationToken);
-        var pvTask = GetListAsync<PvInformation>(
-            $"PV_INFORMATION?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000",
-            cancellationToken);
-        var batteryTask = GetListAsync<BatteryInformation>(
-            $"BATTERY_INFORMATION?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000",
-            cancellationToken);
-        var gridTask = GetListAsync<GridInformation>(
-            $"GRID_INFORMATION?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000",
-            cancellationToken);
-        var statsTask = GetPagedListAsync<StatisticalInformation>(
-            $"STATISTICAL_INFORMATION?sn_number=eq.{encodedSn}&timestamp=gte.{statsFromStr}{statsToFilter}&order=timestamp.{statsOrder}",
-            Math.Max(SupabasePageSize, EstimatedHistoryRowsPerDay),
+        var wattUrl = $"WATTROUTER_INFO?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000";
+        var pvUrl = $"PV_INFORMATION?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000";
+        var batteryUrl = $"BATTERY_INFORMATION?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000";
+        var gridUrl = $"GRID_INFORMATION?sn_number=eq.{encodedSn}&created_at=gte.{fromStr}&created_at=lt.{toStr}&order=created_at.asc&limit=4000";
+        var statsUrl = $"STATISTICAL_INFORMATION?sn_number=eq.{encodedSn}&timestamp=gte.{statsFromStr}{statsToFilter}&order=timestamp.{statsOrder}";
+
+        var wattTask = RunDashboardQueryAsync("WattRouter", token => TryGetListAsync<WattRouterInfo>(wattUrl, token), cancellationToken);
+        var pvTask = RunDashboardQueryAsync("FV stringy", token => TryGetListAsync<PvInformation>(pvUrl, token), cancellationToken);
+        var batteryTask = RunDashboardQueryAsync("Bateria", token => TryGetListAsync<BatteryInformation>(batteryUrl, token), cancellationToken);
+        var gridTask = RunDashboardQueryAsync("Siet", token => TryGetListAsync<GridInformation>(gridUrl, token), cancellationToken);
+        var statsTask = RunDashboardQueryAsync(
+            "Statistika",
+            token => TryGetPagedListAsync<StatisticalInformation>(statsUrl, Math.Max(SupabasePageSize, EstimatedHistoryRowsPerDay), token),
             cancellationToken);
         Report(progress, 25, "Databaza", "Spustam paralelne nacitanie dat zo vsetkych zdrojov.");
 
@@ -650,14 +649,17 @@ public sealed class SupabaseEnergyDashboardService : IEnergyDashboardService
             return [];
         }
 
-        using var response = await _httpClient.GetAsync(relativeUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(QueryTimeout);
+
+        using var response = await _httpClient.GetAsync(relativeUrl, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
         var data = await JsonSerializer.DeserializeAsync<List<T>>(
             stream,
             JsonOptions,
-            cancellationToken);
+            timeout.Token);
 
         return NormalizeDatabaseTimestamps(data ?? []);
     }
@@ -735,9 +737,55 @@ public sealed class SupabaseEnergyDashboardService : IEnergyDashboardService
         {
             return await GetListAsync<T>(relativeUrl, cancellationToken);
         }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Supabase query timed out for {Url}", relativeUrl);
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Partial live query failed for {Url}", relativeUrl);
+            return [];
+        }
+    }
+
+    private async Task<List<T>> RunDashboardQueryAsync<T>(
+        string label,
+        Func<CancellationToken, Task<List<T>>> queryFactory,
+        CancellationToken cancellationToken)
+    {
+        using var queryTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var queryTask = queryFactory(queryTimeout.Token);
+        var timeoutTask = Task.Delay(QueryTimeout + TimeSpan.FromSeconds(2), cancellationToken);
+        var completedTask = await Task.WhenAny(queryTask, timeoutTask);
+
+        if (completedTask == queryTask)
+        {
+            return await queryTask;
+        }
+
+        queryTimeout.Cancel();
+        _logger.LogWarning("Dashboard query {Label} did not finish inside {TimeoutSeconds} seconds. Continuing with empty data for this source.", label, QueryTimeout.TotalSeconds + 2);
+        return [];
+    }
+
+    private async Task<List<T>> TryGetPagedListAsync<T>(
+        string relativeUrl,
+        int maxRows,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await GetPagedListAsync<T>(relativeUrl, maxRows, cancellationToken);
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Supabase paged query timed out for {Url}", relativeUrl);
+            return [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Partial paged query failed for {Url}", relativeUrl);
             return [];
         }
     }

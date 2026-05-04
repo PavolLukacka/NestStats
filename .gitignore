@@ -70,6 +70,7 @@ Firmwares/**/dependencies.lock
 Firmwares/**/config.env
 Firmwares/**/secret*.h
 Firmwares/**/secrets*.h
+Firmwares/**/local_secrets*.h
 Firmwares/**/wifi_credentials*.h
 
 # Personal project material that is not part of the public NestStats app

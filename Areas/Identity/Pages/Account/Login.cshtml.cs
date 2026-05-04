@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using NestStats2.Models;
@@ -38,7 +39,7 @@ public class LoginModel : PageModel
             ModelState.AddModelError(string.Empty, ErrorMessage);
         }
 
-        ReturnUrl ??= Url.Content("~/");
+        ReturnUrl = CleanReturnUrl(ReturnUrl);
         Input.RememberMe = ReadKeepSignedInPreference();
 
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -47,7 +48,7 @@ public class LoginModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
-        returnUrl ??= Url.Content("~/");
+        returnUrl = CleanReturnUrl(returnUrl);
         ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         var isEnglish = string.Equals(
             HttpContext.Features.Get<Microsoft.AspNetCore.Localization.IRequestCultureFeature>()?.RequestCulture.UICulture.TwoLetterISOLanguageName,
@@ -144,5 +145,32 @@ public class LoginModel : PageModel
                 SameSite = SameSiteMode.Lax,
                 Secure = Request.IsHttps
             });
+    }
+
+    private string CleanReturnUrl(string? returnUrl)
+    {
+        var fallback = Url.Content("~/");
+        if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
+        {
+            return fallback;
+        }
+
+        if (!Uri.TryCreate(new Uri("http://neststats.local"), returnUrl, out var uri))
+        {
+            return fallback;
+        }
+
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        var keptQuery = query
+            .Where(pair =>
+                !string.Equals(pair.Key, "LoadToken", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(pair.Key, "QuietRefresh", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(pair.Key, "handler", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(pair.Key, "jobId", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(pair => pair.Value.Select(value => new KeyValuePair<string, string?>(pair.Key, value)));
+
+        var cleanPath = string.IsNullOrWhiteSpace(uri.AbsolutePath) ? "/" : uri.AbsolutePath;
+        var cleanQuery = QueryString.Create(keptQuery).ToUriComponent();
+        return cleanPath + cleanQuery + uri.Fragment;
     }
 }
